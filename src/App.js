@@ -126,6 +126,7 @@ const CourseApp = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [products, setProducts] = useState([]);
   const [cryptoPrices, setCryptoPrices] = useState([]);
+  const [stories, setStories] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [sliders, setSliders] = useState([]); // برای ذخیره اسلایدرها
@@ -321,9 +322,31 @@ useEffect(() => {
 
   return () => clearInterval(interval);
 }, [currentSlide, sliders.length]);
+  /////////////////////////////////------------------------------------------
 
+// اضافه کردن useEffect برای دریافت stories
+useEffect(() => {
+  const fetchStories = async () => {
+    try {
+      const auth = btoa('ck_20b3c33ef902d4ccd94fc1230c940a85be290e0a:cs_e8a85df738324996fd3608154ab5bf0ccc6ded99');
+      const response = await fetch('https://alicomputer.com/wp-json/wp/v2/story_highlights?_embed', {
+        headers: {
+          'Authorization': `Basic ${auth}`
+        }
+      });
+      
+      if (!response.ok) throw new Error('خطا در دریافت استوری ها');
+      const data = await response.json();
+      console.log('دریافت استوری ها:', data); // برای دیباگ
+      setStories(data);
+    } catch (error) {
+      console.error('خطا در دریافت استوری ها:', error);
+    }
+  };
 
-  //////////////
+  fetchStories();
+}, []);
+  /////////////////////////////////------------------------------------------
   const scrollToIndex = (index) => {
     setCurrentIndex(index);
     if (sliderRef.current) {
@@ -409,9 +432,55 @@ useEffect(() => {
   </div>
 </div>
 
+{/* Story Highlights */}
+<div className="px-4">
+  <div className="relative">
+    <div 
+      className="flex overflow-x-auto gap-4 pb-4 scrollbar-hide snap-x snap-mandatory"
+    >
+      {stories.map((story, index) => (
+        <a 
+        key={story.id}
+        href={story.meta.story_link} // تغییر از story.meta?.story_link به story.meta.story_link
+        className="flex-none snap-center"
+        target="_blank" // اضافه کردن این خط
+        rel="noopener noreferrer" // اضافه کردن این خط
+        onClick={(e) => {
+          console.log('Clicked story link:', story.meta.story_link); // برای دیباگ
+        }}
+      >
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-24 h-24 rounded-full bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 p-0.5">
+              <div className={`w-full h-full rounded-full p-0.5 ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
+                {story._embedded && story._embedded['wp:featuredmedia'] && (
+                  <img
+                    src={story._embedded['wp:featuredmedia'][0].source_url}
+                    alt={story.title.rendered}
+                    className="w-full h-full rounded-full object-cover"
+                  />
+                )}
+              </div>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <span className={`text-sm font-medium text-center line-clamp-1 w-24 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                {story.title.rendered}
+              </span>
+              <span className={`text-xs text-center line-clamp-1 w-24 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                {story.meta?.story_subtitle || ''}
+              </span>
+            </div>
+          </div>
+        </a>
+      ))}
+    </div>
+  </div>
+</div>
+
+
+
 
      {/* Sliders Section */}
-<div className="px-4 mb-6">
+<div className="px-4">
   <div className="relative">
     <div 
       ref={slidersRef}
@@ -443,7 +512,7 @@ useEffect(() => {
     {/* Navigation Dots */}
     <div className="absolute bottom-4 left-0 right-0">
       <div className="flex justify-center gap-2">
-        {sliders.map((_, index) => (
+        {/*sliders.map((_, index) => (
           <button
             key={index}
             onClick={() => setCurrentSlide(index)}
@@ -451,7 +520,7 @@ useEffect(() => {
               currentSlide === index ? 'bg-blue-500 w-4' : 'bg-white bg-opacity-50'
             }`}
           />
-        ))}
+        ))*/}
       </div>
     </div>
   </div>
@@ -519,7 +588,7 @@ useEffect(() => {
             ))}
           </div>
           {/* Courses */}
-<div className="px-4 mb-6 pb-20 ">
+<div className="px-4">
   <h2 className="text-xl mb-4"></h2>
   <div className="grid grid-cols-1 gap-4">
   <div className={`p-4 rounded-2xl flex items-center gap-3   ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
@@ -617,6 +686,65 @@ useEffect(() => {
 </div>
         </div>
       </div>
+     
+     {/*--------------------------- */}
+     {/* Social Media Boxes */}
+<div className="px-4  mb- pb-28 "> {/* mb-20 برای فاصله از bottom navigation */}
+  <div className="grid grid-cols-4 gap-2">
+    {/* Telegram */}
+    <div className={`p-1 rounded-2xl flex flex-col items-center justify-center gap-2 shadow-sm ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+      <div className="w-5 h-5 flex items-center justify-center text-blue-500">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+          <path d="M21.2 5L2.5 12.3c-1.3.5-1.3 1.8 0 2.3l4.1 1.3 1.6 4.8c.2.7 1.1.9 1.7.4l2.4-2.2 4.7 3.5c.7.5 1.7.1 1.9-.7l3.9-15.2c.3-1.1-.8-2-1.6-1.5zM6.8 13.9l9.4-5.8"></path>
+        </svg>
+      </div>
+      <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>تلگرام</span>
+    </div>
+
+    {/* Instagram */}
+    <div className={`p-1 rounded-2xl flex flex-col items-center justify-center gap-2 shadow-sm ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+      <div className="w-5 h-5 flex items-center justify-center text-pink-500">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+          <rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect>
+          <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+          <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line>
+        </svg>
+      </div>
+      <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>اینستاگرام</span>
+    </div>
+
+    {/* TikTok */}
+    <div className={`p-1 rounded-2xl flex flex-col items-center justify-center gap-2 shadow-sm ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+      <div className="w-5 h-5 flex items-center justify-center text-black">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+          <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"></path>
+        </svg>
+      </div>
+      <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>تیک تاک</span>
+    </div>
+
+    {/* About Us */}
+    <div className={`p-1 rounded-2xl flex flex-col items-center justify-center gap-2 shadow-sm ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+      <div className="w-5 h-5 flex items-center justify-center text-gray-500">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 16v-4"></path>
+          <path d="M12 8h.01"></path>
+        </svg>
+      </div>
+      <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>درباره ما</span>
+    </div>
+  </div>
+</div>
+     
+     
+     
+     
+     
+     
+     
+     
+     
       {/* Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0">
         <div className="mx-4 mb-4">
