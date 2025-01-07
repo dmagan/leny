@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Menu,  Play, Home, PlayCircle, Calendar, User, MoreHorizontal } from 'lucide-react';
+import { Menu, Play, Home, PlayCircle, Calendar, User, MoreHorizontal } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -125,20 +125,22 @@ const ThemeSwitcher = ({ isDarkMode, setIsDarkMode }) => {
 };
 
 
-const CourseApp = () => {
+const CourseApp = ({  // این قسمت رو جایگزین کنید
+  isDarkMode,
+  setIsDarkMode,
+  products,
+  cryptoPrices,
+  stories,
+  loading,
+  sliders
+}) => {
   const navigate = useNavigate();
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [products, setProducts] = useState([]);
-  const [cryptoPrices, setCryptoPrices] = useState([]);
-  const [stories, setStories] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [sliders, setSliders] = useState([]); // برای ذخیره اسلایدرها
-  const [currentSlide, setCurrentSlide] = useState(0); // برای ردیابی اسلاید فعلی
-
   const sliderRef = useRef(null);
   const cryptoSliderRef = useRef(null);
   const slidersRef = useRef(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentSlide, setCurrentSlide] = useState(0); // برای ردیابی اسلاید فعلی
+
 
   // دریافت قیمت‌های ارز دیجیتال
   useEffect(() => {
@@ -202,8 +204,7 @@ const CourseApp = () => {
       }
     ];
 
-    setCryptoPrices(staticData);
-
+   
     const fetchPrices = async () => {
       try {
         const response = await fetch(
@@ -219,7 +220,7 @@ const CourseApp = () => {
         }));
 
         console.log('Updated Data:', updatedData);
-        setCryptoPrices(updatedData);
+
       } catch (error) {
         console.error('Error fetching crypto prices:', error);
       }
@@ -231,55 +232,10 @@ const CourseApp = () => {
   }, []);
 
 
-/// برای دریافت اسلایدر اعلانات
-useEffect(() => {
-  const fetchSliders = async () => {
-    try {
-      const auth = btoa('ck_20b3c33ef902d4ccd94fc1230c940a85be290e0a:cs_e8a85df738324996fd3608154ab5bf0ccc6ded99');
-      const response = await fetch('https://alicomputer.com/wp-json/wp/v2/slider?_embed', {
-        headers: {
-          'Authorization': `Basic ${auth}`
-        }
-      });
-      
-      if (!response.ok) throw new Error('خطا در دریافت اسلایدرها');
-      
-      const data = await response.json();
-      console.log('Fetched sliders:', data);
-      setSliders(data);
-    } catch (error) {
-      console.error('Error fetching sliders:', error);
-    }
-  };
-
-  fetchSliders();
-}, []);
 
 
-  // دریافت محصولات
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const auth = btoa('ck_20b3c33ef902d4ccd94fc1230c940a85be290e0a:cs_e8a85df738324996fd3608154ab5bf0ccc6ded99');
-        const response = await fetch('https://alicomputer.com/wp-json/wc/v3/products?per_page=10', {
-          headers: {
-            'Authorization': `Basic ${auth}`
-          }
-        });
-        
-        if (!response.ok) throw new Error('خطا در دریافت محصولات');
-        
-        const data = await response.json();
-        setProducts(data);
-        setLoading(false);
-      } catch (err) {
-        console.error('Error fetching products:', err);
-        setLoading(false);
-      }
-    };
 
-    fetchProducts();
-  }, []);
+
 
   /////////////////////
 
@@ -328,28 +284,7 @@ useEffect(() => {
 }, [currentSlide, sliders.length]);
   /////////////////////////////////------------------------------------------
 
-// اضافه کردن useEffect برای دریافت stories
-useEffect(() => {
-  const fetchStories = async () => {
-    try {
-      const auth = btoa('ck_20b3c33ef902d4ccd94fc1230c940a85be290e0a:cs_e8a85df738324996fd3608154ab5bf0ccc6ded99');
-      const response = await fetch('https://alicomputer.com/wp-json/wp/v2/story_highlights?_embed', {
-        headers: {
-          'Authorization': `Basic ${auth}`
-        }
-      });
-      
-      if (!response.ok) throw new Error('خطا در دریافت استوری ها');
-      const data = await response.json();
-      console.log('دریافت استوری ها:', data); // برای دیباگ
-      setStories(data);
-    } catch (error) {
-      console.error('خطا در دریافت استوری ها:', error);
-    }
-  };
 
-  fetchStories();
-}, []);
   /////////////////////////////////------------------------------------------
   const scrollToIndex = (index) => {
     setCurrentIndex(index);
