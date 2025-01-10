@@ -1,17 +1,21 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeftCircle } from 'lucide-react';
+import { ArrowLeftCircle, ChevronUp, ChevronDown, ChevronDownCircle, ChevronUpCircleIcon } from 'lucide-react';
 
 const AsadPage = ({ isDarkMode }) => {
   const navigate = useNavigate();
   const cardRef = useRef(null);
   const isDragging = useRef(false);
   const startY = useRef(0);
-  const currentTranslate = useRef(45);
+  const currentTranslate = useRef(50);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  const isIOS = CSS.supports("-webkit-touch-callout", "none");
 
   useEffect(() => {
     const card = cardRef.current;
-    if (!card) return;
+    if (!card || isAndroid) return;
 
     const handleTouchStart = (e) => {
       if (e.target.closest('.scrollable-content') && 
@@ -27,11 +31,9 @@ const AsadPage = ({ isDarkMode }) => {
 
       const currentY = e.touches[0].clientY;
       const diff = (currentY - startY.current) / window.innerHeight * 100;
-      let newTranslate = currentTranslate.current + diff * 1.5; // Increased sensitivity
+      let newTranslate = currentTranslate.current + diff * 1.5;
 
-      // Limit the translation between 0 and 45vh
-      newTranslate = Math.max(0, Math.min(65, newTranslate));
-
+      newTranslate = Math.max(0, Math.min(50, newTranslate));
       card.style.transform = `translateY(${newTranslate}vh)`;
     };
 
@@ -42,18 +44,17 @@ const AsadPage = ({ isDarkMode }) => {
       const match = currentTransform.match(/translateY\(([0-9.]+)vh\)/);
       if (match) {
         const currentValue = parseFloat(match[1]);
-        // Changed threshold from 25 to 35 for easier downward movement
         if (currentValue < 35) {
-          // Added velocity-like animation
           card.style.transition = 'transform 0.3s cubic-bezier(0.17, 0.84, 0.44, 1)';
           card.style.transform = 'translateY(0vh)';
           currentTranslate.current = 0;
+          setIsExpanded(true);
         } else {
           card.style.transition = 'transform 0.3s cubic-bezier(0.17, 0.84, 0.44, 1)';
-          card.style.transform = 'translateY(60vh)';
-          currentTranslate.current = 60;
+          card.style.transform = 'translateY(50vh)';
+          currentTranslate.current = 50;
+          setIsExpanded(false);
         }
-        // Reset transition after animation
         setTimeout(() => {
           card.style.transition = 'transform 0.3s ease-out';
         }, 300);
@@ -69,7 +70,23 @@ const AsadPage = ({ isDarkMode }) => {
       card.removeEventListener('touchmove', handleTouchMove);
       card.removeEventListener('touchend', handleTouchEnd);
     };
-  }, []);
+  }, [isAndroid]);
+
+  const handleAndroidToggle = () => {
+    const card = cardRef.current;
+    if (!card) return;
+
+    setIsExpanded(prev => !prev);
+    card.style.transition = 'transform 0.3s cubic-bezier(0.17, 0.84, 0.44, 1)';
+    
+    if (!isExpanded) {
+      card.style.transform = 'translateY(0vh)';
+      currentTranslate.current = 0;
+    } else {
+      card.style.transform = 'translateY(50vh)';
+      currentTranslate.current = 50;
+    }
+  };
 
   return (
     <div className={`fixed inset-0 select-none ${isDarkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
@@ -86,12 +103,14 @@ const AsadPage = ({ isDarkMode }) => {
         {/* Yellow Gradient Background */}
         <div className="absolute inset-0 bg-gradient-to-b from-yellow-500 to-yellow-200" />
 
-        {/* Decorative Coins */}
+        {/* Decorative Coins 
         <img 
           src="/coin1.png"
           alt="Decorative Coin"
           className="absolute w-12 md:w-16 lg:w-24 h-auto object-contain opacity-20 top-[10%] -left-[20%]"
         />
+        
+        */}
 
         {/* Main Content Area */}
         <div className="relative w-full h-[60vh]">
@@ -103,12 +122,13 @@ const AsadPage = ({ isDarkMode }) => {
             />
           </div>
 
-          {/* Second Coin */}
+          {/* Second Coin 
           <img 
             src="/CoinPNG.png"
             alt="Coin"
-            className="absolute w-24 md:w-28 lg:w-32 h-auto object-contain bottom-[15%] right-[10%]"
+            className="absolute w-24 md:w-28 lg:w-32 h-auto object-contain sm:bottom-[15%] bottom-[5%] right-[10%]"
           />
+          */}
         </div>
 
         {/* Floating Button - Always visible on top */}
@@ -118,21 +138,35 @@ const AsadPage = ({ isDarkMode }) => {
           </button>
         </div>
 
-        {/* Bottom Card - Draggable */}
-        <div className="absolute bottom-0 w-full">
+        {/* Bottom Card - Draggable for iOS, Button Toggle for Android */}
+        <div className="absolute bottom-0 w-full overflow-hidden">
           <div 
             ref={cardRef}
             className={`${
               isDarkMode ? 'bg-gray-800' : 'bg-white'
-            } rounded-t-3xl shadow-lg h-[85vh] transform translate-y-[65vh] transition-transform duration-300 ease-out`}
+            } rounded-t-3xl shadow-lg h-[85vh] transform translate-y-[50vh] transition-transform duration-300 ease-out`}
           >
-            {/* Handle Container with More Space */}
-            <div className="pt-2 pb-4">
-              <div className="w-24 h-1 bg-gray-400/20 rounded-full mx-auto" />
-            </div>
+            {isAndroid ? (
+              // Toggle Button for Android
+              <button
+                onClick={handleAndroidToggle}
+                className="w-full pt-4 pb-2 flex justify-center items-center"
+              >
+                {isExpanded ? (
+                  <ChevronDownCircle className="w-8 h-8 text-gray-400" />
+                ) : (
+                  <ChevronUpCircleIcon className="w-8 h-8 text-gray-400" />
+                )}
+              </button>
+            ) : (
+              // Handle for iOS
+              <div className="pt-2">
+                <div className="w-24 h-1 bg-gray-400/20 rounded-full mx-auto" />
+              </div>
+            )}
             
             {/* Scrollable Content */}
-            <div className="scrollable-content h-[calc(100%-2rem)] overflow-y-auto touch-pan-y">
+            <div className="scrollable-content h-[calc(100%-3rem)] overflow-y-auto touch-pan-y">
               <div className="p-6 space-y-4 text-right pb-24">
                 <h2 className={`text-xl md:text-2xl font-bold ${
                   isDarkMode ? 'text-white' : 'text-gray-900'

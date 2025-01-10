@@ -9,18 +9,18 @@ const CoinIcon = ({ symbol }) => {
   // SVG icons for cryptocurrencies...
   const icons = {
     BTC: (
-      <svg viewBox="0 0 32 32" width="32" height="32" fill="currentColor">
+      <svg viewBox="0 0 32 32" width="16" height="16" fill="currentColor">
         <path d="M16 32C7.163 32 0 24.837 0 16S7.163 0 16 0s16 7.163 16 16-7.163 16-16 16zm7.189-17.98c.314-2.096-1.283-3.223-3.465-3.975l.708-2.84-1.728-.43-.69 2.765c-.454-.114-.92-.22-1.385-.326l.695-2.783L15.596 6l-.708 2.839c-.376-.086-.745-.17-1.104-.26l.002-.009-2.384-.595-.46 1.846s1.283.294 1.256.312c.7.175.826.638.805 1.006l-.806 3.235c.048.012.11.03.18.057l-.183-.045-1.13 4.532c-.086.212-.303.531-.793.41.018.025-1.256-.313-1.256-.313l-.858 1.978 2.25.561c.418.105.828.215 1.231.318l-.715 2.872 1.727.43.708-2.84c.472.127.93.245 1.378.357l-.706 2.828 1.728.43.715-2.866c2.948.558 5.164.333 6.097-2.333.752-2.146-.037-3.385-1.588-4.192 1.13-.26 1.98-1.003 2.207-2.538z" fill="#f7931a"/>
       </svg>
     ),
     BNB: (
-      <svg viewBox="0 0 32 32" width="32" height="32">
+      <svg viewBox="0 0 32 32" width="18" height="18">
         <circle cx="16" cy="16" r="16" fill="#F3BA2F"/>
         <path d="M12.116 14.404L16 10.52l3.886 3.886 2.26-2.26L16 6l-6.144 6.144 2.26 2.26zM6 16l2.26-2.26L10.52 16l-2.26 2.26L6 16zm6.116 1.596L16 21.48l3.886-3.886 2.26 2.259L16 26l-6.144-6.144-.003-.003 2.263-2.257zM21.48 16l2.26-2.26L26 16l-2.26 2.26L21.48 16zm-3.188-.002h.002V16L16 18.294l-2.291-2.29-.004-.004.004-.003.401-.402.195-.195L16 13.706l2.293 2.293z" fill="#fff"/>
       </svg>
     ),
     ETH: (
-      <svg viewBox="0 0 32 32" width="32" height="32">
+      <svg viewBox="0 0 32 32" width="16" height="16">
         <g fill="none" fillRule="evenodd">
           <circle cx="16" cy="16" r="16" fill="#627EEA"/>
           <g fill="#FFF" fillRule="nonzero">
@@ -35,7 +35,7 @@ const CoinIcon = ({ symbol }) => {
       </svg>
     ),
     SOL: (
-      <svg viewBox="0 0 32 32" width="32" height="32">
+      <svg viewBox="0 0 32 32" width="16" height="16">
         <defs>
           <linearGradient x1="50%" y1="0%" x2="50%" y2="100%" id="sol-grad">
             <stop stopColor="#9945FF" offset="0%"/>
@@ -48,14 +48,14 @@ const CoinIcon = ({ symbol }) => {
     ),
 
     XRP: (
-      <svg viewBox="0 0 32 32" width="32" height="32">
+      <svg viewBox="0 0 32 32" width="16" height="16">
         <g fill="none">
           <circle cx="16" cy="16" r="16" fill="#23292F"/>
           <path d="M23.07 8h2.89l-6.015 5.957a5.621 5.621 0 01-7.89 0L6.035 8H8.93l4.57 4.523a3.556 3.556 0 004.996 0L23.07 8zM8.895 24.563H6l6.055-5.993a5.621 5.621 0 017.89 0L26 24.562h-2.895L18.5 20a3.556 3.556 0 00-4.996 0l-4.61 4.563z" fill="#FFF"/>
         </g>
       </svg>
     ),
-    DOGE: <img src="/dogecoin.svg" alt="Dogecoin" width="32" height="32" />,
+    DOGE: <img src="/dogecoin.svg" alt="Dogecoin" width="22" height="22" />,
     ADA: <img src="/cardano-ada-logo.svg" alt="Dogecoin" width="32" height="32" />,
   };
 
@@ -333,49 +333,59 @@ useEffect(() => {
   <ThemeSwitcher isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />
 </div>
 
-      {/* Crypto Prices */}
-<div className="p-3">
+
+{/* ------------------------------------------------------- */}
+
+{/* Crypto Prices */}
+<div className="p-4">
   <div 
     ref={cryptoSliderRef}
-    className="flex overflow-x-auto gap-2 pb-1 -mx-2 px-2 scrollbar-hide snap-x snap-mandatory touch-pan-x"
+    className="flex overflow-x-auto gap-2 pb-1 -mx-2 px-1 scrollbar-hide snap-x snap-mandatory touch-pan-x"
     style={{
-      scrollbarWidth: 'none',  // برای Firefox
-      msOverflowStyle: 'none'  // برای IE و Edge
+      scrollbarWidth: 'none',
+      msOverflowStyle: 'none'
     }}
   >
-    { cryptoPrices.map((crypto) => (
+    {cryptoPrices.map((crypto) => (
       <div
         key={crypto.id}
-        className={`flex-shrink-0 w-40 p-2 rounded-2xl shadow-sm flex items-center
-          ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}
+        className={`flex-shrink-0 w-[150px] h-[85px] p-1.5 rounded-xl border ${
+          isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900'
+        }`}
       >
-        <div className="flex-shrink-1 ml-1 mr-3">
-          <CoinIcon symbol={crypto.symbol} />
+        <div className="flex items-center mb-2">
+          <div className="w-6 h-6 mr-2">
+            <CoinIcon symbol={crypto.symbol} />
+          </div>
+          <span className={`text-sm  ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+            {crypto.symbol}
+          </span>
         </div>
-        <div className="flex-1">
-          <div className={`font-medium text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-            {crypto.name}
+        
+        <div className="flex items-center justify-between">
+        <div 
+  className={`text- font-bold tracking-wide ${isDarkMode ? 'text-white' : 'text-gray-900'}`}  style={{ WebkitTextStroke: '0.4px currentColor' }}  >
+            $&nbsp;{crypto.price?.toLocaleString()}
           </div>
-          <div className={`font-medium text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-            ${crypto.price?.toLocaleString(undefined, {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2
-            })}
-          </div>
-          <div className={`text-sm ${crypto.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <div className={`text-xs font-medium ${crypto.change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
             {crypto.change >= 0 ? '+' : ''}{crypto.change?.toFixed(2)}%
           </div>
+        </div>
+        <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+          $&nbsp;{crypto.price?.toLocaleString()} USD
         </div>
       </div>
     ))}
   </div>
 </div>
 
+{/* ------------------------------------------------------- */}
+
 {/* Story Highlights */}
 <div className="px-4">
   <div className="relative">
     <div 
-      className="flex overflow-x-auto gap-4 pb-4 scrollbar-hide snap-x snap-mandatory"
+      className="flex overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory"
     >
       {stories.map((story, index) => (
         <a 
@@ -388,8 +398,8 @@ useEffect(() => {
           console.log('Clicked story link:', story.meta.story_link); // برای دیباگ
         }}
       >
-          <div className="flex flex-col items-center gap-2">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 p-0.5">
+          <div className="flex flex-col items-center gap-1">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 ">
               <div className={`w-full h-full rounded-full p-0.5 ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
                 {story._embedded && story._embedded['wp:featuredmedia'] && (
                   <img
@@ -488,7 +498,7 @@ useEffect(() => {
           >
             {products.map((product, index) => (
               <div key={product.id} 
-              className={`flex-shrink-0 w-32 p-2 rounded-2xl shadow-sm  ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+              className={`flex-shrink-0 w-32 p-2 rounded-2xl shadow-sm  ${isDarkMode ? '' : ''}`}>
             
               <div className={`font-medium text-sm 
                 ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
@@ -521,7 +531,7 @@ useEffect(() => {
                 key={index}
                 onClick={() => scrollToIndex(index)}
                 className={`w-2 h-2 rounded-full transition-all ${
-                  currentIndex === index ? 'bg-blue-500 w-4' : 'bg-gray-300'
+                  currentIndex === index ? 'bg-yellow-500 w-4' : 'bg-gray-300'
                 }`}
               />
             ))}
@@ -530,37 +540,44 @@ useEffect(() => {
 <div className="px-4">
   <h2 className="text-xl mb-4"></h2>
   <div className="grid grid-cols-1 gap-4">
-  <div  
-    onClick={() => navigate('/asad')}
-     className={`p-4 rounded-2xl flex items-center gap-3   ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
-      <div className="w-16 h-16 bg-teal-50 rounded-xl flex items-center justify-center">
-        <div className="w-10 h-10 text-teal-500">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-          </svg>
-        </div>
+  <div  onClick={() => navigate('/asad')} className={`p-4 rounded-2xl flex items-center gap-3 border ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900'  }`}>
+      <div className="w-16 h-16 rounded-xl flex items-center justify-center">
+      <div className="w-10 h-10 text-[#f7d55d]">
+      <svg width="37" height="37" viewBox="0 0 37 37" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M10.7917 15.4167H4.625V26.2084H10.7917V15.4167Z" stroke="#F7D55D" stroke-width="2" stroke-linejoin="round"/>
+<path d="M21.5834 10.7917H15.4167V30.8334H21.5834V10.7917Z" stroke="#F7D55D" stroke-width="2" stroke-linejoin="round"/>
+<path d="M18.5 33.9166V30.8333" stroke="#F7D55D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M32.375 9.25H26.2083V16.1875H32.375V9.25Z" stroke="#F7D55D" stroke-width="2" stroke-linejoin="round"/>
+<path d="M7.70831 15.4166V7.70831" stroke="#F7D55D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M29.2917 26.2083V16.1875" stroke="#F7D55D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M29.2917 9.24998V3.08331" stroke="#F7D55D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+
+</div>
       </div>
       <div>
       <h3 className={`font-medium text-base ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-          خرید اشتراک آقا اسد گل
+          عضو رایگان سیگنال فیوچرز
         </h3>
         <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-          Purchase subscription
+        Free Member of Futures Signal
         </p>
       </div>
     </div>
 
-    <div className={`p-4 rounded-2xl flex items-center gap-3   ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
-      <div className="w-16 h-16 bg-blue-50 rounded-xl flex items-center justify-center">
-        <div className="w-10 h-10 text-blue-500">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-          </svg>
+    <div  onClick={() => navigate('/chat')} className={`p-4 rounded-2xl flex items-center gap-3 border ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900'  }`}>
+      <div className="">
+        <div className="w-10 h-10 text-blue-100">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M12.7526 5.92418C12.2059 6.28608 11.679 6.70574 11.1924 7.19239C10.4754 7.90932 10.4947 7.94822 9.85359 8.68204M12.7526 5.92418C16.178 3.65685 20.3848 3.65685 20.3848 3.65685C20.3848 3.65685 20.3848 7.86362 18.1174 11.289M12.7526 5.92418L18.1174 11.289M18.1174 11.289C17.7555 11.8358 17.3359 12.3626 16.8492 12.8492C16.1323 13.5662 16.0934 13.5469 15.3596 14.188M6.11523 13.429C5.74278 13.9526 5.53552 14.2635 5.53552 14.2635L9.77816 18.5061C9.77816 18.5061 10.0891 18.2988 10.6127 17.9264M6.11523 13.429L2.70709 10.0208L8.36394 7.19239L9.85359 8.68204M6.11523 13.429C6.83965 12.4105 8.18898 10.5874 9.85359 8.68204M10.6127 17.9264L14.0208 21.3345L16.8492 15.6777L15.3596 14.188M10.6127 17.9264C11.6311 17.202 13.4542 15.8526 15.3596 14.188" stroke="#f7d55d"/>
+<path d="M5.00002 19C5.3503 17.5825 5.99994 17.0001 6.5 17.5C7.00002 18 6.4175 18.6497 5.00002 19Z" stroke="#f7d55d"/>
+</svg>
+
         </div>
       </div>
       <div>
       <h3 className={`font-medium text-base ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-          کانال ویژه آقا عرفان گل
+          کانال VIP
           </h3>
           <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
           Exclusive channel
@@ -568,7 +585,7 @@ useEffect(() => {
       </div>
     </div>
 
-    <div className={`p-4 rounded-2xl flex items-center gap-3   ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+    <div  onClick={() => navigate('')} className={`p-4 rounded-2xl flex items-center gap-3 border ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900'  }`}>
       <div className="w-16 h-16 bg-purple-50 rounded-xl flex items-center justify-center">
         <div className="w-10 h-10 text-purple-500">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -587,7 +604,7 @@ useEffect(() => {
       </div>
     </div>
 
-    <div className={`p-4 rounded-2xl flex items-center gap-3   ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+    <div  onClick={() => navigate('/asad')} className={`p-4 rounded-2xl flex items-center gap-3 border ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900'  }`}>
       <div className="w-16 h-16 bg-yellow-50 rounded-xl flex items-center justify-center">
         <div className="w-10 h-10 text-yellow-500">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

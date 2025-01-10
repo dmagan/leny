@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import CourseApp from './CourseApp';
 import AsadPage from './AsadPage';
+import Chat from './chat';
 
 const App = () => {
   // All states
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true);
   const [products, setProducts] = useState([]);
   const [cryptoPrices, setCryptoPrices] = useState([]);
   const [stories, setStories] = useState([]);
@@ -194,6 +195,15 @@ const App = () => {
             />
           } 
         />
+        <Route 
+         path="/chat" 
+          element={
+         <Chat 
+            isDarkMode={isDarkMode}
+         />
+  } 
+/>
+        
       </Routes>
     </BrowserRouter>
   );
