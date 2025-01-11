@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeftCircle, X } from 'lucide-react';
 import AudioPlayer from './AudioPlayer';
 
-
-// کامپوننت مودال تصویر
+// Image Modal Component
 const ImageModal = ({ isOpen, onClose, imageUrl }) => {
   if (!isOpen) return null;
 
@@ -26,13 +25,33 @@ const ImageModal = ({ isOpen, onClose, imageUrl }) => {
   );
 };
 
-// کامپوننت پیام
-// کامپوننت پیام
-const ChatMessage = ({ children, timestamp, isDarkMode, image, audioUrl }) => {
-  const [isModalOpen, setIsModalOpen] = useState(false); // اضافه کردن این خط
+// Chat Message Component
+const ChatMessage = ({ message, isDarkMode }) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const image = message._embedded?.['wp:featuredmedia']?.[0]?.source_url;
+  const audioUrl = message.meta?.audio_url;
+  const getFormattedDate = (date) => {
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const getFormattedTime = (date) => {
+    const d = new Date(date);
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+  
+  const dateStr = message.date ? getFormattedDate(message.date) : getFormattedDate(new Date());
+  const timeStr = message.date ? getFormattedTime(message.date) : getFormattedTime(new Date());
+  const content = message.content || message.excerpt?.rendered || '';
 
   return (
-    <div className="flex w-full justify-start" dir="rtl">
+    <div className="flex w-full justify-start mb-4" dir="rtl">
       <div className="message-bubble">
         {image && (
           <>
@@ -40,7 +59,8 @@ const ChatMessage = ({ children, timestamp, isDarkMode, image, audioUrl }) => {
               src={image} 
               alt="Post featured" 
               className="w-full h-48 object-cover rounded-xl mb-4 cursor-pointer"
-              onClick={() => setIsModalOpen(true)} // اضافه کردن click handler
+              onClick={() => setIsModalOpen(true)}
+              loading="lazy"
             />
             <ImageModal 
               isOpen={isModalOpen}
@@ -49,13 +69,21 @@ const ChatMessage = ({ children, timestamp, isDarkMode, image, audioUrl }) => {
             />
           </>
         )}
-        {children}
+        {message.title && (
+          <h3 className="font-bold mb-2" dangerouslySetInnerHTML={{ __html: message.title.rendered }} />
+        )}
+        {typeof content === 'string' && content ? (
+          <div dangerouslySetInnerHTML={{ __html: content }} />
+        ) : (
+          typeof content === 'object' && React.isValidElement(content) ? content : null
+        )}
         {audioUrl && (
           <AudioPlayer audioUrl={audioUrl} isDarkMode={isDarkMode} />
         )}
-        <span className={`text-xs block mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-          {timestamp}
-        </span>
+        <div className="timestamps">
+          <span className="date">{dateStr}</span>
+          <span className="time">{timeStr}</span>
+        </div>
       </div>
     </div>
   );
@@ -66,8 +94,12 @@ const Chat = ({ isDarkMode }) => {
   const messagesEndRef = useRef(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const containerRef = useRef(null);
+  const loadingMoreRef = useRef(null);
 
-  // پیام‌های خوش‌آمدگویی
+  // Welcome messages
   const welcomeMessages = [
     {
       id: 'welcome-1',
@@ -91,115 +123,167 @@ const Chat = ({ isDarkMode }) => {
     }
   ];
 
-  // دریافت پست‌ها از وردپرس
-  useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const auth = btoa('ck_20b3c33ef902d4ccd94fc1230c940a85be290e0a:cs_e8a85df738324996fd3608154ab5bf0ccc6ded99');
-        const response = await fetch('https://alicomputer.com/wp-json/wp/v2/posts?_embed', {
+  // Fetch posts function
+  const fetchPosts = async (pageNumber) => {
+    try {
+      setLoading(true);
+      const auth = btoa('ck_20b3c33ef902d4ccd94fc1230c940a85be290e0a:cs_e8a85df738324996fd3608154ab5bf0ccc6ded99');
+      const response = await fetch(
+        `https://alicomputer.com/wp-json/wp/v2/posts?_embed&order=desc&orderby=date&per_page=10&page=${pageNumber}`,
+        {
           headers: {
             'Authorization': `Basic ${auth}`
           }
-        });
-        
-        if (!response.ok) throw new Error('Error fetching posts');
-        
-        const data = await response.json();
-        console.log('Raw API response:', data); // اضافه شده
-    
-        const sortedPosts = data.sort((a, b) => new Date(a.date) - new Date(b.date))
-          .map(post => {
-            console.log('Post featured media:', post._embedded?.['wp:featuredmedia']); // اضافه شده
-            return post;
-          });
-        
-        setPosts(sortedPosts);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching posts:', error);
-        setLoading(false);
+        }
+      );
+      
+      if (!response.ok) throw new Error('Error fetching posts');
+      
+      const data = await response.json();
+      // Log first post date for debugging
+      if (data.length > 0) {
+        console.log('WordPress post date:', data[0].date);
       }
-    };
-  
-    fetchPosts();
+      const totalPages = response.headers.get('X-WP-TotalPages');
+      setHasMore(pageNumber < parseInt(totalPages));
+      
+      setPosts(prevPosts => pageNumber === 1 ? [...data].reverse() : [...prevPosts, ...[...data].reverse()]);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+      setLoading(false);
+      setHasMore(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPosts(1);
   }, []);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [posts]);
+    if (messagesEndRef.current && page === 1) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [posts, page]);
+
+  useEffect(() => {
+    if (!loadingMoreRef.current || loading || !hasMore) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !loading && hasMore) {
+          setPage(prev => prev + 1);
+          fetchPosts(page + 1);
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(loadingMoreRef.current);
+    return () => observer.disconnect();
+  }, [loading, hasMore, page]);
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-100'} font-iransans`}>
-      {/* Header */}
-      <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} h-[70px] relative shadow-sm`}>
-        <button 
-          onClick={() => navigate(-1)} 
-          className={`absolute top-4 left-4 z-10 flex items-center gap-1 rounded-full px-4 py-2 ${
-            isDarkMode ? 'text-white' : 'text-gray-900'
-          }`}
-        >
-          <ArrowLeftCircle className="w-8 h-8 md:w-9 md:h-9" />
-        </button>
-        
-        <div className="flex items-center justify-center h-full">
-          <h1 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>کانال ویژه</h1>
+    <div className={`relative min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-100'} font-iransans`}>
+      <div 
+        className={`fixed top-0 left-0 right-0 z-40 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} h-[70px] shadow-md`}
+      >
+        <div className="h-full flex items-center px-4">
+          <div className="flex-grow flex justify-center">
+            <h1 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              کانال ویژه
+            </h1>
+          </div>
         </div>
       </div>
 
-      {/* Chat Messages Container */}
-      <div className="p-4 space-y-4 overflow-y-auto h-[calc(100vh-70px)]">
-        <div className="flex flex-col space-y-4" dir="rtl">
-          {/* پیام‌های خوش‌آمدگویی */}
-          {welcomeMessages.map((msg) => (
-            <ChatMessage 
-              key={msg.id}
-              timestamp={msg.date.toLocaleDateString('fa-IR')}
-              isDarkMode={isDarkMode}
-            >
-              {msg.content}
-            </ChatMessage>
-          ))}
+      <button 
+        onClick={() => navigate(-1)} 
+        className={`fixed top-4 left-4 z-50 flex items-center gap-1 rounded-full px-4 py-2 ${
+          isDarkMode ? 'text-[#f7d55d]' : 'text-gray-200'
+        }`}
+      >
+        <ArrowLeftCircle className="w-8 h-8 md:w-9 md:h-9" />
+      </button>
 
-          {/* نمایش پست‌های وردپرس */}
-          {loading ? (
-            <div className="flex justify-center items-center p-4">
+      <div className="relative pt-[70px] h-[calc(100vh-10px)] overflow-hidden">
+        <div 
+          ref={containerRef}
+          className="h-full overflow-y-auto px-4 pb-4"
+        >
+          {(loading && page > 1) && (
+            <div ref={loadingMoreRef} className="flex justify-center items-center p-4">
               <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
             </div>
-          ) : (
-            posts.map((post) => (
-              <ChatMessage 
-  key={post.id}
-  timestamp={new Date(post.date).toLocaleDateString('fa-IR')}
-  isDarkMode={isDarkMode}
-  image={post._embedded?.['wp:featuredmedia']?.[0]?.source_url}
-  audioUrl={post.meta?.audio_url}
->
-  <h3 className="font-bold mb-2" dangerouslySetInnerHTML={{ __html: post.title.rendered }} />
-  <div dangerouslySetInnerHTML={{ __html: post.excerpt.rendered }} />
-</ChatMessage>
-            ))
           )}
+
+          <div className="flex-grow">
+            {[...welcomeMessages].reverse().map((msg) => (
+              <ChatMessage 
+                key={msg.id}
+                message={msg}
+                isDarkMode={isDarkMode}
+              />
+            ))}
+
+            {[...posts].map((post) => (
+              <ChatMessage 
+                key={post.id}
+                message={post}
+                isDarkMode={isDarkMode}
+              />
+            ))}
+
+            {loading && page === 1 && (
+              <div className="flex justify-center items-center p-4">
+                <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            )}
+          </div>
+
+          {!loading && !hasMore && posts.length > 0 && (
+            <div className="text-center text-gray-500 py-4">
+              پیام دیگری وجود ندارد
+            </div>
+          )}
+
           <div ref={messagesEndRef} />
         </div>
       </div>
 
-      {/* Add global styles */}
       <style jsx global>{`
         .message-bubble {
           background-color: transparent;
           color: ${isDarkMode ? '#fff' : '#1f2937'};
-          border: 2px solid #f7d55d;
+          border: 2px solid rgba(247, 213, 93, 0.5);
           border-radius: 24px;
           border-top-right-radius: 4px;
           padding: 1rem;
           max-width: 80%;
           direction: rtl;
           text-align: right;
+          position: relative;
         }
         
         .message-bubble ul {
           padding-right: 20px;
           list-style-position: inside;
+        }
+
+        .message-bubble .timestamps {
+          display: flex;
+          justify-content: space-between;
+          margin-top: 1rem;
+          color: ${isDarkMode ? '#9CA3AF' : '#6B7280'};
+          font-size: 0.75rem;
+        }
+
+        .message-bubble .time {
+          direction: ltr;
+        }
+
+        .message-bubble .date {
+          direction: ltr;
         }
       `}</style>
     </div>

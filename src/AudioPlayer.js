@@ -1,35 +1,47 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Play, Pause, Volume2 } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
 
-const AudioPlayer = ({ audioUrl, isDarkMode }) => {
+const AudioPlayer = ({ audioUrl }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
-  const audioRef = useRef(new Audio(audioUrl));
-  const progressRef = useRef(null);
+  const audioRef = useRef(null);
 
+  // Event listeners remain the same
   useEffect(() => {
     const audio = audioRef.current;
-    audio.addEventListener('loadedmetadata', () => {
-      setDuration(audio.duration);
-    });
-    audio.addEventListener('timeupdate', () => {
-      setCurrentTime(audio.currentTime);
-    });
-    audio.addEventListener('ended', () => {
-      setIsPlaying(false);
-      setCurrentTime(0);
-    });
+    if (audio) {
+      audio.addEventListener('loadedmetadata', () => {
+        setDuration(audio.duration);
+      });
+
+      audio.addEventListener('timeupdate', () => {
+        setCurrentTime(audio.currentTime);
+      });
+
+      audio.addEventListener('ended', () => {
+        setIsPlaying(false);
+        setCurrentTime(0);
+      });
+    }
 
     return () => {
-      audio.pause();
-      audio.removeEventListener('loadedmetadata', () => {});
-      audio.removeEventListener('timeupdate', () => {});
-      audio.removeEventListener('ended', () => {});
+      if (audio) {
+        audio.removeEventListener('loadedmetadata', () => {});
+        audio.removeEventListener('timeupdate', () => {});
+        audio.removeEventListener('ended', () => {});
+      }
     };
-  }, [audioUrl]);
+  }, [audioRef]);
 
-  const togglePlay = () => {
+  const formatTime = (time) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  const handlePlayPause = () => {
+    if (!audioRef.current) return;
+    
     if (isPlaying) {
       audioRef.current.pause();
     } else {
@@ -38,46 +50,94 @@ const AudioPlayer = ({ audioUrl, isDarkMode }) => {
     setIsPlaying(!isPlaying);
   };
 
-  const handleProgressChange = (e) => {
-    const time = (e.nativeEvent.offsetX / progressRef.current.offsetWidth) * duration;
-    audioRef.current.currentTime = time;
-    setCurrentTime(time);
-  };
-
-  const formatTime = (time) => {
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  // Modified to generate shorter bars for very small screens
+  const generateBars = (count = 30) => {
+    const bars = [];
+    for (let i = 0; i < count; i++) {
+      // Reduced height range for small screens
+      const height = 2 + Math.random() * 8;
+      bars.push(
+        <div
+          key={i}
+          className="w-[3px] mx-[1px] rounded-full bg-white/50"
+          style={{ height: `${height}px` }}
+        />
+      );
+    }
+    return bars;
   };
 
   return (
-    <div className={`flex items-center space-x-4 mt-2 p-3 rounded-xl ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
-      <button
-        onClick={togglePlay}
-        className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-white hover:bg-gray-200'}`}
-      >
-        {isPlaying ? <Pause size={20} /> : <Play size={20} />}
-      </button>
-      
-      <div className="flex-1 space-y-1">
-        <div 
-          ref={progressRef}
-          className="h-1 bg-gray-300 rounded-full cursor-pointer"
-          onClick={handleProgressChange}
-        >
-          <div 
-            className="h-full bg-blue-500 rounded-full"
-            style={{ width: `${(currentTime / duration) * 100}%` }}
-          />
-        </div>
+    <div 
+      className="w-full rounded-3xl p-2 sm:p-4 mt-4"
+      style={{
+        background: `linear-gradient(to bottom right, #f7d55d, #e5c255)`
+      }}
+    >
+      <div className="flex items-start gap-3 sm:gap-4">
+        <audio
+          ref={audioRef}
+          src={audioUrl}
+          className="hidden"
+        />
         
-        <div className="flex justify-between text-xs text-gray-500">
-          <span>{formatTime(currentTime)}</span>
-          <span>{formatTime(duration)}</span>
+        {/* Play button - Adjusted size for small screens */}
+        <button
+          onClick={handlePlayPause}
+          className="w-9 h-9 sm:w-14 sm:h-14 rounded-full bg-white flex items-center justify-center flex-shrink-0 shadow-md mt-4 sm:mt-6"
+        >
+          {isPlaying ? (
+            <svg 
+              className="w-3 h-3 sm:w-6 sm:h-6" 
+              fill="currentColor" 
+              viewBox="0 0 24 24"
+              style={{ color: '#f7d55d' }}
+            >
+              <rect x="7" y="6" width="3" height="12" rx="1" />
+              <rect x="14" y="6" width="3" height="12" rx="1" />
+            </svg>
+          ) : (
+            <svg 
+              className="w-7 h-7 sm:w-6 sm:h-6 ml-0.5" 
+              fill="currentColor" 
+              viewBox="0 0 24 24"
+              style={{ color: '#f7d55d' }}
+            >
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          )}
+        </button>
+
+        {/* Main container */}
+        <div className="flex-1 min-w-0"> {/* Added min-w-0 to prevent overflow */}
+          {/* Times Container - Adjusted for small screens */}
+          <div className="flex justify-between mb-2 sm:mb-3">
+            <div className="text-sm sm:text-base text-white/90 font-bold">
+              {formatTime(currentTime)}
+            </div>
+            <div className="text-sm sm:text-base text-white/90 font-bold p-1 font-bold">
+              {formatTime(duration)}
+            </div>
+          </div>
+          
+          {/* Waveform Container - Mobile (fewer bars for small screens) */}
+          <div className="flex items-center sm:hidden overflow-hidden h-6 sm:h-8">
+            <div className="flex items-center gap-[1px] flex-1">
+              {generateBars(90)} {/* Reduced number of bars */}
+            </div>
+          </div>
+
+          {/* Waveform Container - Desktop */}
+          <div className="hidden sm:flex items-center justify-between h-10">
+            <div className="flex items-center gap-[2px] overflow-hidden">
+              {generateBars(30)}
+            </div>
+            <div className="flex items-center gap-[2px] overflow-hidden">
+              {generateBars(30)}
+            </div>
+          </div>
         </div>
       </div>
-      
-      <Volume2 size={20} className="text-gray-500" />
     </div>
   );
 };

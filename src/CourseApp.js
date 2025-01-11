@@ -539,7 +539,7 @@ useEffect(() => {
           {/* Courses */}
 <div className="px-4">
   <h2 className="text-xl mb-4"></h2>
-  <div className="grid grid-cols-1 gap-4">
+  <div className="grid grid-cols-1 gap-4" dir="rtl">
   <div  onClick={() => navigate('/asad')} className={`p-4 rounded-2xl flex items-center gap-3 border ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900'  }`}>
       <div className="w-16 h-16 rounded-xl flex items-center justify-center">
       <div className="w-10 h-10 text-[#f7d55d]">
@@ -580,7 +580,7 @@ useEffect(() => {
           کانال VIP
           </h3>
           <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-          Exclusive channel
+          کانال ویژه تیم PCS
           </p>
       </div>
     </div>
