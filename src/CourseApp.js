@@ -384,20 +384,13 @@ useEffect(() => {
 {/* Story Highlights */}
 <div className="px-4">
   <div className="relative">
-    <div 
-      className="flex overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory"
-    >
-      {stories.map((story, index) => (
-        <a 
-        key={story.id}
-        href={story.meta.story_link} // تغییر از story.meta?.story_link به story.meta.story_link
-        className="flex-none snap-center"
-        target="_blank" // اضافه کردن این خط
-        rel="noopener noreferrer" // اضافه کردن این خط
-        onClick={(e) => {
-          console.log('Clicked story link:', story.meta.story_link); // برای دیباگ
-        }}
-      >
+  <div className="flex overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory">
+  {stories.map((story, index) => (
+        <div 
+          key={story.id}
+          className="flex-none snap-center cursor-pointer"
+          onClick={() => navigate(`/stories/${story.id}`)} // تغییر این خط
+        >
           <div className="flex flex-col items-center gap-1">
             <div className="w-16 h-16 rounded-full bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 ">
               <div className={`w-full h-full rounded-full p-0.5 ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
@@ -419,7 +412,7 @@ useEffect(() => {
               </span>
             </div>
           </div>
-        </a>
+        </div>
       ))}
     </div>
   </div>
@@ -500,10 +493,7 @@ useEffect(() => {
               <div key={product.id} 
               className={`flex-shrink-0 w-32 p-2 rounded-2xl shadow-sm  ${isDarkMode ? '' : ''}`}>
             
-              <div className={`font-medium text-sm 
-                ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                {crypto.name}
-              </div>
+              
                 <div className="flex flex-col items-center ">
                   <div className="rounded-2xl p-2 bg-gray-0 w-full aspect-square">
                   <a href={product.permalink} target="_blank" rel="noopener noreferrer"> 

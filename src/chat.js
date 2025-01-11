@@ -8,7 +8,7 @@ const ImageModal = ({ isOpen, onClose, imageUrl }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 select-none" onClick={onClose}>
       <button 
         className="absolute top-4 right-4 text-white p-2 rounded-full hover:bg-gray-800"
         onClick={onClose}
@@ -51,7 +51,7 @@ const ChatMessage = ({ message, isDarkMode }) => {
   const content = message.content || message.excerpt?.rendered || '';
 
   return (
-    <div className="flex w-full justify-start mb-4" dir="rtl">
+    <div className="flex w-full justify-start mb-4 select-none" dir="rtl">
       <div className="message-bubble">
         {image && (
           <>
@@ -140,10 +140,6 @@ const Chat = ({ isDarkMode }) => {
       if (!response.ok) throw new Error('Error fetching posts');
       
       const data = await response.json();
-      // Log first post date for debugging
-      if (data.length > 0) {
-        console.log('WordPress post date:', data[0].date);
-      }
       const totalPages = response.headers.get('X-WP-TotalPages');
       setHasMore(pageNumber < parseInt(totalPages));
       
@@ -184,9 +180,9 @@ const Chat = ({ isDarkMode }) => {
   }, [loading, hasMore, page]);
 
   return (
-    <div className={`relative min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-100'} font-iransans`}>
+    <div className={`relative min-h-screen select-none ${isDarkMode ? 'bg-gray-900' : 'bg-gray-100'} font-iransans`}>
       <div 
-        className={`fixed top-0 left-0 right-0 z-40 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} h-[70px] shadow-md`}
+        className={`fixed top-0 left-0 right-0 z-40 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} h-[70px] shadow-md select-none`}
       >
         <div className="h-full flex items-center px-4">
           <div className="flex-grow flex justify-center">
@@ -206,10 +202,10 @@ const Chat = ({ isDarkMode }) => {
         <ArrowLeftCircle className="w-8 h-8 md:w-9 md:h-9" />
       </button>
 
-      <div className="relative pt-[70px] h-[calc(100vh-10px)] overflow-hidden">
+      <div className="relative pt-[70px] h-[calc(100vh-10px)] overflow-hidden select-none">
         <div 
           ref={containerRef}
-          className="h-full overflow-y-auto px-4 pb-4"
+          className="h-full overflow-y-auto px-4 pb-4 select-none"
         >
           {(loading && page > 1) && (
             <div ref={loadingMoreRef} className="flex justify-center items-center p-4">
@@ -263,11 +259,16 @@ const Chat = ({ isDarkMode }) => {
           direction: rtl;
           text-align: right;
           position: relative;
+          user-select: none;
+          -webkit-user-select: none;
+          -moz-user-select: none;
+          -ms-user-select: none;
         }
         
         .message-bubble ul {
           padding-right: 20px;
           list-style-position: inside;
+          user-select: none;
         }
 
         .message-bubble .timestamps {
@@ -276,14 +277,21 @@ const Chat = ({ isDarkMode }) => {
           margin-top: 1rem;
           color: ${isDarkMode ? '#9CA3AF' : '#6B7280'};
           font-size: 0.75rem;
+          user-select: none;
         }
 
         .message-bubble .time {
           direction: ltr;
+          user-select: none;
         }
 
         .message-bubble .date {
           direction: ltr;
+          user-select: none;
+        }
+
+        * {
+          -webkit-tap-highlight-color: transparent;
         }
       `}</style>
     </div>

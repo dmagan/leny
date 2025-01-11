@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import CourseApp from './CourseApp';
-import AsadPage from './AsadPage';
-import Chat from './chat';
+  import React, { useState, useEffect } from 'react';
+  import { BrowserRouter, Routes, Route } from 'react-router-dom';
+  import CourseApp from './CourseApp';
+  import AsadPage from './AsadPage';
+  import Chat from './chat';
+  import StoriesPage from './components/StoriesPage';
 
 const App = () => {
   // All states
@@ -172,39 +173,51 @@ const App = () => {
 
   return (
     <BrowserRouter>
-      <Routes>
-        <Route 
-          path="/" 
-          element={
-            <CourseApp 
-              isDarkMode={isDarkMode}
-              setIsDarkMode={setIsDarkMode}
-              products={products}
-              cryptoPrices={cryptoPrices}
-              stories={stories}
-              loading={loading}
-              sliders={sliders}
-            />
-          } 
-        />
-        <Route 
-          path="/asad" 
-          element={
-            <AsadPage 
-              isDarkMode={isDarkMode}
-            />
-          } 
-        />
-        <Route 
-         path="/chat" 
-          element={
-         <Chat 
-            isDarkMode={isDarkMode}
-         />
-  } 
-/>
-        
-      </Routes>
+<Routes>
+  <Route 
+    path="/" 
+    element={
+      <CourseApp 
+        isDarkMode={isDarkMode}
+        setIsDarkMode={setIsDarkMode}
+        products={products}
+        cryptoPrices={cryptoPrices}
+        stories={stories}
+        loading={loading}
+        sliders={sliders}
+      />
+    } 
+  />
+
+  <Route 
+    path="/asad" 
+    element={
+      <AsadPage 
+        isDarkMode={isDarkMode}
+      />
+    } 
+  />
+
+  <Route 
+    path="/chat" 
+    element={
+      <Chat 
+        isDarkMode={isDarkMode}
+      />
+    }
+  />
+
+  {/* این Route رو نگه دارید و اون یکی رو حذف کنید */}
+  <Route 
+    path="/stories/:storyId"
+    element={
+      <StoriesPage 
+        isDarkMode={isDarkMode}
+        stories={stories}
+      />
+    } 
+  />
+</Routes>
     </BrowserRouter>
   );
 };
