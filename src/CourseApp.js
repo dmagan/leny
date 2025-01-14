@@ -616,7 +616,7 @@ useEffect(() => {
       </div>
     </div>
 
-    <div  onClick={() => navigate('/asad')} className={`p-4 rounded-2xl flex items-center gap-3 border ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900'  }`}>
+    <div  onClick={() => navigate('/login')} className={`p-4 rounded-2xl flex items-center gap-3 border ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900'  }`}>
       <div className="">
         <div className="w-10 h-10 text-yellow-500">
         <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
