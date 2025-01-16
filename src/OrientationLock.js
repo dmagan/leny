@@ -1,36 +1,106 @@
+import React from 'react';
+
+const OrientationLock = ({ children }) => {
+  return children;
+};
+
+export default OrientationLock;
+/*
+
+
+
 import React, { useState, useEffect } from 'react';
 import { RotateCcw } from 'lucide-react';
 
-const OrientationLock = ({ children, isDarkMode }) => {
-  const [isLandscape, setIsLandscape] = useState(window.innerWidth > window.innerHeight);
+const OrientationLock = ({ children, isDarkMode, allowLandscape = false }) => {
+  const [showBlocker, setShowBlocker] = useState(false);
 
   useEffect(() => {
-    const handleOrientationChange = () => {
-      setIsLandscape(window.innerWidth > window.innerHeight);
-    };
+    function checkOrientation() {
+      // اگر allowLandscape روشن است، نیازی به بررسی نیست
+      if (allowLandscape) {
+        setShowBlocker(false);
+        return;
+      }
 
-    window.addEventListener('resize', handleOrientationChange);
-    window.addEventListener('orientationchange', handleOrientationChange);
+      let isLandscape = false;
 
+      // روش اول: استفاده از window.screen.orientation
+      if (window.screen && window.screen.orientation) {
+        isLandscape = window.screen.orientation.type.includes('landscape');
+      } 
+      // روش دوم: استفاده از window.orientation
+      else if (window.orientation !== undefined) {
+        isLandscape = Math.abs(window.orientation) === 90;
+      } 
+      // روش سوم: مقایسه ابعاد صفحه
+      else {
+        isLandscape = window.innerWidth > window.innerHeight;
+      }
+
+      setShowBlocker(isLandscape);
+    }
+
+    // بررسی اولیه
+    checkOrientation();
+
+    // تنظیم event listener ها
+    if (window.screen && window.screen.orientation) {
+      window.screen.orientation.addEventListener('change', checkOrientation);
+    }
+    window.addEventListener('orientationchange', checkOrientation);
+    window.addEventListener('resize', checkOrientation);
+
+    // cleanup
     return () => {
-      window.removeEventListener('resize', handleOrientationChange);
-      window.removeEventListener('orientationchange', handleOrientationChange);
+      if (window.screen && window.screen.orientation) {
+        window.screen.orientation.removeEventListener('change', checkOrientation);
+      }
+      window.removeEventListener('orientationchange', checkOrientation);
+      window.removeEventListener('resize', checkOrientation);
     };
-  }, []);
+  }, [allowLandscape]);
 
-  if (isLandscape) {
+  if (showBlocker) {
     return (
-      <div className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center ${
-        isDarkMode ? 'bg-[#141e35] text-white' : 'bg-white text-gray-900'
-      }`}>
-        <div className="animate-bounce mb-4">
-          <RotateCcw className="w-16 h-16 text-[#f7d55d]" />
+      <div 
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100%',
+          height: '100%',
+          zIndex: 9999,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: isDarkMode ? '#141e35' : 'white',
+          color: isDarkMode ? 'white' : '#1a1a1a',
+          overflow: 'hidden'
+        }}
+      >
+        <div style={{ marginBottom: '1rem', animation: 'bounce 1s infinite' }}>
+          <RotateCcw style={{ width: 64, height: 64, color: '#f7d55d' }} />
         </div>
-        <p className="text-lg font-medium text-center">
+        <p style={{ 
+          fontSize: '1.25rem', 
+          fontWeight: 500, 
+          textAlign: 'center',
+          padding: '0 1rem',
+          marginBottom: '0.5rem'
+        }}>
           لطفا گوشی خود را به حالت عمودی بچرخانید
         </p>
-        <p className="text-sm text-center mt-2 text-gray-500">
-          این برنامه فقط در حالت عمودی قابل استفاده است
+        <p style={{ 
+          fontSize: '0.875rem', 
+          color: '#6b7280',
+          textAlign: 'center',
+          padding: '0 1rem'
+        }}>
+          این صفحه فقط در حالت عمودی قابل استفاده است
         </p>
       </div>
     );
@@ -40,3 +110,4 @@ const OrientationLock = ({ children, isDarkMode }) => {
 };
 
 export default OrientationLock;
+*/

@@ -6,6 +6,8 @@ import Chat from './chat';
 import StoriesPage from './components/StoriesPage';
 import LoginPage from './LoginPage';
 import OrientationLock from './OrientationLock';
+import MentorPage from './MentorPage';
+import DexPage from './dex'; 
 
 const App = () => {
  // All states
@@ -31,7 +33,7 @@ const App = () => {
        id: 'ethereum', 
        symbol: 'ETH',
        name: 'Ethereum',
-       color: 'bg-[#627eea]',
+       color: 'bg-[#6§27eea]',
        price: 2200,
        change: 1.8
      },
@@ -177,68 +179,17 @@ const App = () => {
    <BrowserRouter>
      <OrientationLock isDarkMode={isDarkMode}>
        <Routes>
-         <Route 
-           path="/" 
-           element={
-             <CourseApp 
-               isDarkMode={isDarkMode}
-               setIsDarkMode={setIsDarkMode}
-               products={products}
-               cryptoPrices={cryptoPrices}
-               stories={stories}
-               loading={loading}
-               sliders={sliders}
-             />
-           }
-         />
+         <Route  path="/"  element={ <CourseApp   isDarkMode={isDarkMode}  setIsDarkMode={setIsDarkMode} products={products}  cryptoPrices={cryptoPrices}  stories={stories} loading={loading} sliders={sliders} />  }  />
          
-         <Route 
-           path="/asad" 
-           element={
-             <AsadPage 
-               isDarkMode={isDarkMode}
-             />
-           }
-         />
+         <Route path="/asad"  element={ <AsadPage  isDarkMode={isDarkMode} /> } />
+         <Route  path="/chat"  element={ <Chat  isDarkMode={isDarkMode}  />  } />
          
-         <Route 
-           path="/chat" 
-           element={
-             <Chat 
-               isDarkMode={isDarkMode}
-             />
-           }
-         />
+         <Route  path="/stories/:storyId"  element={ <StoriesPage  isDarkMode={isDarkMode} stories={stories} /> } />         
+         <Route  path="/login"  element={ <> <CourseApp  isDarkMode={isDarkMode}  setIsDarkMode={setIsDarkMode}  products={products}  cryptoPrices={cryptoPrices} stories={stories} loading={loading} sliders={sliders} /> <LoginPage isDarkMode={isDarkMode} /></>  } />
+         <Route path="/mentor" element={<> <CourseApp   isDarkMode={isDarkMode}   setIsDarkMode={setIsDarkMode}   products={products}   cryptoPrices={cryptoPrices}  stories={stories}    loading={loading}  sliders={sliders}  />  <MentorPage isDarkMode={isDarkMode} /></>}/>
+         <Route  path="/dex" element={<DexPage  isDarkMode={isDarkMode} /> } />  </Routes>
          
-         <Route 
-           path="/stories/:storyId" 
-           element={
-             <StoriesPage 
-               isDarkMode={isDarkMode}
-               stories={stories}
-             />
-           }
-         />
-         
-         <Route 
-           path="/login" 
-           element={
-             <>
-               <CourseApp
-                 isDarkMode={isDarkMode}
-                 setIsDarkMode={setIsDarkMode}
-                 products={products}
-                 cryptoPrices={cryptoPrices}
-                 stories={stories}
-                 loading={loading}
-                 sliders={sliders}
-               />
-               <LoginPage isDarkMode={isDarkMode} />
-             </>
-           }
-         />
-       </Routes>
-     </OrientationLock>
+          </OrientationLock>
    </BrowserRouter>
  );
 };

@@ -389,7 +389,7 @@ useEffect(() => {
         <div 
           key={story.id}
           className="flex-none snap-center cursor-pointer"
-          onClick={() => navigate(`/stories/${story.id}`)} // تغییر این خط
+          onClick={() => navigate(`/stories/${story.id}`)}
         >
           <div className="flex flex-col items-center gap-1">
             <div className="w-16 h-16 rounded-full bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 ">
@@ -575,7 +575,7 @@ useEffect(() => {
       </div>
     </div>
 
-    <div  onClick={() => navigate('')} className={`p-4 rounded-2xl flex items-center gap-3 border ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900'  }`}>
+    <div  onClick={() => navigate('/dex')} className={`p-4 rounded-2xl flex items-center gap-3 border ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900'  }`}>
       <div className="">
         <div className="w-10 h-10 text-purple-500">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 160">
@@ -598,7 +598,7 @@ useEffect(() => {
       </div>
     </div>
 
-    <div  onClick={() => navigate('/asad')} className={`p-4 rounded-2xl flex items-center gap-3 border ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900'  }`}>
+    <div  onClick={() => navigate('')} className={`p-4 rounded-2xl flex items-center gap-3 border ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900'  }`}>
       <div className="">
         <div className="w-10 h-10 text-yellow-500">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 98.94">
@@ -616,7 +616,7 @@ useEffect(() => {
       </div>
     </div>
 
-    <div  onClick={() => navigate('/login')} className={`p-4 rounded-2xl flex items-center gap-3 border ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900'  }`}>
+    <div  onClick={() => navigate('/mentor')} className={`p-4 rounded-2xl flex items-center gap-3 border ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900'  }`}>
       <div className="">
         <div className="w-10 h-10 text-yellow-500">
         <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
@@ -712,7 +712,7 @@ useEffect(() => {
             <NavItem icon={<Home size={24} />} label="خانه" active={true} isDarkMode={isDarkMode}/>
             <NavItem icon={<PlayCircle size={24} />} label="محصولات" active={false}isDarkMode={isDarkMode} />
             <NavItem icon={<Calendar size={24} />} label="سفارش‌ها" active={false} isDarkMode={isDarkMode}/>
-            <NavItem icon={<User size={24} />} label="پروفایل" active={false} isDarkMode={isDarkMode}/>
+            <NavItem  icon={<User size={24} />}  label="پروفایل"  active={false}   isDarkMode={isDarkMode}   isProfile={true}/>
             <NavItem icon={<MoreHorizontal size={24} />} label="بیشتر" active={false} isDarkMode={isDarkMode} />
           </div>
         </div>
@@ -721,9 +721,20 @@ useEffect(() => {
   );
 };
 
-const NavItem = ({ icon, label, active, isDarkMode }) => {
+const NavItem = ({ icon, label, active, isDarkMode, isProfile }) => {
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    if (isProfile) {
+      navigate('/login');
+    }
+  };
+
   return (
-    <button className="flex flex-col items-center p-2">
+    <button 
+      onClick={handleClick} 
+      className="flex flex-col items-center p-2"
+    >
       <div className={active ? "text-blue-500" : isDarkMode ? "text-gray-400" : "text-gray-500"}>
         {icon}
       </div>

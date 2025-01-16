@@ -47,7 +47,7 @@ const AsadPage = ({ isDarkMode }) => {
         if (currentValue < 35) {
           card.style.transition = 'transform 0.3s cubic-bezier(0.17, 0.84, 0.44, 1)';
           card.style.transform = 'translateY(0vh)';
-          currentTranslate.current = 0;
+          currentTransfontate.current = 0;
           setIsExpanded(true);
         } else {
           card.style.transition = 'transform 0.3s cubic-bezier(0.17, 0.84, 0.44, 1)';
