@@ -11,6 +11,8 @@ import DexPage from './dex';
 import { ReactNotifications } from 'react-notifications-component';
 import 'react-notifications-component/dist/theme.css';
 import 'animate.css';
+import 'react-notifications-component/dist/theme.css'
+import 'animate.css/animate.min.css'
 
 const App = () => {
   // All states
