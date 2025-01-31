@@ -727,8 +727,20 @@ const NavItem = ({ icon, label, active, isDarkMode, isProfile }) => {
   const handleClick = () => {
     if (isProfile) {
       navigate('/login');
+    } else if (label === "سفارش‌ها") {
+      toast.success('با موفقیت وارد شدید √', {
+        style: {
+          fontFamily: 'IranSans',
+          direction: 'rtl',
+          minWidth: '300px',
+          background:'#4ab543',
+        },
+        
+        duration: 2000,
+        position: 'bottom-center',
+      });
     }
-  };
+}
 
   return (
     <button 
