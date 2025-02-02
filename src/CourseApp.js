@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Menu, Play, Home, PlayCircle, Calendar, User, MoreHorizontal } from 'lucide-react';
+import { Menu, Play, Home, PlayCircle, Calendar, UserX,UserCheck, MoreHorizontal } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -132,8 +132,11 @@ const CourseApp = ({  // این قسمت رو جایگزین کنید
   cryptoPrices,
   stories,
   loading,
-  sliders
+  sliders,
+  isLoggedIn,
+  onLogout
 }) => {
+
   const navigate = useNavigate();
   const sliderRef = useRef(null);
   const cryptoSliderRef = useRef(null);
@@ -151,7 +154,7 @@ const CourseApp = ({  // این قسمت رو جایگزین کنید
         symbol: 'BTC',
         name: 'Bitcoin',
         color: 'bg-[#f7931a]',
-        price: 42000,
+        price: 0,
         change: 2.5
       },
       { 
@@ -159,7 +162,7 @@ const CourseApp = ({  // این قسمت رو جایگزین کنید
         symbol: 'ETH',
         name: 'Ethereum',
         color: 'bg-[#627eea]',
-        price: 2200,
+        price: 0,
         change: 1.8
       },
       { 
@@ -167,7 +170,7 @@ const CourseApp = ({  // این قسمت رو جایگزین کنید
         symbol: 'BNB',
         name: 'BNB',
         color: 'bg-[#F3BA2F]',
-        price: 320,
+        price: 0,
         change: -0.5
       },
       { 
@@ -175,7 +178,7 @@ const CourseApp = ({  // این قسمت رو جایگزین کنید
         symbol: 'SOL',
         name: 'Solana',
         color: 'bg-[#9945ff]',
-        price: 98,
+        price: 0,
         change: 3.2
       },
       { 
@@ -183,7 +186,7 @@ const CourseApp = ({  // این قسمت رو جایگزین کنید
         symbol: 'XRP',
         name: 'Ripple',
         color: 'bg-[#23292F]',
-        price: 0.62,
+        price:0,
         change: 1.1
       },
       { 
@@ -191,7 +194,7 @@ const CourseApp = ({  // این قسمت رو جایگزین کنید
         symbol: 'DOGE',
         name: 'Dogecoin',
         color: 'bg-[#C2A633]',
-        price: 0.08,
+        price: 0,
         change: -1.2
       },
       { 
@@ -199,7 +202,7 @@ const CourseApp = ({  // این قسمت رو جایگزین کنید
         symbol: 'ADA',
         name: 'Cardano',
         color: 'bg-[#0033AD]',
-        price: 0.51,
+        price: 0,
         change: 0.9
       }
     ];
@@ -711,8 +714,8 @@ useEffect(() => {
       ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
             <NavItem icon={<Home size={24} />} label="خانه" active={true} isDarkMode={isDarkMode}/>
             <NavItem icon={<PlayCircle size={24} />} label="محصولات" active={false}isDarkMode={isDarkMode} />
-            <NavItem icon={<Calendar size={24} />} label="سفارش‌ها" active={false} isDarkMode={isDarkMode}/>
-            <NavItem  icon={<User size={24} />}  label="پروفایل"  active={false}   isDarkMode={isDarkMode}   isProfile={true}/>
+            <NavItem icon={<Calendar size={24} />} label="سفارش‌ها" active={false} isDarkMode={isDarkMode} onLogout={onLogout} />
+            <NavItem  icon={isLoggedIn ? <UserCheck size={24} /> : <UserX size={24} />}  label="پروفایل"  active={false}   isDarkMode={isDarkMode}   isProfile={true}/>
             <NavItem icon={<MoreHorizontal size={24} />} label="بیشتر" active={false} isDarkMode={isDarkMode} />
           </div>
         </div>
@@ -721,26 +724,26 @@ useEffect(() => {
   );
 };
 
-const NavItem = ({ icon, label, active, isDarkMode, isProfile }) => {
+const NavItem = ({ icon, label, active, isDarkMode, isProfile, onLogout }) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
     if (isProfile) {
       navigate('/login');
     } else if (label === "سفارش‌ها") {
-      toast.success('با موفقیت وارد شدید √', {
+      onLogout && onLogout();  // اگر onLogout وجود داشت اجرا کن
+      toast.error('از حساب کاربری خارج شدید', {
         style: {
           fontFamily: 'IranSans',
           direction: 'rtl',
           minWidth: '300px',
-          background:'#4ab543',
+          background: '#ff4444',
         },
-        
         duration: 2000,
         position: 'bottom-center',
       });
     }
-}
+  };
 
   return (
     <button 
@@ -756,5 +759,4 @@ const NavItem = ({ icon, label, active, isDarkMode, isProfile }) => {
     </button>
   );
 };
-
 export default CourseApp;

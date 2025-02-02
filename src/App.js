@@ -14,6 +14,7 @@ import 'animate.css';
 import 'react-notifications-component/dist/theme.css'
 import 'animate.css/animate.min.css'
 
+
 const App = () => {
   // All states
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -22,7 +23,27 @@ const App = () => {
   const [stories, setStories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sliders, setSliders] = useState([]);
- 
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    console.log('Login state changed:', isLoggedIn);
+  }, [isLoggedIn]);
+
+
+  const handleLogout = () => {
+    localStorage.removeItem('userToken');
+    localStorage.removeItem('userInfo');
+    sessionStorage.removeItem('userToken');
+    sessionStorage.removeItem('userInfo');  
+    setIsLoggedIn(false);
+  };
+
+  useEffect(() => {
+    const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+    setIsLoggedIn(!!token);
+  }, []);
+  
+  
   // دریافت قیمت‌های ارز دیجیتال
   useEffect(() => {
     const staticData = [
@@ -185,15 +206,64 @@ const App = () => {
       <ReactNotifications />
       <BrowserRouter>
         <OrientationLock isDarkMode={isDarkMode}>
-          <Routes>
-            <Route path="/" element={<CourseApp isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} products={products} cryptoPrices={cryptoPrices} stories={stories} loading={loading} sliders={sliders} />} />
-            <Route path="/asad" element={<AsadPage isDarkMode={isDarkMode} />} />
-            <Route path="/chat" element={<Chat isDarkMode={isDarkMode} />} />
-            <Route path="/stories/:storyId" element={<StoriesPage isDarkMode={isDarkMode} stories={stories} />} />
-            <Route path="/login" element={<><CourseApp isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} products={products} cryptoPrices={cryptoPrices} stories={stories} loading={loading} sliders={sliders} /><LoginPage isDarkMode={isDarkMode} /></>} />
-            <Route path="/mentor" element={<><CourseApp isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} products={products} cryptoPrices={cryptoPrices} stories={stories} loading={loading} sliders={sliders} /><MentorPage isDarkMode={isDarkMode} /></>} />
-            <Route path="/dex" element={<DexPage isDarkMode={isDarkMode} />} />
-          </Routes>
+        <Routes>
+  <Route path="/" element={
+    <CourseApp 
+      isDarkMode={isDarkMode} 
+      setIsDarkMode={setIsDarkMode} 
+      products={products} 
+      cryptoPrices={cryptoPrices} 
+      stories={stories} 
+      loading={loading} 
+      sliders={sliders}
+      isLoggedIn={isLoggedIn}
+      onLogout={handleLogout}
+    />
+  } />
+  
+  <Route path="/asad" element={<AsadPage isDarkMode={isDarkMode} />} />
+  <Route path="/chat" element={<Chat isDarkMode={isDarkMode} />} />
+  <Route path="/stories/:storyId" element={<StoriesPage isDarkMode={isDarkMode} stories={stories} />} />
+  
+  <Route path="/login" element={
+    <>
+      <CourseApp 
+        isDarkMode={isDarkMode} 
+        setIsDarkMode={setIsDarkMode} 
+        products={products} 
+        cryptoPrices={cryptoPrices} 
+        stories={stories} 
+        loading={loading} 
+        sliders={sliders}
+        isLoggedIn={isLoggedIn}    
+        onLogout={handleLogout}     
+      />
+      <LoginPage 
+        isDarkMode={isDarkMode} 
+        setIsLoggedIn={setIsLoggedIn} 
+      />
+    </>
+  } />
+  
+  <Route path="/mentor" element={
+    <>
+      <CourseApp 
+        isDarkMode={isDarkMode} 
+        setIsDarkMode={setIsDarkMode} 
+        products={products} 
+        cryptoPrices={cryptoPrices} 
+        stories={stories} 
+        loading={loading} 
+        sliders={sliders}
+        isLoggedIn={isLoggedIn}  
+        onLogout={handleLogout}     
+      />
+      <MentorPage isDarkMode={isDarkMode} />
+    </>
+  } />
+  
+  <Route path="/dex" element={<DexPage isDarkMode={isDarkMode} />} />
+</Routes>
         </OrientationLock>
       </BrowserRouter>
     </div>

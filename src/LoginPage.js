@@ -61,7 +61,7 @@
     }
   };
 
-  const LoginPage = ({ isDarkMode }) => {
+  const LoginPage = ({ isDarkMode, setIsLoggedIn  }) => {
     const [selectedCountry, setSelectedCountry] = useState({ code: '+98', flag: '🇮🇷', name: 'Iran' });
       const [showCountries, setShowCountries] = useState(false);
     const [isLandscape, setIsLandscape] = useState(window.innerHeight < window.innerWidth);
@@ -174,7 +174,7 @@
       }, 300);
     };
 
-    const validateLogin = async (username, password) => {
+    const validateLogin = async (username, password, rememberMe) => {
       try {
         const response = await fetch('https://alicomputer.com/wp-json/jwt-auth/v1/token', {
           method: 'POST',
@@ -190,9 +190,14 @@
         const data = await response.json();
         
         if (data.token) {
-          localStorage.setItem('userToken', data.token);
-          localStorage.setItem('userInfo', JSON.stringify(data));
-          return {
+          if (rememberMe) {
+            localStorage.setItem('userToken', data.token);
+            localStorage.setItem('userInfo', JSON.stringify(data));
+        } else {
+          sessionStorage.setItem('userToken', data.token);
+    sessionStorage.setItem('userInfo', JSON.stringify(data));
+        }
+        return {
             success: true,
             message: 'با موفقیت وارد شدید'
           };
@@ -326,7 +331,8 @@
           // فرض کنید که تابع ثبت‌نام شما در اینجا وجود دارد
           const result = await validateRegister(formData, selectedCountry);
     
-          if (result.success) {
+          if (result.success) {  
+            setIsLoggedIn(true);
             Store.addNotification({
               title: "موفق",
               message: result.message,
@@ -398,9 +404,11 @@
     
         setIsLoading(true);
         try {
-          const result = await validateLogin(formData.email, formData.password);
+          const result = await validateLogin(formData.email, formData.password, saveLogin);
     
           if (result.success) {
+            setIsLoggedIn(true);
+
             Store.addNotification({
               title: "موفق",
               message: result.message,
@@ -676,7 +684,7 @@
                           onChange={(e) => setSaveLogin(e.target.checked)}
                           className="rounded border-gray-300"
                         />
-                        ذخیره اطلاعات ورود
+                        من رو به خاطر بسپار
                       </label>
                       <button className={`text-sm ${
                         isDarkMode ? 'text-gray-300' : 'text-gray-600'
