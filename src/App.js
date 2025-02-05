@@ -8,6 +8,7 @@ import LoginPage from './LoginPage';
 import OrientationLock from './OrientationLock';
 import MentorPage from './MentorPage';
 import DexPage from './dex'; 
+import ProductsPage from './ProductsPage';
 import { ReactNotifications } from 'react-notifications-component';
 import 'react-notifications-component/dist/theme.css';
 import 'animate.css';
@@ -261,9 +262,10 @@ const App = () => {
       <MentorPage isDarkMode={isDarkMode} />
     </>
   } />
-  
-  <Route path="/dex" element={<DexPage isDarkMode={isDarkMode} />} />
-</Routes>
+   <Route  path="/products" element={<ProductsPage  isDarkMode={isDarkMode} />} />
+  <Route path="/dex" element={<DexPage isDarkMode={isDarkMode} />} /></Routes>
+ 
+
         </OrientationLock>
       </BrowserRouter>
     </div>

@@ -730,6 +730,8 @@ const NavItem = ({ icon, label, active, isDarkMode, isProfile, onLogout }) => {
   const handleClick = () => {
     if (isProfile) {
       navigate('/login');
+    } else if (label === "محصولات") {
+      navigate('/products');
     } else if (label === "سفارش‌ها") {
       onLogout && onLogout();  // اگر onLogout وجود داشت اجرا کن
       toast.error('از حساب کاربری خارج شدید', {
