@@ -1,8 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { X, Upload } from 'lucide-react';
 import { Store } from 'react-notifications-component';
-// اگر لازم است استایل‌های react-notifications-component را وارد کنید
-// import 'react-notifications-component/dist/theme.css';
 
 const notify = (title, message, type = 'danger', duration = 7000) => {
   Store.addNotification({
@@ -14,12 +12,149 @@ const notify = (title, message, type = 'danger', duration = 7000) => {
     animationIn: ["animate__animated", "animate__flipInX"],
     animationOut: ["animate__animated", "animate__flipOutX"],
     dismiss: {
-      duration: duration,
+      duration,
       showIcon: true,
       pauseOnHover: true,
     },
     style: { direction: 'rtl', textAlign: 'right' },
   });
+};
+
+const verifyTransaction = async (hash) => {
+  try {
+    const response = await fetch(`https://apilist.tronscan.org/api/transaction-info?hash=${hash}`, {
+      headers: {
+        'Authorization': `Bearer ${process.env.REACT_APP_TRONSCAN_API_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const data = await response.json();
+    
+    if (data) {
+      const isUSDTContract = data.toAddress === 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
+      const receiverAddress = isUSDTContract 
+        ? data.trc20TransferInfo?.[0]?.to_address
+        : data.toAddress;
+      
+      console.log('اطلاعات تراکنش:', {
+        هش: data.hash,
+        وضعیت: data.confirmed ? 'تایید شده' : 'در انتظار تایید',
+        'آدرس گیرنده': receiverAddress,
+        'مقدار تراکنش': data.trc20TransferInfo?.[0]?.amount_str || data.amount,
+        'نوع تراکنش': isUSDTContract ? 'USDT' : 'TRX'
+      });
+
+      return { success: data.confirmed, data };
+    }
+    return { success: false, message: 'تراکنش یافت نشد' };
+    
+  } catch (error) {
+    console.error('خطای API:', error);
+    return { success: false, message: 'خطا در بررسی تراکنش' };
+  }
+};
+
+const analyzeImage = async (base64Image) => {
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: "Extract transaction hash from this image. Return ONLY the hash with no additional characters, spaces, or text. If no valid hash is found, return INVALID_IMAGE"
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: `data:image/jpeg;base64,${base64Image}`
+                }
+              }
+            ]
+          }
+        ],
+        max_tokens: 100
+      })
+    });
+
+    const data = await response.json();
+    if (data.choices && data.choices[0].message.content) {
+      const hash = data.choices[0].message.content.trim();
+      
+      console.log('هش استخراج شده:', hash);
+      
+      if (hash === 'INVALID_IMAGE') {
+        notify("خطا", "لطفا تصویر معتبر رسید تراکنش را آپلود کنید", "danger");
+        return null;
+      }
+
+      if (hash.length < 64) {
+        notify("خطا", "هش تراکنش معتبر در تصویر یافت نشد", "danger");
+        return null;
+      }
+
+      const verificationResult = await verifyTransaction(hash);
+      if (!verificationResult.success) {
+        notify("خطا", verificationResult.message, "danger");
+        return null;
+      }
+
+      // بررسی می‌کنیم که آیا تراکنش قبلاً ثبت شده است یا خیر
+      const saved = await saveTransaction(hash, verificationResult.data);
+      if (!saved) {
+        notify("خطا", "این تراکنش قبلاً ثبت شده است", "danger");
+        return null;
+      }
+
+      notify("موفق", "تراکنش با موفقیت تایید شد", "success");
+      return hash;
+    }
+    
+    notify("خطا", "خطا در پردازش تصویر", "danger");
+    return null;
+
+  } catch (error) {
+    console.error('خطای آنالیز:', error);
+    notify("خطا", "خطا در پردازش تصویر", "danger");
+    return null;
+  }
+};
+
+const saveTransaction = async (hash, data) => {
+  try {
+    const isUSDTContract = data.toAddress === 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
+    const receiverAddress = isUSDTContract 
+      ? data.trc20TransferInfo?.[0]?.to_address
+      : data.toAddress;
+    
+    const response = await fetch('https://alicomputer.com/wp-json/transaction/v1/verify',{
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        hash: hash,
+        amount: data.trc20TransferInfo?.[0]?.amount_str || data.amount,
+        wallet_address: receiverAddress,
+        type: isUSDTContract ? 'USDT' : 'TRX'
+      })
+    });
+    
+    const result = await response.json();
+    return result.success;
+  } catch (error) {
+    console.error('خطای ذخیره تراکنش:', error);
+    return false;
+  }
 };
 
 const PaymentCard = ({ isDarkMode, onClose, productTitle, price }) => {
@@ -28,63 +163,6 @@ const PaymentCard = ({ isDarkMode, onClose, productTitle, price }) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
-
-  const analyzeImage = async (base64Image) => {
-    try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-         'Authorization': `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: "gpt-4o-mini",
-          messages: [
-            {
-              role: "user",
-              content: [
-                {
-                  type: "text",
-                  text: `Please analyze this image and extract the following information:
-1. Transaction status (Completed/Processing/Failed)
-2. TXID/Hash (usually a long string of letters and numbers)
-3. Amount in USDT
-4. Wallet address (starting with TR or TU)
-
-اگر تصویر ارسال شده مربوط به ارز دیجیتال نباشد، به‌طور بسیار بسیار کوتاه توضیح دهید که عکس ارسال شده درباره چه موضوعی است.`
-                },
-                {
-                  type: "image_url",
-                  image_url: {
-                    url: `data:image/jpeg;base64,${base64Image}`
-                  }
-                }
-              ]
-            }
-          ],
-          max_tokens: 200
-        })
-      });
-
-      const data = await response.json();
-      const analysisResult = data.choices[0].message.content;
-
-      // نمایش اعلان بر اساس نوع پیام دریافتی
-      if (analysisResult.toLowerCase().includes('fail') || analysisResult.toLowerCase().includes('error')) {
-        notify("خطا", analysisResult, "danger");
-      } else if (analysisResult.toLowerCase().includes('complete') || analysisResult.toLowerCase().includes('success')) {
-        notify("موفق", analysisResult, "success");
-      } else {
-        notify("اطلاع", analysisResult, "danger");
-      }
-
-      return analysisResult;
-
-    } catch (error) {
-      notify("خطا", "خطا در تحلیل تصویر", "danger");
-      throw error;
-    }
-  };
 
   const handleFileSelect = async (event) => {
     const file = event.target.files[0];
@@ -107,8 +185,12 @@ const PaymentCard = ({ isDarkMode, onClose, productTitle, price }) => {
       });
 
       setUploadProgress(50);
-      await analyzeImage(base64);
+      const hash = await analyzeImage(base64);
+      if (hash) {
+        setTransactionHash(hash);
+      }
       setUploadProgress(100);
+      
       setTimeout(() => {
         setIsUploading(false);
         setUploadProgress(0);
@@ -123,17 +205,23 @@ const PaymentCard = ({ isDarkMode, onClose, productTitle, price }) => {
   };
 
   const handleSubmit = async () => {
-    if (!selectedFile && !transactionHash) {
-      notify("خطا", "لطفا رسید یا هش تراکنش را وارد کنید", "danger");
+    if (!transactionHash) {
+      notify("خطا", "لطفا هش تراکنش را وارد کنید", "danger");
       return;
     }
-
-    notify("موفق", "اطلاعات با موفقیت ثبت شد", "success", 3000);
-
-    // کمی تاخیر قبل از بستن مودال
-    setTimeout(() => {
-      onClose();
-    }, 1000);
+  
+    const result = await verifyTransaction(transactionHash);
+    if (result.success) {
+      const saved = await saveTransaction(transactionHash, result.data);
+      if (!saved) {
+        notify("خطا", "این تراکنش قبلاً ثبت شده است", "danger");
+        return;
+      }
+      notify("موفق", "تراکنش با موفقیت تایید شد", "success", 3000);
+      setTimeout(() => onClose(), 1000);
+    } else {
+      notify("خطا", result.message || "تراکنش معتبر نیست", "danger");
+    }
   };
 
   return (
