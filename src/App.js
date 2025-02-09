@@ -4,6 +4,7 @@ import CourseApp from './CourseApp';
 import AsadPage from './AsadPage';
 import Chat from './chat';
 import StoriesPage from './components/StoriesPage';
+import ProfilePage from './ProfilePage';
 import LoginPage from './LoginPage';
 import OrientationLock from './OrientationLock';
 import MentorPage from './MentorPage';
@@ -14,6 +15,8 @@ import 'react-notifications-component/dist/theme.css';
 import 'animate.css';
 import 'react-notifications-component/dist/theme.css'
 import 'animate.css/animate.min.css'
+import { Navigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 
 const App = () => {
@@ -25,6 +28,7 @@ const App = () => {
   const [loading, setLoading] = useState(true);
   const [sliders, setSliders] = useState([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  
 
   useEffect(() => {
     console.log('Login state changed:', isLoggedIn);
@@ -41,7 +45,13 @@ const App = () => {
 
   useEffect(() => {
     const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
-    setIsLoggedIn(!!token);
+    if (token) {
+      setIsLoggedIn(true);
+      console.log('User is logged in:', token); // برای دیباگ
+    } else {
+      setIsLoggedIn(false);
+      console.log('User is not logged in'); // برای دیباگ
+    }
   }, []);
   
   
@@ -227,6 +237,26 @@ const App = () => {
   <Route path="/stories/:storyId" element={<StoriesPage isDarkMode={isDarkMode} stories={stories} />} />
   
   <Route path="/login" element={
+  isLoggedIn ? (
+    <>
+      <CourseApp 
+        isDarkMode={isDarkMode} 
+        setIsDarkMode={setIsDarkMode} 
+        products={products} 
+        cryptoPrices={cryptoPrices} 
+        stories={stories} 
+        loading={loading} 
+        sliders={sliders}
+        isLoggedIn={isLoggedIn}    
+        onLogout={handleLogout}     
+      />
+      <ProfilePage 
+        isDarkMode={isDarkMode} 
+        setIsLoggedIn={setIsLoggedIn}
+        onLogout={handleLogout}
+      />
+    </>
+  ) : (
     <>
       <CourseApp 
         isDarkMode={isDarkMode} 
@@ -244,7 +274,8 @@ const App = () => {
         setIsLoggedIn={setIsLoggedIn} 
       />
     </>
-  } />
+  )
+} />
   
   <Route path="/mentor" element={
     <>

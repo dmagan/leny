@@ -322,7 +322,7 @@ const LoginPage = ({ isDarkMode, setIsLoggedIn }) => {
   
           setTimeout(() => {
             navigate('/');
-          }, 1500);
+          }, 0);
         } else {
           Store.addNotification({
             title: "خطا",
@@ -388,7 +388,7 @@ const LoginPage = ({ isDarkMode, setIsLoggedIn }) => {
   
           setTimeout(() => {
             navigate('/');
-          }, 1500);
+          }, 0);
         } else {
           let title = "خطا";
           let message = result.message;

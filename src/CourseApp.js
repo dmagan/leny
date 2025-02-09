@@ -715,8 +715,14 @@ useEffect(() => {
             <NavItem icon={<Home size={24} />} label="خانه" active={true} isDarkMode={isDarkMode}/>
             <NavItem icon={<PlayCircle size={24} />} label="محصولات" active={false}isDarkMode={isDarkMode} />
             <NavItem icon={<Calendar size={24} />} label="سفارش‌ها" active={false} isDarkMode={isDarkMode} onLogout={onLogout} />
-            <NavItem  icon={isLoggedIn ? <UserCheck size={24} /> : <UserX size={24} />}  label="پروفایل"  active={false}   isDarkMode={isDarkMode}   isProfile={true}/>
-            <NavItem icon={<MoreHorizontal size={24} />} label="بیشتر" active={false} isDarkMode={isDarkMode} />
+            <NavItem  
+  icon={isLoggedIn ? <UserCheck size={24} /> : <UserX size={24} />}  
+  label="پروفایل"  
+  active={false}   
+  isDarkMode={isDarkMode}   
+  isProfile={true}
+  isLoggedIn={isLoggedIn}
+/>            <NavItem icon={<MoreHorizontal size={24} />} label="بیشتر" active={false} isDarkMode={isDarkMode} />
           </div>
         </div>
       </div>
@@ -724,7 +730,7 @@ useEffect(() => {
   );
 };
 
-const NavItem = ({ icon, label, active, isDarkMode, isProfile, onLogout }) => {
+const NavItem = ({ icon, label, active, isDarkMode, isProfile, onLogout, isLoggedIn }) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
@@ -733,17 +739,21 @@ const NavItem = ({ icon, label, active, isDarkMode, isProfile, onLogout }) => {
     } else if (label === "محصولات") {
       navigate('/products');
     } else if (label === "سفارش‌ها") {
-      onLogout && onLogout();  // اگر onLogout وجود داشت اجرا کن
-      toast.error('از حساب کاربری خارج شدید', {
-        style: {
-          fontFamily: 'IranSans',
-          direction: 'rtl',
-          minWidth: '300px',
-          background: '#ff4444',
-        },
-        duration: 2000,
-        position: 'bottom-center',
-      });
+      if (isLoggedIn) {
+        onLogout && onLogout();
+        toast.error('از حساب کاربری خارج شدید', {
+          style: {
+            fontFamily: 'IranSans',
+            direction: 'rtl',
+            minWidth: '300px',
+            background: '#ff4444',
+          },
+          duration: 2000,
+          position: 'bottom-center',
+        });
+      } else {
+        navigate('/login');
+      }
     }
   };
 
