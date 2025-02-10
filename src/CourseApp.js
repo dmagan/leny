@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Menu, Play, Home, PlayCircle, Calendar, UserX,UserCheck, MoreHorizontal } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
+import { Store } from 'react-notifications-component';
+
 
 
 
@@ -143,6 +145,56 @@ const CourseApp = ({  // این قسمت رو جایگزین کنید
   const slidersRef = useRef(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [currentSlide, setCurrentSlide] = useState(0); // برای ردیابی اسلاید فعلی
+
+
+
+
+  const handleVIPClick = () => {
+    const userInfo = localStorage.getItem('userInfo') || sessionStorage.getItem('userInfo');
+    if (!userInfo) {
+      navigate('/login');
+      return;
+    }
+  
+    const purchasedProducts = localStorage.getItem('purchasedProducts');
+    if (!purchasedProducts) {
+      navigate('/products');
+      return;
+    }
+  
+    const products = JSON.parse(purchasedProducts);
+    const vipProduct = products.find(p => 
+      p.isVIP && p.status === 'active'
+    );
+  
+    if (!vipProduct) {
+      if (products.some(p => p.isVIP)) {
+        navigate('/login');
+      } else {
+        Store.addNotification({
+          title: "خطا",
+          message: " شما این محصول را خریداری نکرده اید . به صفحه خرید محصولات هدایت می شوید ",
+          type: "danger",
+          insert: "top",
+          container: "center",
+          animationIn: ["animate__animated", "animate__flipInX"],
+          animationOut: ["animate__animated", "animate__flipOutX"],
+          dismiss: { duration: 4000, showIcon: true, pauseOnHover: true },
+          style: { direction: 'rtl', textAlign: 'right' }
+        });
+  
+        setTimeout(() => {
+          navigate('/products');
+        }, 4000);
+      }
+      return;
+    }
+  
+    navigate('/chat');
+  };
+
+
+
 
 
   // دریافت قیمت‌های ارز دیجیتال
@@ -558,7 +610,7 @@ useEffect(() => {
       </div>
     </div>
 
-    <div  onClick={() => navigate('/chat')} className={`p-4 rounded-2xl flex items-center gap-3 border ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900'  }`}>
+    <div  onClick={handleVIPClick}  className={`p-4 rounded-2xl flex items-center gap-3 border ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900'  }`}>
       <div className="">
         <div className="w-10 h-10 text-blue-100">
         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -715,14 +767,10 @@ useEffect(() => {
             <NavItem icon={<Home size={24} />} label="خانه" active={true} isDarkMode={isDarkMode}/>
             <NavItem icon={<PlayCircle size={24} />} label="محصولات" active={false}isDarkMode={isDarkMode} />
             <NavItem icon={<Calendar size={24} />} label="سفارش‌ها" active={false} isDarkMode={isDarkMode} onLogout={onLogout} />
-            <NavItem  
-  icon={isLoggedIn ? <UserCheck size={24} /> : <UserX size={24} />}  
-  label="پروفایل"  
-  active={false}   
-  isDarkMode={isDarkMode}   
-  isProfile={true}
-  isLoggedIn={isLoggedIn}
-/>            <NavItem icon={<MoreHorizontal size={24} />} label="بیشتر" active={false} isDarkMode={isDarkMode} />
+            <NavItem 
+            icon={isLoggedIn ? <UserCheck size={24} /> : <UserX size={24} />}  
+                                                                                  label="پروفایل"   aactive={false} isDarkMode={isDarkMode} onLogout={onLogout} />     
+             <NavItem icon={<MoreHorizontal size={24} />} label="بیشتر" active={false} isDarkMode={isDarkMode} />
           </div>
         </div>
       </div>
@@ -734,29 +782,23 @@ const NavItem = ({ icon, label, active, isDarkMode, isProfile, onLogout, isLogge
   const navigate = useNavigate();
 
   const handleClick = () => {
-    if (isProfile) {
-      navigate('/login');
+    if (label === "پروفایل") {
+      if (isLoggedIn) {
+        navigate('/orders');
+      } else {
+        navigate('/login');
+      }
     } else if (label === "محصولات") {
       navigate('/products');
     } else if (label === "سفارش‌ها") {
       if (isLoggedIn) {
-        onLogout && onLogout();
-        toast.error('از حساب کاربری خارج شدید', {
-          style: {
-            fontFamily: 'IranSans',
-            direction: 'rtl',
-            minWidth: '300px',
-            background: '#ff4444',
-          },
-          duration: 2000,
-          position: 'bottom-center',
-        });
+        navigate('/orders');
       } else {
         navigate('/login');
       }
     }
   };
-
+  
   return (
     <button 
       onClick={handleClick} 

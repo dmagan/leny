@@ -165,6 +165,64 @@ const LoginPage = ({ isDarkMode, setIsLoggedIn }) => {
     }, 300);
   };
 
+
+
+
+  const handleLoginSuccess = async (result) => {
+    setIsLoggedIn(true);
+    try {
+      const auth = btoa('ck_20b3c33ef902d4ccd94fc1230c940a85be290e0a:cs_e8a85df738324996fd3608154ab5bf0ccc6ded99');
+      const response = await fetch(
+        'https://alicomputer.com/wp-json/wc/v3/orders?status=completed',
+        {
+          headers: {
+            'Authorization': `Basic ${auth}`,
+            'Accept': 'application/json'
+          }
+        }
+      );
+      const orders = await response.json();
+      const userOrders = orders.filter(order => 
+        order.billing?.email?.toLowerCase() === result.user_email.toLowerCase()
+      );
+      const products = userOrders.flatMap(order => {
+        const orderDate = new Date(order.date_created_gmt);
+        return order.line_items.map(item => {
+          let subscriptionMonths = 1;
+          item.meta_data.forEach(meta => {
+            if (typeof meta.value === 'string' && 
+                (meta.value.includes('ماه') || meta.value.includes('month'))) {
+              const match = meta.value.match(/(\d+)/);
+              if (match) {
+                subscriptionMonths = parseInt(match[1]);
+              }
+            }
+          });
+          const subscriptionDays = subscriptionMonths * 30;
+          const endDate = new Date(orderDate.getTime() + (subscriptionDays * 24 * 60 * 60 * 1000));
+          const remainingDays = Math.max(0, Math.ceil((endDate - new Date()) / (1000 * 60 * 60 * 24)));
+          return {
+            id: item.id,
+            title: item.name,
+            date: orderDate,
+            status: remainingDays > 0 ? 'active' : 'expired',
+            remainingDays: remainingDays,
+            isVIP: item.name.includes('VIP')
+          };
+        });
+      });
+      localStorage.setItem('purchasedProducts', JSON.stringify(products));
+      localStorage.setItem('lastProductCheck', new Date().getTime());
+    } catch (error) {
+      console.error('Error loading products:', error);
+    }
+    navigate('/');
+  };
+
+
+
+
+
   const validateLogin = async (username, password, rememberMe) => {
     try {
       const response = await fetch('https://alicomputer.com/wp-json/jwt-auth/v1/token', {
@@ -320,9 +378,7 @@ const LoginPage = ({ isDarkMode, setIsLoggedIn }) => {
             style: { direction: 'rtl', textAlign: 'right' }
           });
   
-          setTimeout(() => {
-            navigate('/');
-          }, 0);
+          await handleLoginSuccess(result);
         } else {
           Store.addNotification({
             title: "خطا",

@@ -1,10 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, LogOut, Package, ShoppingCart, User } from 'lucide-react';
+import ProductSkeleton from './ProductSkeleton';
+
+
 
 
 
 const ProfilePage = ({ isDarkMode, setIsLoggedIn }) => {
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const [showCard, setShowCard] = useState(false);
   const [userInfo, setUserInfo] = useState(null);
@@ -16,17 +20,27 @@ const ProfilePage = ({ isDarkMode, setIsLoggedIn }) => {
   useEffect(() => {
     const storedInfo = localStorage.getItem('userInfo') || sessionStorage.getItem('userInfo');
     if (storedInfo) {
-      const parsedInfo = JSON.parse(storedInfo);
-      console.log('Parsed User Info:', parsedInfo);
-      setUserInfo(JSON.parse(storedInfo));
-      loadPurchasedProducts();
-      
+      try {
+        const parsedInfo = JSON.parse(storedInfo);
+        setUserInfo(parsedInfo);
+      } catch (error) {
+        console.error('خطا در پردازش اطلاعات کاربر:', error);
+      }
     }
     
     setTimeout(() => {
       setShowCard(true);
     }, 100);
   }, []);
+  
+  // اضافه کردن یک useEffect جدید
+  useEffect(() => {
+    if (userInfo?.user_email) {
+      loadPurchasedProducts();
+    }
+  }, [userInfo]);
+
+
 
   useEffect(() => {
     const handleResize = () => {
@@ -93,13 +107,18 @@ const ProfilePage = ({ isDarkMode, setIsLoggedIn }) => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('userToken');
-    localStorage.removeItem('userInfo');
-    sessionStorage.removeItem('userToken');
-    sessionStorage.removeItem('userInfo');
-    setIsLoggedIn(false);
-    navigate('/');
-  };
+  // پاک کردن اطلاعات کاربر
+  localStorage.removeItem('userToken');
+  localStorage.removeItem('userInfo');
+  sessionStorage.removeItem('userToken');
+  sessionStorage.removeItem('userInfo');
+  // پاک کردن کش محصولات
+  localStorage.removeItem('purchasedProducts');
+  localStorage.removeItem('purchasedProductsTime');
+  
+  setIsLoggedIn(false);
+  navigate('/');
+};
 
   const [purchasedProducts, setPurchasedProducts] = useState([]);
 
@@ -114,22 +133,40 @@ const ProfilePage = ({ isDarkMode, setIsLoggedIn }) => {
   
   const loadPurchasedProducts = async () => {
     try {
-      const storedInfo = localStorage.getItem('userInfo') || sessionStorage.getItem('userInfo');
-      if (!storedInfo) {
-        console.log('No user info found');
+      setIsLoading(true);
+      
+      // بررسی وجود اطلاعات کاربر
+      if (!userInfo?.user_email) {
+        setPurchasedProducts([]);
         return;
       }
   
-      const userInfo = JSON.parse(storedInfo);
-      const userEmail = userInfo.user_email;
+      // بررسی وجود کش و تطابق با کاربر فعلی
+      const cachedUserEmail = localStorage.getItem('cachedUserEmail');
+      const cachedData = localStorage.getItem('purchasedProducts');
+      const cacheTime = localStorage.getItem('purchasedProductsTime');
+      const now = new Date().getTime();
   
-      if (!userEmail) {
-        console.log('No user email found');
+      // استفاده از کش اگر معتبر باشد
+      if (cachedData && 
+          cacheTime && 
+          (now - Number(cacheTime)) < 5 * 60 * 1000 && 
+          cachedUserEmail === userInfo.user_email) {
+        // بازسازی آیکون‌ها برای داده‌های کش شده
+        const parsedData = JSON.parse(cachedData);
+        const productsWithIcons = parsedData.map(product => ({
+          ...product,
+          icon: product.isVIP ? <ShoppingCart className="w-6 h-6" /> : <Package className="w-6 h-6" />
+        }));
+        setPurchasedProducts(productsWithIcons);
+        setIsLoading(false);
         return;
       }
   
+      // کلید‌های احراز هویت برای API
       const auth = btoa('ck_20b3c33ef902d4ccd94fc1230c940a85be290e0a:cs_e8a85df738324996fd3608154ab5bf0ccc6ded99');
       
+      // دریافت سفارشات از API
       const response = await fetch(
         'https://alicomputer.com/wp-json/wc/v3/orders?status=completed',
         {
@@ -140,27 +177,27 @@ const ProfilePage = ({ isDarkMode, setIsLoggedIn }) => {
         }
       );
   
-      if (!response.ok) throw new Error('خطا در دریافت سفارشات');
+      // بررسی خطای API
+      if (!response.ok) {
+        throw new Error('خطا در دریافت سفارشات');
+      }
       
+      // تبدیل پاسخ به JSON
       const orders = await response.json();
       
+      // فیلتر کردن سفارشات کاربر فعلی
       const userOrders = orders.filter(order => 
-        order.billing && order.billing.email && 
-        order.billing.email.toLowerCase() === userEmail.toLowerCase()
+        order.billing?.email?.toLowerCase() === userInfo.user_email.toLowerCase()
       );
   
-      console.log('User Orders:', userOrders);
-  
+      // تبدیل سفارشات به محصولات
       const products = userOrders.flatMap(order => {
         const orderDate = new Date(order.date_created_gmt);
         
         return order.line_items.map(item => {
-          // بررسی همه متادیتاها برای پیدا کردن مدت اشتراک
-          console.log('Meta Data for item:', item.meta_data); // برای دیباگ
+          // پیدا کردن مدت اشتراک از متادیتا
+          let subscriptionMonths = 1; // مقدار پیش‌فرض یک ماه
           
-          let subscriptionMonths = 1; // مقدار پیش‌فرض 1 ماه
-          
-          // جستجو در همه متادیتاها برای پیدا کردن مدت اشتراک
           item.meta_data.forEach(meta => {
             if (typeof meta.value === 'string' && 
                 (meta.value.includes('ماه') || meta.value.includes('month'))) {
@@ -175,34 +212,50 @@ const ProfilePage = ({ isDarkMode, setIsLoggedIn }) => {
           const subscriptionDays = subscriptionMonths * 30;
           const endDate = new Date(orderDate.getTime() + (subscriptionDays * 24 * 60 * 60 * 1000));
           const remainingDays = Math.max(0, Math.ceil((endDate - new Date()) / (1000 * 60 * 60 * 24)));
+
   
-          console.log(`Product ${item.name}:`, {
-            subscriptionMonths,
-            orderDate: orderDate.toISOString(),
-            endDate: endDate.toISOString(),
-            remainingDays
-          }); // برای دیباگ
-  
-          return {
+          // ساخت آبجکت محصول
+          const productData = {
             id: item.id,
             title: item.name,
             date: orderDate,
-            status: remainingDays > 0 ? 'active' : 'expired',
+            status: remainingDays < 0 ? 'active' : 'expired',
             remainingDays: remainingDays,
-            icon: item.name.includes('VIP') ? <ShoppingCart className="w-6 h-6" /> : <Package className="w-6 h-6" />
+            isVIP: item.name.includes('VIP')
+          };
+  
+          // اضافه کردن آیکون برای نمایش
+          return {
+            ...productData,
+            icon: productData.isVIP ? <ShoppingCart className="w-6 h-6" /> : <Package className="w-6 h-6" />
           };
         });
       });
   
+      // ذخیره در کش
+      const productsForCache = products.map(({ icon, ...rest }) => rest);
+      localStorage.setItem('purchasedProducts', JSON.stringify(productsForCache));
+      localStorage.setItem('purchasedProductsTime', now.toString());
+      localStorage.setItem('cachedUserEmail', userInfo.user_email);
+      
+      // بروزرسانی state
       setPurchasedProducts(products);
   
     } catch (error) {
       console.error('Error loading purchased products:', error);
+      setPurchasedProducts([]); // در صورت خطا، لیست خالی نمایش داده شود
+    } finally {
+      setIsLoading(false);
     }
   };
-
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 overflow-hidden transition-opacity duration-300"
+    <div className="fixed inset-0 z-50 bg-black/75 overflow-hidden transition-opacity duration-300"
+    onClick={(e) => {
+      // اگر کلیک روی خود overlay بود (نه روی کارت)، کارت رو ببند
+      if (e.target === e.currentTarget) {
+        closeCard();
+      }
+    }}
       style={{ 
         opacity: showCard ? 1 : 0,
         pointerEvents: showCard ? 'auto' : 'none'
@@ -222,7 +275,7 @@ const ProfilePage = ({ isDarkMode, setIsLoggedIn }) => {
         <div className="pt-2">
           <div className="w-24 h-1 bg-gray-300 rounded-full mx-auto" />
         </div>
-
+  
         <div className="scrollable-content h-full overflow-y-auto pb-safe">
           <div className="px-6 pb-8 pt-4">
             <div className="mb-8 text-center pt-4">
@@ -236,51 +289,62 @@ const ProfilePage = ({ isDarkMode, setIsLoggedIn }) => {
                 {userInfo?.user_email}
               </p>
             </div>
-
-            <div className="space-y-4">
-              <h2 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-4`}>
+  
+            <div className="space-y-4 text-right" dir="rtl">
+              <h2 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-4 `}>
                 محصولات خریداری شده
               </h2>
               
-              {purchasedProducts.map(product => (
-                <div
-                  key={product.id}
-                  className={`p-4 rounded-xl border ${
-                    isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900'
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                      product.status === 'active' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'
-                    }`}>
-                      {product.icon}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-medium text-base">{product.title}</h3>
-                      <div className="flex items-center justify-between mt-1">
-  <div className="flex flex-col">
-  <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-right`} dir="rtl">
-  {product.status === 'active' ? (
-        <span>
-          <span className="text-yellow-500">{product.remainingDays}</span>
-          {' '}روز باقی‌مانده
-        </span>
-      ) : (
-        'منقضی شده'
-      )}
-    </div>
-  </div>
-  <span className={`text-sm ${
-    product.status === 'active' ? 'text-green-500' : 'text-red-500'
-  }`}>
-    {product.status === 'active' ? 'فعال' : 'منقضی شده'}
-  </span>
+              {isLoading ? (
+                <>
+                  <ProductSkeleton isDarkMode={isDarkMode} />
+                  <ProductSkeleton isDarkMode={isDarkMode} />
+                  <ProductSkeleton isDarkMode={isDarkMode} />
+                </>
+              ) : purchasedProducts.length > 0 ? (
+                purchasedProducts.map(product => (
+                  <div key={product.id} className={`p-4 rounded-xl border ${isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900'}`}>
+ <div className="flex flex-col gap-4">
+   <div className="flex items-center justify-between">
+     <div className="flex-1">
+       <h3 className="font-medium text-base">{product.title}</h3>
+       <div className="flex items-center justify-between mt-1">
+         <div className="flex flex-col">
+           <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+             {new Date(product.date).toLocaleDateString('fa-IR')}
+           </p>
+           {product.status === 'active' && (
+             <p className="text-sm text-yellow-500">
+               روزهای باقیمانده: {product.remainingDays}
+             </p>
+           )}
+         </div>
+         <span className={`text-sm ${product.status === 'active' ? 'text-green-500' : 'text-red-500'}`}>
+           {product.status === 'active' ? 'فعال' : 'منقضی شده'}
+         </span>
+       </div>
+     </div>
+     <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+       product.status === 'active' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'
+     }`}>
+       {product.icon}
+     </div>
+   </div>
+   {product.status !== 'active' && (
+     <button onClick={() => navigate('')} className="w-full bg-[#f7d55d] text-gray-900 py-3 rounded-xl text-sm">
+       تمدید اشتراک
+     </button>
+   )}
+ </div>
 </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
 
+))
+              ) : (
+                <div className={`text-center p-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  محصولی یافت نشد
+                </div>
+              )}
+  
               <button
                 onClick={handleLogout}
                 className="w-full mt-6 bg-red-500 text-white rounded-xl py-3 text-sm font-medium hover:bg-red-600 transition-colors flex items-center justify-center gap-2"

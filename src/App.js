@@ -235,6 +235,7 @@ const App = () => {
   <Route path="/asad" element={<AsadPage isDarkMode={isDarkMode} />} />
   <Route path="/chat" element={<Chat isDarkMode={isDarkMode} />} />
   <Route path="/stories/:storyId" element={<StoriesPage isDarkMode={isDarkMode} stories={stories} />} />
+  <Route path="/profile" element={<ProfilePage isDarkMode={isDarkMode} />} />
   
   <Route path="/login" element={
   isLoggedIn ? (
