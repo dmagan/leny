@@ -331,7 +331,7 @@ const ProfilePage = ({ isDarkMode, setIsLoggedIn }) => {
      </div>
    </div>
    {product.status !== 'active' && (
-     <button onClick={() => navigate('')} className="w-full bg-[#f7d55d] text-gray-900 py-3 rounded-xl text-sm">
+     <button onClick={() => navigate('/products')} className="w-full bg-[#f7d55d] text-gray-900 py-3 rounded-xl text-sm">
        تمدید اشتراک
      </button>
    )}
