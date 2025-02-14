@@ -48,5 +48,8 @@
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17"
   },
+  "proxy": "https://alicomputer.com",
+  
   "main": ",/src/asadpage.js"
+  
 }

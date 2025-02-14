@@ -31,6 +31,27 @@ const products = [
     duration: "دسترسی 730 روزه", 
     price: "399",
     description: "دسترسی نامحدود به تمام خدمات با بیشترین تخفیف"
+  },
+  {
+    id: 5,
+    title: "دوره دکس تریدینگ",
+    duration: "نا محدود", 
+    price: "149",
+    description: ""
+  },
+  {
+    id: 6,
+    title: "دوره صفر تا ۱۰۰ ",
+    duration: "نا محدود", 
+    price: "۸۹",
+    description: " "
+  },
+  {
+    id: 7,
+    title: "دوره دکس تریدین و صفر تا ۱۰۰ (پیشنهاد ویژه )",
+    duration: "نا محدود", 
+    price: "۱۹۹",
+    description: " "
   }
 ];
 
@@ -58,8 +79,8 @@ const ProductsPage = ({ isDarkMode }) => {
         </div>
       </div>
 
-      <div className="absolute top-16 bottom-0 left-0 right-0 overf w-y-auto">
-        <div className="p-4 pb-4">
+      <div className="absolute top-16 bottom-0 left-0 right-0 overflow-y-auto">
+      <div className="p-4 pb-4">
           <div className="space-y-3">
             {products.map((product) => (
               <div

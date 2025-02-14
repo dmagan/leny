@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Menu, Play, Home, PlayCircle, Calendar, UserX,UserCheck, MoreHorizontal } from 'lucide-react';
+import { Menu, Play, Home, PlayCircle, Calendar, UserX,UserCheck, Headphones } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { Store } from 'react-notifications-component';
@@ -763,15 +763,20 @@ useEffect(() => {
       <div className="fixed bottom-0 left-0 right-0">
         <div className="mx-4 mb-4">
         <div className={`flex items-center justify-between rounded-full px-6 py-2 shadow-lg
-      ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
-            <NavItem icon={<Home size={24} />} label="خانه" active={true} isDarkMode={isDarkMode}/>
-            <NavItem icon={<PlayCircle size={24} />} label="محصولات" active={false}isDarkMode={isDarkMode} />
-            <NavItem icon={<Calendar size={24} />} label="سفارش‌ها" active={false} isDarkMode={isDarkMode} onLogout={onLogout} />
-            <NavItem 
-            icon={isLoggedIn ? <UserCheck size={24} /> : <UserX size={24} />}  
-                                                                                  label="پروفایل"   aactive={false} isDarkMode={isDarkMode} onLogout={onLogout} />     
-             <NavItem icon={<MoreHorizontal size={24} />} label="بیشتر" active={false} isDarkMode={isDarkMode} />
-          </div>
+  ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+    <NavItem icon={<Home size={24} />} label="خانه" active={true} isDarkMode={isDarkMode}/>
+    <NavItem icon={<PlayCircle size={24} />} label="محصولات" active={false} isDarkMode={isDarkMode} onLogout={onLogout} />
+    <NavItem icon={<Calendar size={24} />} label="سفارش‌ها" active={false} isDarkMode={isDarkMode} onLogout={onLogout} />
+    <NavItem icon={isLoggedIn ? <UserCheck size={24} /> : <UserX size={24} />}  
+                                                                                        active={false} label="پروفایل" isDarkMode={isDarkMode} isProfile={true}  isLoggedIn={isLoggedIn} onLogout={onLogout}/>     
+    <NavItem 
+      icon={<Headphones size={24} />} 
+      label="پشتیبانی" 
+      active={false} 
+      isDarkMode={isDarkMode} 
+      isLoggedIn={isLoggedIn}  // این مهمه
+    />
+</div>
         </div>
       </div>
     </div>
@@ -782,9 +787,9 @@ const NavItem = ({ icon, label, active, isDarkMode, isProfile, onLogout, isLogge
   const navigate = useNavigate();
 
   const handleClick = () => {
-    if (label === "پروفایل") {
+    if (isProfile) {
       if (isLoggedIn) {
-        navigate('/orders');
+        navigate('/profile');
       } else {
         navigate('/login');
       }
@@ -793,6 +798,12 @@ const NavItem = ({ icon, label, active, isDarkMode, isProfile, onLogout, isLogge
     } else if (label === "سفارش‌ها") {
       if (isLoggedIn) {
         navigate('/orders');
+      } else {
+        navigate('/login');
+      }
+    } else if (label === "پشتیبانی") {
+      if (isLoggedIn) {
+        navigate('/support');
       } else {
         navigate('/login');
       }

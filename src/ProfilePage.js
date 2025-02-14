@@ -219,7 +219,7 @@ const ProfilePage = ({ isDarkMode, setIsLoggedIn }) => {
             id: item.id,
             title: item.name,
             date: orderDate,
-            status: remainingDays < 0 ? 'active' : 'expired',
+            status: remainingDays > 0 ? 'active' : 'expired',
             remainingDays: remainingDays,
             isVIP: item.name.includes('VIP')
           };
@@ -320,7 +320,7 @@ const ProfilePage = ({ isDarkMode, setIsLoggedIn }) => {
            )}
          </div>
          <span className={`text-sm ${product.status === 'active' ? 'text-green-500' : 'text-red-500'}`}>
-           {product.status === 'active' ? 'فعال' : 'منقضی شده'}
+           {product.status === 'active' ? 'فعال' : 'با شده'}
          </span>
        </div>
      </div>
