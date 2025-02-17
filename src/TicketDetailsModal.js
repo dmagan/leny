@@ -41,28 +41,28 @@ const TicketMessage = ({ message, isDarkMode }) => {
             {formattedDate}
           </span>
           {!message.isAdmin && (
-  <div className="flex items-center">
-    {message.isPending ? (
-      <svg 
-        className="w-3 h-3 text-gray-600" 
-        fill="none" 
-        viewBox="0 0 24 24" 
-        stroke="currentColor"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ) : (
-      <svg 
-        className="w-3 h-3 text-gray-600" 
-        fill="none" 
-        viewBox="0 0 24 24" 
-        stroke="currentColor"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12l5 5L20 7" />
-      </svg>
-    )}
-  </div>
-)}
+            <div className="flex items-center">
+              {message.isPending ? (
+                <svg 
+                  className="w-3 h-3 text-gray-600" 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              ) : (
+                <svg 
+                  className="w-3 h-3 text-gray-600" 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12l5 5L20 7" />
+                </svg>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -76,21 +76,37 @@ const TicketDetailsModal = ({ isOpen, onClose, ticketId, isDarkMode, isNewTicket
   const [title, setTitle] = useState('');
   const messagesEndRef = useRef(null);
 
+  // Fetch messages when modal opens and ticketId changes
   useEffect(() => {
-    if (isOpen) {
-      // ریست کردن حالت اولیه
-      setMessages([]);
+    if (isOpen && !isNewTicket && ticketId) {
+      // Show loading state
       setLoading(true);
 
-      if (!isNewTicket && ticketId) {
-        fetchMessages();
-      } else if (isNewTicket) {
-        setLoading(false);
-      }
+      // Fetch messages for the given ticketId
+      fetchMessages(ticketId)
+        .then(({ messages }) => {
+          // Save fetched messages to state
+          setMessages(messages);
+        })
+        .catch(error => {
+          // Display error notification to the user
+          Store.addNotification({
+            title: "خطا",
+            message: "خطا در بارگذاری پیام‌ها",
+            type: "danger",
+            insert: "top",
+            container: "center",
+            dismiss: { duration: 3000 }
+          });
+        })
+        .finally(() => {
+          // End loading state
+          setLoading(false);
+        });
     }
   }, [isOpen, ticketId, isNewTicket]);
 
-  const fetchMessages = async () => {
+  const fetchMessages = async (ticketId) => {
     try {
       const auth = btoa('test:test');
       // First fetch the ticket information
@@ -114,7 +130,7 @@ const TicketDetailsModal = ({ isOpen, onClose, ticketId, isDarkMode, isNewTicket
 
       if (!repliesResponse.ok) throw new Error('خطا در دریافت پیام‌ها');
       const repliesData = await repliesResponse.json();
-      
+
       // Combine the initial ticket message with the replies
       const initialMessage = {
         id: ticketData.id,
@@ -131,19 +147,16 @@ const TicketDetailsModal = ({ isOpen, onClose, ticketId, isDarkMode, isNewTicket
         isAdmin: reply.author === 1,
         isPending: false
       }));
+
       // Combine all messages and sort them by date
       const allMessages = [initialMessage, ...formattedReplies].sort(
         (a, b) => new Date(a.date) - new Date(b.date)
       );
 
-      // Set messages
-      setMessages(allMessages);
-      setLoading(false);
-      scrollToBottom();
-
+      return { messages: allMessages };
     } catch (error) {
       console.error('Error:', error);
-      setLoading(false);
+      throw error;
     }
   };
 
@@ -155,7 +168,7 @@ const TicketDetailsModal = ({ isOpen, onClose, ticketId, isDarkMode, isNewTicket
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     if (isNewTicket) {
       if (!title.trim()) {
         Store.addNotification({
@@ -169,7 +182,7 @@ const TicketDetailsModal = ({ isOpen, onClose, ticketId, isDarkMode, isNewTicket
         return;
       }
     }
-  
+
     if (!message.trim()) {
       Store.addNotification({
         title: "خطا",
@@ -190,7 +203,7 @@ const TicketDetailsModal = ({ isOpen, onClose, ticketId, isDarkMode, isNewTicket
       isAdmin: false,
       isPending: true
     };
-    
+
     setMessages(prev => [...prev, tempMessage]);
     setMessage('');
     scrollToBottom();
@@ -210,20 +223,20 @@ const TicketDetailsModal = ({ isOpen, onClose, ticketId, isDarkMode, isNewTicket
       });
 
       if (!response.ok) throw new Error('خطا در ارسال پیام');
-      
+
       // Update the message status after successful send
-      setMessages(prev => prev.map(msg => 
-        msg.id === tempMessage.id 
-          ? { ...msg, isPending: false } 
+      setMessages(prev => prev.map(msg =>
+        msg.id === tempMessage.id
+          ? { ...msg, isPending: false }
           : msg
       ));
 
     } catch (error) {
       console.error('Error:', error);
-      
+
       // Remove the temporary message if sending failed
       setMessages(prev => prev.filter(msg => msg.id !== tempMessage.id));
-      
+
       Store.addNotification({
         title: "خطا",
         message: "خطا در ارسال پیام",
@@ -254,7 +267,7 @@ const TicketDetailsModal = ({ isOpen, onClose, ticketId, isDarkMode, isNewTicket
 
       {/* Messages Area */}
       <div className="absolute top-16 bottom-20 left-0 right-0 overflow-y-auto p-4">
-      {loading ? (
+        {loading ? (
           <>
             <MessageSkeleton isDarkMode={isDarkMode} />
             <MessageSkeleton isDarkMode={isDarkMode} />
@@ -263,14 +276,14 @@ const TicketDetailsModal = ({ isOpen, onClose, ticketId, isDarkMode, isNewTicket
         ) : (
           <>
             {[...messages]
-            .sort((a, b) => new Date(a.date) - new Date(b.date))
-            .map((message) => (
-              <TicketMessage 
-                key={message.id}
-                message={message}
-                isDarkMode={isDarkMode}
-              />
-            ))}
+              .sort((a, b) => new Date(a.date) - new Date(b.date))
+              .map((message) => (
+                <TicketMessage 
+                  key={message.id}
+                  message={message}
+                  isDarkMode={isDarkMode}
+                />
+              ))}
             <div ref={messagesEndRef} />
           </>
         )}
