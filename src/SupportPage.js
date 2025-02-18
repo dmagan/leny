@@ -21,6 +21,11 @@ const SupportPage = ({ isDarkMode }) => {
 
   // رفرنس برای اسکرول به انتهای لیست
   const messagesEndRef = useRef(null);
+  
+  
+
+
+
 
   // هنگام بارگذاری کامپوننت، اطلاعات کاربر را می‌خوانیم
   useEffect(() => {
@@ -302,6 +307,10 @@ const SupportPage = ({ isDarkMode }) => {
     }, 100);
   };
 
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
   // کامپوننت نمایش هر پیام
   const ChatMessage = ({ message }) => {
     const formattedDate = new Date(message.date).toLocaleDateString('fa-IR');
@@ -320,8 +329,8 @@ const SupportPage = ({ isDarkMode }) => {
           className={`max-w-[80%] rounded-2xl p-4 relative ${
             message.isAdmin
               ? isDarkMode
-                ? 'bg-gray-700'
-                : 'bg-gray-100'
+                ? 'bg-gray-100'
+                : 'bg-gray-200'
               : 'bg-[#f7d55d]'
           }`}
         >
@@ -411,11 +420,24 @@ const SupportPage = ({ isDarkMode }) => {
             {messages.map((msg) => (
               <ChatMessage key={msg.id} message={msg} />
             ))}
-            <div ref={messagesEndRef} />
+            <div ref={messagesEndRef} className="mb-9"/>
           </>
         )}
       </div>
 
+
+
+      <div className="absolute bottom-20 left-4 right-4 flex justify-center p-1">
+  <button
+    onClick={() => navigate('/faq')}
+    className="w-full max-w-md bg-gray-700/50 text-white py-2 px-4 rounded-lg shadow-md hover:bg-gray-500/50 transition-colors"
+  >
+    سوالات پر تکرار
+  </button>
+</div>
+
+
+ٕ
       {/* Input Area */}
       <div className="absolute bottom-0 left-0 right-0 p-4">
         <div
