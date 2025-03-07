@@ -14,6 +14,7 @@ import DexPage from './dex';
 import FaqPage from './faq'; 
 
 import ProductsPage from './ProductsPage';
+import PageTransition from './components/PageTransition';
 import { ReactNotifications } from 'react-notifications-component';
 import 'react-notifications-component/dist/theme.css';
 import 'animate.css';
@@ -221,8 +222,86 @@ const App = () => {
       <ReactNotifications />
       <BrowserRouter>
         <OrientationLock isDarkMode={isDarkMode}>
-        <Routes>
-  <Route path="/" element={
+          <Routes>
+            <Route path="/" element={
+              <CourseApp 
+                isDarkMode={isDarkMode} 
+                setIsDarkMode={setIsDarkMode} 
+                products={products} 
+                cryptoPrices={cryptoPrices} 
+                stories={stories} 
+                loading={loading} 
+                sliders={sliders}
+                isLoggedIn={isLoggedIn}
+                onLogout={handleLogout}
+              />
+            } />
+            
+            <Route path="/asad" element={<AsadPage isDarkMode={isDarkMode} />} />
+            <Route path="/chat" element={<Chat isDarkMode={isDarkMode} />} />
+            <Route path="/stories/:storyId" element={<StoriesPage isDarkMode={isDarkMode} stories={stories} />} />
+            
+            <Route path="/login" element={
+              isLoggedIn ? (
+                <>
+                  <CourseApp 
+                    isDarkMode={isDarkMode} 
+                    setIsDarkMode={setIsDarkMode} 
+                    products={products} 
+                    cryptoPrices={cryptoPrices} 
+                    stories={stories} 
+                    loading={loading} 
+                    sliders={sliders}
+                    isLoggedIn={isLoggedIn}    
+                    onLogout={handleLogout}     
+                  />
+                  <ProfilePage 
+                    isDarkMode={isDarkMode} 
+                    setIsLoggedIn={setIsLoggedIn}
+                    onLogout={handleLogout}
+                  />
+                </>
+              ) : (
+                <>
+                  <CourseApp 
+                    isDarkMode={isDarkMode} 
+                    setIsDarkMode={setIsDarkMode} 
+                    products={products} 
+                    cryptoPrices={cryptoPrices} 
+                    stories={stories} 
+                    loading={loading} 
+                    sliders={sliders}
+                    isLoggedIn={isLoggedIn}    
+                    onLogout={handleLogout}     
+                  />
+                  <LoginPage 
+                    isDarkMode={isDarkMode} 
+                    setIsLoggedIn={setIsLoggedIn} 
+                  />
+                </>
+              )
+            } />
+            
+            <Route path="/mentor" element={
+              <>
+                <CourseApp 
+                  isDarkMode={isDarkMode} 
+                  setIsDarkMode={setIsDarkMode} 
+                  products={products} 
+                  cryptoPrices={cryptoPrices} 
+                  stories={stories} 
+                  loading={loading} 
+                  sliders={sliders}
+                  isLoggedIn={isLoggedIn}  
+                  onLogout={handleLogout}     
+                />
+                <MentorPage isDarkMode={isDarkMode} />
+              </>
+            } />
+            
+            <Route path="/products" element={<ProductsPage isDarkMode={isDarkMode} />} />
+            <Route path="/faq" element={
+  <>
     <CourseApp 
       isDarkMode={isDarkMode} 
       setIsDarkMode={setIsDarkMode} 
@@ -231,17 +310,17 @@ const App = () => {
       stories={stories} 
       loading={loading} 
       sliders={sliders}
-      isLoggedIn={isLoggedIn}
-      onLogout={handleLogout}
+      isLoggedIn={isLoggedIn}  
+      onLogout={handleLogout}     
     />
-  } />
-  
-  <Route path="/asad" element={<AsadPage isDarkMode={isDarkMode} />} />
-  <Route path="/chat" element={<Chat isDarkMode={isDarkMode} />} />
-  <Route path="/stories/:storyId" element={<StoriesPage isDarkMode={isDarkMode} stories={stories} />} />
-  
-  
-  <Route path="/login" element={
+    <PageTransition>
+      <FaqPage isDarkMode={isDarkMode} />
+    </PageTransition>
+  </>
+} />
+            <Route path="/dex" element={<DexPage isDarkMode={isDarkMode} />} />
+            
+         <Route path="/support" element={
   isLoggedIn ? (
     <>
       <CourseApp 
@@ -255,10 +334,8 @@ const App = () => {
         isLoggedIn={isLoggedIn}    
         onLogout={handleLogout}     
       />
-      <ProfilePage 
+      <SupportPage 
         isDarkMode={isDarkMode} 
-        setIsLoggedIn={setIsLoggedIn}
-        onLogout={handleLogout}
       />
     </>
   ) : (
@@ -281,102 +358,48 @@ const App = () => {
     </>
   )
 } />
-  
-  <Route path="/mentor" element={
-    <>
-      <CourseApp 
-        isDarkMode={isDarkMode} 
-        setIsDarkMode={setIsDarkMode} 
-        products={products} 
-        cryptoPrices={cryptoPrices} 
-        stories={stories} 
-        loading={loading} 
-        sliders={sliders}
-        isLoggedIn={isLoggedIn}  
-        onLogout={handleLogout}     
-      />
-      <MentorPage isDarkMode={isDarkMode} />
-    </>
-  } />
-   <Route  path="/products" element={<ProductsPage  isDarkMode={isDarkMode} />} />
-   <Route path="/faq" element={<FaqPage isDarkMode={isDarkMode} />} />
-
-  <Route path="/dex" element={<DexPage isDarkMode={isDarkMode} />} />
-  <Route 
-  path="/support" 
-  element={
-    isLoggedIn ? (
-      <SupportPage isDarkMode={isDarkMode} />
-    ) : (
-      <>
-        <CourseApp 
-          isDarkMode={isDarkMode} 
-          setIsDarkMode={setIsDarkMode} 
-          products={products} 
-          cryptoPrices={cryptoPrices} 
-          stories={stories} 
-          loading={loading} 
-          sliders={sliders}
-          isLoggedIn={isLoggedIn}    
-          onLogout={handleLogout}     
-        />
-        <LoginPage 
-          isDarkMode={isDarkMode} 
-          setIsLoggedIn={setIsLoggedIn} 
-        />
-      </>
-    )
-  } 
-/>
-
-
-
-<Route path="/profile" element={
-  isLoggedIn ? (
-    <>
-      <CourseApp 
-        isDarkMode={isDarkMode} 
-        setIsDarkMode={setIsDarkMode} 
-        products={products} 
-        cryptoPrices={cryptoPrices} 
-        stories={stories} 
-        loading={loading} 
-        sliders={sliders}
-        isLoggedIn={isLoggedIn}
-        onLogout={handleLogout}
-      />
-      <ProfilePage 
-        isDarkMode={isDarkMode} 
-        setIsLoggedIn={setIsLoggedIn}
-        onLogout={handleLogout}
-      />
-    </>
-  ) : (
-    <>
-      <CourseApp 
-        isDarkMode={isDarkMode} 
-        setIsDarkMode={setIsDarkMode} 
-        products={products} 
-        cryptoPrices={cryptoPrices} 
-        stories={stories} 
-        loading={loading} 
-        sliders={sliders}
-        isLoggedIn={isLoggedIn}
-        onLogout={handleLogout}
-      />
-      <LoginPage 
-        isDarkMode={isDarkMode} 
-        setIsLoggedIn={setIsLoggedIn} 
-      />
-    </>
-  )
-} />
-  
-
-  
-  </Routes>
- 
-
+            
+            <Route path="/profile" element={
+              isLoggedIn ? (
+                <>
+                  <CourseApp 
+                    isDarkMode={isDarkMode} 
+                    setIsDarkMode={setIsDarkMode} 
+                    products={products} 
+                    cryptoPrices={cryptoPrices} 
+                    stories={stories} 
+                    loading={loading} 
+                    sliders={sliders}
+                    isLoggedIn={isLoggedIn}
+                    onLogout={handleLogout}
+                  />
+                  <ProfilePage 
+                    isDarkMode={isDarkMode} 
+                    setIsLoggedIn={setIsLoggedIn}
+                    onLogout={handleLogout}
+                  />
+                </>
+              ) : (
+                <>
+                  <CourseApp 
+                    isDarkMode={isDarkMode} 
+                    setIsDarkMode={setIsDarkMode} 
+                    products={products} 
+                    cryptoPrices={cryptoPrices} 
+                    stories={stories} 
+                    loading={loading} 
+                    sliders={sliders}
+                    isLoggedIn={isLoggedIn}
+                    onLogout={handleLogout}
+                  />
+                  <LoginPage 
+                    isDarkMode={isDarkMode} 
+                    setIsLoggedIn={setIsLoggedIn} 
+                  />
+                </>
+              )
+            } />
+          </Routes>
         </OrientationLock>
       </BrowserRouter>
     </div>

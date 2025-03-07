@@ -67,7 +67,18 @@ const CoinIcon = ({ symbol }) => {
 
 const ThemeSwitcher = ({ isDarkMode, setIsDarkMode }) => {
   const handleCheckboxChange = () => {
-    setIsDarkMode(!isDarkMode);
+    const newThemeMode = !isDarkMode;
+    setIsDarkMode(newThemeMode);
+    
+    // ارسال پیام به اپ نیتیو
+    try {
+      if (window.ReactNativeWebView && typeof window.ReactNativeWebView.postMessage === 'function') {
+        window.ReactNativeWebView.postMessage(JSON.stringify({ theme: newThemeMode ? 'dark' : 'light' }));
+        console.log(`Theme change message sent to app: ${newThemeMode ? 'dark' : 'light'}`);
+      }
+    } catch (error) {
+      console.error('Error sending message to native app:', error);
+    }
   };
 
   return (
@@ -194,6 +205,18 @@ const CourseApp = ({  // این قسمت رو جایگزین کنید
   };
 
 
+
+  // ارسال وضعیت تم به اپ نیتیو در بارگذاری اولیه
+useEffect(() => {
+  try {
+    if (window.ReactNativeWebView && typeof window.ReactNativeWebView.postMessage === 'function') {
+      window.ReactNativeWebView.postMessage(JSON.stringify({ theme: isDarkMode ? 'dark' : 'light' }));
+      console.log(`Initial theme sent to app: ${isDarkMode ? 'dark' : 'light'}`);
+    }
+  } catch (error) {
+    console.error('Error sending initial theme to native app:', error);
+  }
+}, []);
 
 
 

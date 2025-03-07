@@ -1,10 +1,11 @@
+import PageTransition from './components/PageTransition';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeftCircle, ChevronDown, ChevronUp, RefreshCw, Search, X } from 'lucide-react';
 import { Store } from 'react-notifications-component';
 import faqService from './FaqService';
 
-const FaqPage = ({ isDarkMode }) => {
+const FaqPage = ({ isDarkMode , onBack }) => {
   const navigate = useNavigate();
   const [expandedId, setExpandedId] = useState(null);
   const [faqs, setFaqs] = useState([]);
@@ -106,6 +107,7 @@ const FaqPage = ({ isDarkMode }) => {
     setExpandedId(expandedId === id ? null : id);
   };
 
+  
   const handleRefresh = async () => {
     try {
       await faqService.syncFaqs();
@@ -142,7 +144,7 @@ const FaqPage = ({ isDarkMode }) => {
       {/* Header */}
       <div className={`h-16 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} flex items-center px-4 relative border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
         <button 
-          onClick={() => navigate(-1)} 
+          onClick={onBack || (() => navigate(-1))}
           className={`absolute left-4 ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}
         >
           <ArrowLeftCircle className="w-8 h-8" />
