@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeftCircle } from 'lucide-react';
 import PaymentCard from './PaymentCard';
@@ -57,18 +57,55 @@ const products = [
 
 const ProductsPage = ({ isDarkMode }) => {
   const navigate = useNavigate();
+  const [showCard, setShowCard] = useState(false);
+const [productExiting, setProductExiting] = useState(false);
+const cardRef = useRef(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
+
+
+  // انیمیشن ورود صفحه
+useEffect(() => {
+  setTimeout(() => {
+    setShowCard(true);
+  }, 100);
+}, []);
 
   const handleProductClick = (product) => {
     setSelectedProduct(product);
   };
 
-  return (
-    <div dir="rtl" className={`fixed inset-0 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
+  const closeCard = () => {
+    setProductExiting(true);
+    setTimeout(() => {
+      setShowCard(false);
+      setProductExiting(false);
+      navigate(-1);
+    }, 300);
+  };
+
+return (
+  <div 
+  className="fixed inset-0 z-[100] bg-black/40 overflow-hidden transition-opacity duration-300"
+  style={{ 
+    opacity: productExiting ? 0 : (showCard ? 1 : 0),
+    pointerEvents: productExiting || !showCard ? 'none' : 'auto',
+    transition: 'opacity 0.3s ease-out'
+  }}
+  >
+    <div 
+      ref={cardRef}
+      className={`fixed inset-0 w-full ${isDarkMode ? 'bg-gray-900' : 'bg-white'} shadow-lg transition-transform duration-300 ease-out`}
+      style={{ 
+        transform: productExiting 
+          ? 'translateX(100%)' 
+          : `translateX(${showCard ? '0' : '100%'})`,
+        transition: 'transform 0.3s cubic-bezier(0.17, 0.67, 0.24, 0.99), opacity 0.3s ease-out'
+      }}
+    >
       <div className="absolute top-0 left-0 right-0 z-30">
         <div className="relative h-16 flex items-center px-4">
           <button 
-            onClick={() => navigate(-1)}
+            onClick={closeCard}
             className={`absolute left-4 ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}
           >
             <ArrowLeftCircle className="w-8 h-8" />
@@ -80,7 +117,7 @@ const ProductsPage = ({ isDarkMode }) => {
       </div>
 
       <div className="absolute top-16 bottom-0 left-0 right-0 overflow-y-auto">
-      <div className="p-4 pb-4">
+        <div className="p-4 pb-4">
           <div className="space-y-3">
             {products.map((product) => (
               <div
@@ -117,17 +154,38 @@ const ProductsPage = ({ isDarkMode }) => {
           </div>
         </div>
       </div>
-
-      {selectedProduct && (
-        <PaymentCard
-          isDarkMode={isDarkMode}
-          onClose={() => setSelectedProduct(null)}
-          productTitle={selectedProduct.title}
-          price={selectedProduct.price}
-        />
-      )}
     </div>
-  );
+
+    {selectedProduct && (
+      <PaymentCard
+        isDarkMode={isDarkMode}
+        onClose={() => setSelectedProduct(null)}
+        productTitle={selectedProduct.title}
+        price={selectedProduct.price}
+      />
+    )}
+
+    <style jsx global>{`
+      @keyframes slideInRight {
+        from {
+          transform: translateX(100%);
+        }
+        to {
+          transform: translateX(0);
+        }
+      }
+      
+      @keyframes slideOutRight {
+        from {
+          transform: translateX(0);
+        }
+        to {
+          transform: translateX(100%);
+        }
+      }
+    `}</style>
+  </div>
+);
 };
 
 export default ProductsPage;

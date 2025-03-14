@@ -3,6 +3,10 @@ import { Menu, Play, Home, PlayCircle, Calendar, UserX,UserCheck, Headphones } f
 import { Toaster, toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { Store } from 'react-notifications-component';
+import CustomLoading from './CustomLoading';
+
+
+
 
 
 
@@ -376,9 +380,7 @@ useEffect(() => {
   };
 
   if (loading) {
-    return <div className="flex justify-center items-center min-h-screen">
-      <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-    </div>;
+    return <CustomLoading />;
   }
 
   return (
