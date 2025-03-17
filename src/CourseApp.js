@@ -553,7 +553,7 @@ useEffect(() => {
       {/* Products */}
       <div className=" p-4">
       <h2 className={`text-xl mb-2   ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-  محصولات فروشگاه
+خدمات ما
 </h2>
         <div className="relative">
           <div 

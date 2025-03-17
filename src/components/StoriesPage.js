@@ -146,12 +146,8 @@ const StoriesPage = ({ isDarkMode, stories = [] }) => {
             // برو به عکس بعدی در همین استوری
             setCurrentImageIndex((prev) => prev + 1);
             return 0;
-          } else if (currentStoryIndex < stories.length - 1) {
-            // برو به استوری بعدی
-            goToNextStory();
-            return 0;
           } else {
-            // همه استوری‌ها تمام شده، از صفحه خارج شو
+            // وقتی به آخرین تصویر رسیدیم، به صفحه اصلی برگرد
             navigate(-1);
             return 100;
           }
@@ -231,7 +227,7 @@ const StoriesPage = ({ isDarkMode, stories = [] }) => {
       setIsExiting(false);
     }
   };
-  
+    
 
   const handleTouchEnd = (e) => {
     if (!isDragging || isLoading || transitionDirection) return;
@@ -310,7 +306,8 @@ const StoriesPage = ({ isDarkMode, stories = [] }) => {
       setCurrentImageIndex(prev => prev + 1);
       startProgress(0);
     } else {
-      goToNextStory();
+      // وقتی همه تصاویر استوری تمام شد، به صفحه اصلی برگرد
+      navigate(-1);
     }
   };
 
@@ -320,7 +317,9 @@ const StoriesPage = ({ isDarkMode, stories = [] }) => {
       setCurrentImageIndex(prev => prev - 1);
       startProgress(0);
     } else {
-      goToPrevStory();
+      // وقتی در تصویر اول هستیم، همان تصویر را از ابتدا نمایش بده
+      setCurrentImageIndex(0);
+      startProgress(0);
     }
   };
 
