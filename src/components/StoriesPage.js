@@ -147,9 +147,9 @@ const StoriesPage = ({ isDarkMode, stories = [] }) => {
             setCurrentImageIndex((prev) => prev + 1);
             return 0;
           } else {
-            // وقتی به آخرین تصویر رسیدیم، به صفحه اصلی برگرد
-            navigate(-1);
-            return 100;
+            // وقتی به آخرین تصویر رسیدیم، به استوری بعدی برو
+            goToNextStory();
+            return 0;
           }
         }
         
@@ -175,6 +175,15 @@ const StoriesPage = ({ isDarkMode, stories = [] }) => {
     };
   }, [currentStoryIndex, currentImageIndex, stories.length, isLoading, isDragging]);
 
+  // تعیین استایل مبتنی بر حالت کشیدن
+  const storyContainerStyle = {
+    transform: isDragging 
+      ? `translate3d(${dragOffset.x}px, ${dragOffset.y}px, 0) scale(${1 - Math.abs(dragOffset.y) / 800})` 
+      : 'translate3d(0, 0, 0) scale(1)',
+    opacity: isDragging ? 1 - Math.abs(dragOffset.y) / 400 : 1,
+    transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  };
+
   // توقف موقت استوری با تاچ
   const handleTouchStart = (e) => {
     if (isLoading || transitionDirection) return;
@@ -185,6 +194,9 @@ const StoriesPage = ({ isDarkMode, stories = [] }) => {
     setIsDragging(true);
     setDragOffset({ x: 0, y: 0 });
     
+    // ذخیره زمان شروع تاچ
+    touchTimeoutRef.current = e.timeStamp;
+    
     // توقف پیشرفت
     clearInterval(progressInterval.current);
     setIsPaused(true);
@@ -192,14 +204,14 @@ const StoriesPage = ({ isDarkMode, stories = [] }) => {
 
   const handleTouchMove = (e) => {
     if (!isDragging || isLoading || transitionDirection) return;
-  
+    
     const touchX = e.touches[0].clientX;
     const touchY = e.touches[0].clientY;
   
     // محاسبه میزان حرکت
     const deltaX = touchX - touchStartX;
     const deltaY = touchY - touchStartY;
-  
+    
     // تشخیص حرکت عمودی به سمت پایین (برای خروج)
     if (deltaY > 10 && Math.abs(deltaY) > Math.abs(deltaX)) {
       const boundedDeltaY = Math.max(0, Math.min(DRAG_LIMIT_Y, deltaY));
@@ -228,7 +240,6 @@ const StoriesPage = ({ isDarkMode, stories = [] }) => {
     }
   };
     
-
   const handleTouchEnd = (e) => {
     if (!isDragging || isLoading || transitionDirection) return;
     
@@ -238,10 +249,10 @@ const StoriesPage = ({ isDarkMode, stories = [] }) => {
     
     const deltaX = touchEndX - touchStartX;
     const deltaY = touchEndY - touchStartY;
+    const swipeSpeed = Math.abs(deltaX) / (e.timeStamp - touchTimeoutRef.current);
     
     // اگر در حال خروج هستیم و به اندازه کافی کشیده شده
     if (isExiting && deltaY > VERTICAL_SWIPE_THRESHOLD) {
-      // اضافه کردن انیمیشن خروج نرم
       setDragOffset({ x: 0, y: window.innerHeight });
       setTimeout(() => {
         navigate(-1);
@@ -250,29 +261,22 @@ const StoriesPage = ({ isDarkMode, stories = [] }) => {
     }
     
     // اگر حرکت افقی وجود دارد و بیشتر از آستانه تعیین شده است
-    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > SWIPE_THRESHOLD) {
+    // اضافه کردن محدودیت سرعت برای جلوگیری از پرش چند صفحه‌ای
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > SWIPE_THRESHOLD && swipeSpeed < 2.5) {
       if (deltaX < 0) {
         // کشیدن به سمت چپ - استوری بعدی
-        if (currentStoryIndex < stories.length - 1) {
-          setTransitionDirection('next');
-          setTimeout(() => {
-            goToNextStory();
-            setTimeout(() => setTransitionDirection(null), 150); // Reduced timing
-          }, 25); // Reduced timing
-        } else {
-          resetPosition();
-        }
+        setTransitionDirection('next');
+        setTimeout(() => {
+          goToNextStory();
+          setTimeout(() => setTransitionDirection(null), 150);
+        }, 25);
       } else {
         // کشیدن به سمت راست - استوری قبلی
-        if (currentStoryIndex > 0) {
-          setTransitionDirection('prev');
-          setTimeout(() => {
-            goToPrevStory();
-            setTimeout(() => setTransitionDirection(null), 150); // Reduced timing
-          }, 25); // Reduced timing
-        } else {
-          resetPosition();
-        }
+        setTransitionDirection('prev');
+        setTimeout(() => {
+          goToPrevStory();
+          setTimeout(() => setTransitionDirection(null), 150);
+        }, 25);
       }
     } else if (Math.abs(deltaX) < 10 && Math.abs(deltaY) < 10) {
       // کلیک ساده، بخش بعدی یا قبلی استوری
@@ -289,6 +293,10 @@ const StoriesPage = ({ isDarkMode, stories = [] }) => {
       // کشیدن کمتر از آستانه، برگشت به حالت اولیه
       resetPosition();
     }
+
+    // ادامه پیشرفت از همان نقطه
+    setIsPaused(false);
+    startProgress(progress);
   };
 
   // برگرداندن موقعیت محتوا به حالت اولیه
@@ -306,8 +314,8 @@ const StoriesPage = ({ isDarkMode, stories = [] }) => {
       setCurrentImageIndex(prev => prev + 1);
       startProgress(0);
     } else {
-      // وقتی همه تصاویر استوری تمام شد، به صفحه اصلی برگرد
-      navigate(-1);
+      // وقتی همه تصاویر استوری تمام شد، به استوری بعدی برو
+      goToNextStory();
     }
   };
 
@@ -325,25 +333,26 @@ const StoriesPage = ({ isDarkMode, stories = [] }) => {
 
   // رفتن به استوری بعدی
   const goToNextStory = () => {
-    if (currentStoryIndex < stories.length - 1) {
-      setCurrentStoryIndex(prev => prev + 1);
-      setCurrentImageIndex(0);
-      startProgress(0);
+    // اگر در آخرین استوری هستیم، به اولین استوری برگردیم
+    if (currentStoryIndex === stories.length - 1) {
+      setCurrentStoryIndex(0);
     } else {
-      navigate(-1); // خروج از صفحه استوری
+      setCurrentStoryIndex(prev => prev + 1);
     }
+    setCurrentImageIndex(0);
+    startProgress(0);
   };
 
   // رفتن به استوری قبلی
   const goToPrevStory = () => {
-    if (currentStoryIndex > 0) {
-      setCurrentStoryIndex(prev => prev - 1);
-      const prevGallery = stories[currentStoryIndex - 1]?.meta?.gallery_images || [];
-      setCurrentImageIndex(0); // همیشه از تصویر اول استوری قبلی شروع کنیم
-      startProgress(0);
+    // اگر در اولین استوری هستیم، به آخرین استوری برویم
+    if (currentStoryIndex === 0) {
+      setCurrentStoryIndex(stories.length - 1);
     } else {
-      navigate(-1); // خروج از صفحه استوری
+      setCurrentStoryIndex(prev => prev - 1);
     }
+    setCurrentImageIndex(0);
+    startProgress(0);
   };
 
   if (!stories || stories.length === 0) {
@@ -369,15 +378,6 @@ const StoriesPage = ({ isDarkMode, stories = [] }) => {
     }
     
     return {};
-  };
-
-  // تعیین استایل مبتنی بر حالت کشیدن
-  const storyContainerStyle = {
-    transform: isDragging 
-      ? `translate3d(${dragOffset.x}px, ${dragOffset.y}px, 0) scale(${1 - Math.abs(dragOffset.y) / 800})` 
-      : 'translate3d(0, 0, 0) scale(1)',
-    opacity: isDragging ? 1 - Math.abs(dragOffset.y) / 400 : 1,
-    transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
   };
 
   return (

@@ -1,15 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Menu, Play, Home, PlayCircle, Calendar, UserX,UserCheck, Headphones } from 'lucide-react';
+import { Menu, Play, Home, PlayCircle, Calendar, UserX, UserCheck, Headphones } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { Store } from 'react-notifications-component';
 import CustomLoading from './CustomLoading';
-
-
-
-
-
-
 
 const CoinIcon = ({ symbol }) => {
   // SVG icons for cryptocurrencies...
@@ -160,9 +154,7 @@ const CourseApp = ({  // این قسمت رو جایگزین کنید
   const slidersRef = useRef(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [currentSlide, setCurrentSlide] = useState(0); // برای ردیابی اسلاید فعلی
-
-
-
+  const [autoplayEnabled, setAutoplayEnabled] = useState(true); // افزودن state جدید
 
   const handleVIPClick = () => {
     const userInfo = localStorage.getItem('userInfo') || sessionStorage.getItem('userInfo');
@@ -208,8 +200,6 @@ const CourseApp = ({  // این قسمت رو جایگزین کنید
     navigate('/chat');
   };
 
-
-
   // ارسال وضعیت تم به اپ نیتیو در بارگذاری اولیه
 useEffect(() => {
   try {
@@ -220,9 +210,13 @@ useEffect(() => {
   } catch (error) {
     console.error('Error sending initial theme to native app:', error);
   }
+  
+  // ذخیره وضعیت اتوپلی در localStorage
+  const savedAutoplayState = localStorage.getItem('sliderAutoplayEnabled');
+  if (savedAutoplayState !== null) {
+    setAutoplayEnabled(savedAutoplayState === 'true');
+  }
 }, []);
-
-
 
   // دریافت قیمت‌های ارز دیجیتال
   useEffect(() => {
@@ -313,14 +307,6 @@ useEffect(() => {
     return () => clearInterval(interval);
   }, []);
 
-
-
-
-
-
-
-  /////////////////////
-
   // اضافه کردن یک useEffect جدید برای هندل کردن اسکرول دستی
   useEffect(() => {
     if (!slidersRef.current) return;
@@ -329,7 +315,11 @@ useEffect(() => {
     
     const handleScroll = () => {
       const index = Math.round(slider.scrollLeft / slider.offsetWidth);
-      setCurrentSlide(index);
+      
+      // اگر شماره اسلاید تغییر کرده باشد، به معنی تعامل کاربر است
+      if (index !== currentSlide) {
+        setCurrentSlide(index);
+      }
     };
   
     slider.addEventListener('scroll', handleScroll);
@@ -337,37 +327,74 @@ useEffect(() => {
     return () => {
       slider.removeEventListener('scroll', handleScroll);
     };
-  }, []);
-  ////////////////////
+  }, [currentSlide]);
 
-// اضافه کردن اتوچنج به اسلایدر
+// اتوچنج اسلایدر (فقط اگر autoplayEnabled فعال باشد)
 useEffect(() => {
-  if (sliders.length === 0) return;
+  // اگر اسلایدری وجود ندارد یا autoplayEnabled غیرفعال است، اجرا نشود
+  if (sliders.length === 0 || !autoplayEnabled) return;
+  
+  console.log('اتوپلی اسلایدر فعال است');
   
   const interval = setInterval(() => {
     if (slidersRef.current) {
-      if (currentSlide >= sliders.length - 1) {
-        setCurrentSlide(0);
-        slidersRef.current.scrollTo({
-          left: 0,
-          behavior: 'smooth'
-        });
-      } else {
-        setCurrentSlide(prev => prev + 1);
-        slidersRef.current.scrollTo({
-          left: slidersRef.current.offsetWidth * (currentSlide + 1),
-          behavior: 'smooth'
-        });
-      }
+      const nextSlide = (currentSlide + 1) % sliders.length;
+      setCurrentSlide(nextSlide);
+      
+      slidersRef.current.scrollTo({
+        left: nextSlide * slidersRef.current.clientWidth,
+        behavior: 'smooth'
+      });
     }
-  }, 3000);  // هر 3 ثانیه
-
+  }, 4000);  // هر 4 ثانیه
+  
   return () => clearInterval(interval);
-}, [currentSlide, sliders.length]);
-  /////////////////////////////////------------------------------------------
+}, [currentSlide, sliders.length, autoplayEnabled]);
 
+// افزودن useEffect برای مدیریت تعامل کاربر
+useEffect(() => {
+  const slider = slidersRef.current;
+  if (!slider) return;
 
-  /////////////////////////////////------------------------------------------
+  // غیرفعال کردن دائمی اتوچنج با تعامل کاربر
+  const disableAutoplay = () => {
+    // فقط اگر قبلاً اتوپلی فعال بوده، آن را غیرفعال کنیم
+    if (autoplayEnabled) {
+      console.log('اتوپلی اسلایدر غیرفعال شد');
+      setAutoplayEnabled(false);
+      // ذخیره وضعیت در localStorage برای حفظ آن بین رفرش‌های صفحه
+      localStorage.setItem('sliderAutoplayEnabled', 'false');
+    }
+  };
+
+  // ایجاد event listener برای همه انواع تعامل کاربر
+  const handleUserInteraction = () => {
+    disableAutoplay();
+  };
+
+  slider.addEventListener('touchstart', handleUserInteraction, { passive: true });
+  slider.addEventListener('mousedown', handleUserInteraction);
+  slider.addEventListener('wheel', handleUserInteraction);
+  slider.addEventListener('scroll', handleUserInteraction, { passive: true });
+  
+  // اضافه کردن listener برای کلیک روی دکمه‌های navigation
+  const navButtons = document.querySelectorAll('.slider-nav-button');
+  navButtons.forEach(button => {
+    button.addEventListener('click', handleUserInteraction);
+  });
+
+  return () => {
+    slider.removeEventListener('touchstart', handleUserInteraction);
+    slider.removeEventListener('mousedown', handleUserInteraction);
+    slider.removeEventListener('wheel', handleUserInteraction);
+    slider.removeEventListener('scroll', handleUserInteraction);
+    
+    navButtons.forEach(button => {
+      button.removeEventListener('click', handleUserInteraction);
+    });
+  };
+}, [autoplayEnabled]);
+
   const scrollToIndex = (index) => {
     setCurrentIndex(index);
     if (sliderRef.current) {
@@ -420,7 +447,7 @@ useEffect(() => {
 <div className="p-4">
   <div 
     ref={cryptoSliderRef}
-    className="flex overflow-x-auto gap-2 pb-1 -mx-2 px-1 scrollbar-hide snap-x snap-mandatory touch-pan-x"
+    className="flex overflow-x-auto gap-3 pb-1 -mx-2 px-1 scrollbar-hide snap-x snap-mandatory touch-pan-x"
     style={{
       scrollbarWidth: 'none',
       msOverflowStyle: 'none'
@@ -464,7 +491,7 @@ useEffect(() => {
 {/* Story Highlights */}
 <div className="px-4">
   <div className="relative">
-  <div className="flex overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory">
+  <div className="flex overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory gap-0.5">
   {stories.map((story, index) => (
         <div 
           key={story.id}
@@ -472,7 +499,7 @@ useEffect(() => {
           onClick={() => navigate(`/stories/${story.id}`)}
         >
           <div className="flex flex-col items-center gap-1">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 ">
+            <div className="w-16 h-16">
               <div className={`w-full h-full rounded-full p-0.5 ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
                 {story._embedded && story._embedded['wp:featuredmedia'] && (
                   <img
@@ -483,7 +510,7 @@ useEffect(() => {
                 )}
               </div>
             </div>
-            <div className="flex flex-col items-center gap-1">
+            <div className="flex flex-col items-center gap-0.5">
               <span className={`text-sm font-medium text-center line-clamp-1 w-24 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 {story.title.rendered}
               </span>
@@ -531,25 +558,10 @@ useEffect(() => {
       ))}
     </div>
 
-    {/* Navigation Dots */}
-    <div className="absolute bottom-4 left-0 right-0">
-      <div className="flex justify-center gap-2">
-        {/*sliders.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => setCurrentSlide(index)}
-            className={`w-2 h-2 rounded-full transition-all ${
-              currentSlide === index ? 'bg-blue-500 w-4' : 'bg-white bg-opacity-50'
-            }`}
-          />
-        ))*/}
-      </div>
-    </div>
+    {/* Navigation & Control */}
+   
   </div>
 </div>
-
-
-
       {/* Products */}
       <div className=" p-4">
       <h2 className={`text-xl mb-2   ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -586,7 +598,7 @@ useEffect(() => {
                   </div>
                   <div className="w-full space-y-2">
                   <h3 className={`font-medium text-sm text-center line-clamp-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>  {product.name}</h3>
-                  <div className={`text-sm text-center font-bold ${isDarkMode ? 'text-white' : 'text-green-600'}`}>  {parseInt(product.price).toLocaleString()} تومان</div>
+                  <div className={`text-sm text-center font-bold ${isDarkMode ? 'text-white' : 'text-green-600'}`}>  {parseInt(product.price).toLocaleString()} دلار</div>
                   
                   </div>
                 </div>
