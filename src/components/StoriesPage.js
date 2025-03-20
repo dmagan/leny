@@ -279,17 +279,46 @@ const StoriesPage = ({ isDarkMode, stories = [] }) => {
         }, 25);
       }
     } else if (Math.abs(deltaX) < 10 && Math.abs(deltaY) < 10) {
-      // کلیک ساده، بخش بعدی یا قبلی استوری
-      const halfWidth = window.innerWidth / 2;
-      if (touchEndX < halfWidth) {
-        // کلیک سمت چپ - بخش قبلی
-        goToPrevImage();
-      } else {
-        // کلیک سمت راست - بخش بعدی
-        goToNextImage();
-      }
-      resetPosition();
+  // تعیین آیا این یک کلیک سریع است یا فقط نگه‌داشتن انگشت
+  const touchDuration = e.timeStamp - touchTimeoutRef.current;
+  
+  // اگر لمس کمتر از 300 میلی‌ثانیه باشد، آن را به عنوان کلیک در نظر بگیرید
+  if (touchDuration < 300) {
+    // کلیک ساده، بخش بعدی یا قبلی استوری
+    const halfWidth = window.innerWidth / 2;
+    if (touchEndX < halfWidth) {
+      // کلیک سمت چپ - بخش قبلی
+      goToPrevImage();
     } else {
+      // کلیک سمت راست - بخش بعدی
+      goToNextImage();
+    }
+  } else {
+    // این فقط نگه‌داشتن و رها کردن است - فقط ادامه دادن از همان نقطه
+    // به جای تعیین مجدد پیشرفت، فقط شمارنده را دوباره شروع کنیم
+    clearInterval(progressInterval.current);
+    progressInterval.current = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 100) {
+          clearInterval(progressInterval.current);
+          if (currentImageIndex < currentGallery.length - 1) {
+            // برو به عکس بعدی در همین استوری
+            setCurrentImageIndex((prev) => prev + 1);
+            return 0;
+          } else {
+            // وقتی به آخرین تصویر رسیدیم، از استوری خارج شویم
+            navigate(-1);
+            return 0;
+          }
+        }
+        
+        return prev + 100 / (STORY_DURATION / UPDATE_INTERVAL);
+      });
+    }, UPDATE_INTERVAL);
+  }
+  resetPosition();
+  setIsPaused(false);
+}else {
       // کشیدن کمتر از آستانه، برگشت به حالت اولیه
       resetPosition();
     }
@@ -309,16 +338,16 @@ const StoriesPage = ({ isDarkMode, stories = [] }) => {
   };
 
   // رفتن به تصویر بعدی در استوری فعلی
-  const goToNextImage = () => {
-    if (currentImageIndex < currentGallery.length - 1) {
-      setCurrentImageIndex(prev => prev + 1);
-      startProgress(0);
-    } else {
-      // وقتی همه تصاویر استوری تمام شد، به استوری بعدی برو
-      goToNextStory();
-    }
-  };
-
+// رفتن به تصویر بعدی در استوری فعلی
+const goToNextImage = () => {
+  if (currentImageIndex < currentGallery.length - 1) {
+    setCurrentImageIndex(prev => prev + 1);
+    startProgress(0);
+  } else {
+    // وقتی در آخرین تصویر هستیم و سمت راست را ضربه می‌زنیم، از استوری خارج شویم
+    navigate(-1);
+  }
+};
   // رفتن به تصویر قبلی در استوری فعلی
   const goToPrevImage = () => {
     if (currentImageIndex > 0) {
@@ -381,15 +410,18 @@ const StoriesPage = ({ isDarkMode, stories = [] }) => {
   };
 
   return (
-    <div
-      ref={containerRef}
-      className="fixed inset-0 bg-black select-none overflow-hidden perspective"
-      style={{
-        WebkitUserSelect: 'none',
-        WebkitTouchCallout: 'none',
-        perspective: '1200px',
-      }}
-    >
+<div
+  ref={containerRef}
+  className="fixed inset-0 bg-black select-none overflow-hidden perspective"
+  style={{
+    WebkitUserSelect: 'none',
+    WebkitTouchCallout: 'none',
+    WebkitTapHighlightColor: 'transparent',
+    userSelect: 'none',
+    touchAction: 'manipulation',
+    perspective: '1200px',
+  }}
+>
       {/* دکمه بستن استوری */}
       <div className="absolute top-0 right-0 z-50 p-4">
         <button
@@ -426,16 +458,21 @@ const StoriesPage = ({ isDarkMode, stories = [] }) => {
 
       {/* محتوای اصلی */}
       <div
-        ref={contentRef}
-        className={`h-full w-full ${isExiting ? 'exiting' : ''}`}
-        style={{
-          ...storyContainerStyle,
-          ...getTransitionStyle(),
-        }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
+  ref={contentRef}
+  className={`h-full w-full ${isExiting ? 'exiting' : ''}`}
+  style={{
+    ...storyContainerStyle,
+    ...getTransitionStyle(),
+    WebkitTouchCallout: 'none',
+    WebkitUserSelect: 'none',
+    WebkitTapHighlightColor: 'transparent',
+    userSelect: 'none',
+    touchAction: 'manipulation',
+  }}
+  onTouchStart={handleTouchStart}
+  onTouchMove={handleTouchMove}
+  onTouchEnd={handleTouchEnd}
+>
         <div className="absolute inset-0 z-10">
           {isLoading ? (
             <div className="h-full w-full flex items-center justify-center bg-black">
@@ -443,25 +480,42 @@ const StoriesPage = ({ isDarkMode, stories = [] }) => {
             </div>
           ) : (
             <img
-              src={currentImageUrl}
-              alt={stories[currentStoryIndex]?.title?.rendered || 'Story image'}
-              className="h-full w-full object-cover"
-            />
+  src={currentImageUrl}
+  alt={stories[currentStoryIndex]?.title?.rendered || 'Story image'}
+  className="h-full w-full object-cover"
+  style={{
+    WebkitTouchCallout: 'none',
+    WebkitUserSelect: 'none',
+    pointerEvents: 'none',
+  }}
+/>
           )}
         </div>
       </div>
 
       {/* ایجاد استایل‌های لازم برای افکت‌ها */}
       <style jsx>{`
-        .perspective {
-          perspective: 1200px;
-        }
-        
-        .exiting {
-          filter: brightness(0.9);
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-      `}</style>
+  .perspective {
+    perspective: 1200px;
+  }
+  
+  .exiting {
+    filter: brightness(0.9);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* Disable iOS text selection and highlighting */
+  * {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+  
+  img {
+    -webkit-user-drag: none;
+  }
+`}</style>
     </div>
   );
 };

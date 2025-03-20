@@ -212,10 +212,9 @@ useEffect(() => {
   }
   
   // ذخیره وضعیت اتوپلی در localStorage
-  const savedAutoplayState = localStorage.getItem('sliderAutoplayEnabled');
-  if (savedAutoplayState !== null) {
-    setAutoplayEnabled(savedAutoplayState === 'true');
-  }
+ // همیشه اتوپلی را فعال نگه دار
+localStorage.removeItem('sliderAutoplayEnabled');
+setAutoplayEnabled(true);
 }, []);
 
   // دریافت قیمت‌های ارز دیجیتال
@@ -357,15 +356,20 @@ useEffect(() => {
   if (!slider) return;
 
   // غیرفعال کردن دائمی اتوچنج با تعامل کاربر
-  const disableAutoplay = () => {
-    // فقط اگر قبلاً اتوپلی فعال بوده، آن را غیرفعال کنیم
-    if (autoplayEnabled) {
-      console.log('اتوپلی اسلایدر غیرفعال شد');
-      setAutoplayEnabled(false);
-      // ذخیره وضعیت در localStorage برای حفظ آن بین رفرش‌های صفحه
-      localStorage.setItem('sliderAutoplayEnabled', 'false');
-    }
-  };
+  // غیرفعال کردن موقت اتوچنج با تعامل کاربر
+const disableAutoplay = () => {
+  // فقط موقتاً غیرفعال می‌کنیم، بدون ذخیره در localStorage
+  if (autoplayEnabled) {
+    console.log('اتوپلی اسلایدر موقتاً غیرفعال شد');
+    setAutoplayEnabled(false);
+    
+    // بعد از چند ثانیه دوباره فعال می‌کنیم
+    setTimeout(() => {
+      setAutoplayEnabled(true);
+      console.log('اتوپلی اسلایدر دوباره فعال شد');
+    }, 7000); // 10 ثانیه بعد
+  }
+};
 
   // ایجاد event listener برای همه انواع تعامل کاربر
   const handleUserInteraction = () => {

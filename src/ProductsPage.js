@@ -4,13 +4,7 @@ import { ArrowLeftCircle } from 'lucide-react';
 import PaymentCard from './PaymentCard';
 
 const products = [
-  { 
-    id: 1,
-    title: "پکیج VIPسه ماهه",
-    duration: "دسترسی 90 روزه",
-    price: "79",
-    description: "دسترسی به تمام سیگنال‌های معاملاتی و تحلیل‌های تکنیکال"
-  },
+ 
   {
     id: 2, 
     title: "پکیج VIP شش ماهه",
