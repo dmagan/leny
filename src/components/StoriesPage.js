@@ -449,26 +449,29 @@ if (touchDuration < 300) {
     }
 
     // Resume progress from same point
-    setIsPaused(false);
-    startProgress(progress);
+  // Resume progress from same point without restarting
+setIsPaused(false);
+if (!isExiting && Math.abs(deltaX) >= 10 || Math.abs(deltaY) >= 10) {
+  startProgress(progress);
+}
   };
 
   // Reset content position
-  const resetPosition = () => {
-    setDragOffset({ x: 0, y: 0 });
-    setIsExiting(false);
-    
-    // Restart progress
-    startProgress(progress);
-    
-    // If video, resume playback
-    if (getCurrentMediaType() === 'video' && videoRef.current) {
-      videoRef.current.play();
-    }
-    
-    setIsPaused(false);
-  };
-
+ // Reset content position
+const resetPosition = () => {
+  setDragOffset({ x: 0, y: 0 });
+  setIsExiting(false);
+  
+  // Resume progress from where it was paused
+  startProgress(progress);
+  
+  // If video, resume playback
+  if (getCurrentMediaType() === 'video' && videoRef.current) {
+    videoRef.current.play();
+  }
+  
+  setIsPaused(false);
+};
   // Go to next image in current story
 const goToNextImage = () => {
   if (currentImageIndex < currentGallery.length - 1) {
