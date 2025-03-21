@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X } from 'lucide-react';
+import { X, Volume2, VolumeX } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import CustomLoading from '../CustomLoading';
 
@@ -11,109 +11,172 @@ const StoriesPage = ({ isDarkMode, stories = [] }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [preloadedImages, setPreloadedImages] = useState({});
+  const [preloadedMedia, setPreloadedMedia] = useState({});
   const [isLoading, setIsLoading] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
   
-  // برای مدیریت حرکت‌های لمسی و افکت‌ها
+  // For touch gestures and effects
   const [touchStartX, setTouchStartX] = useState(0);
   const [touchStartY, setTouchStartY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isExiting, setIsExiting] = useState(false);
-  const [transitionDirection, setTransitionDirection] = useState(null); // 'next', 'prev', or null
+  const [transitionDirection, setTransitionDirection] = useState(null);
 
+  // References
   const progressInterval = useRef(null);
   const contentRef = useRef(null);
   const containerRef = useRef(null);
   const touchTimeoutRef = useRef(null);
+  const videoRef = useRef(null);
 
-  const STORY_DURATION = 15000;
+  const STORY_DURATION = 15000; // 15 seconds for images
   const UPDATE_INTERVAL = 100;
-  const SWIPE_THRESHOLD = 70; // آستانه برای تشخیص swipe (کمی بیشتر از قبل)
-  const VERTICAL_SWIPE_THRESHOLD = 100; // آستانه بزرگتر برای کشیدن عمودی و خروج
-  const DRAG_LIMIT_Y = 150; // حداکثر کشیدن عمودی
-  const DRAG_LIMIT_X = 250; // حداکثر کشیدن افقی
+  const SWIPE_THRESHOLD = 70;
+  const VERTICAL_SWIPE_THRESHOLD = 100;
+  const DRAG_LIMIT_Y = 150;
+  const DRAG_LIMIT_X = 250;
 
-  const currentGallery = stories[currentStoryIndex]?.meta?.gallery_images || [];
-  const currentImageUrl = currentGallery[currentImageIndex] || 
-                          stories[currentStoryIndex]?._embedded?.['wp:featuredmedia']?.[0]?.source_url || '';
+  const currentStory = stories[currentStoryIndex];
+  // Get media gallery for current story
+  const currentGallery = processStoryGallery(currentStory);
+  
+  // Process the gallery data from the story
+  function processStoryGallery(story) {
+    if (!story) return [];
+    
+    // Check for the new gallery_media format that includes type
+    if (story.meta?.gallery_media && Array.isArray(story.meta.gallery_media)) {
+      return story.meta.gallery_media;
+    }
+    
+    // Legacy format: convert simple image URLs to media objects
+    if (story.meta?.gallery_images && Array.isArray(story.meta.gallery_images)) {
+      return story.meta.gallery_images.map(url => ({
+        id: Math.random().toString(),
+        url: url,
+        type: detectMediaType(url)
+      }));
+    }
+    
+    // If no gallery, use featured image
+    if (story._embedded?.['wp:featuredmedia']?.[0]?.source_url) {
+      return [{
+        id: 'featured',
+        url: story._embedded['wp:featuredmedia'][0].source_url,
+        type: detectMediaType(story._embedded['wp:featuredmedia'][0].source_url)
+      }];
+    }
+    
+    return [];
+  }
+  
+  // Helper to detect media type from URL
+  function detectMediaType(url) {
+    if (!url) return 'image';
+    const extension = url.split('.').pop().toLowerCase();
+    const videoExtensions = ['mp4', 'webm', 'ogg', 'mov', 'avi', 'm4v'];
+    return videoExtensions.includes(extension) ? 'video' : 'image';
+  }
 
-  // پیش‌بارگذاری تصاویر
+  // Get the type of current media item
+  const getCurrentMediaType = () => {
+    if (currentGallery && currentGallery.length > 0) {
+      const currentItem = currentGallery[currentImageIndex];
+      if (currentItem) {
+        return currentItem.type || detectMediaType(currentItem.url) || 'image';
+      }
+    }
+    return 'image';
+  };
+
+  // Get the URL of current media item
+  const getCurrentMediaUrl = () => {
+    if (currentGallery && currentGallery.length > 0) {
+      const currentItem = currentGallery[currentImageIndex];
+      if (currentItem) {
+        return currentItem.url || currentItem;
+      }
+    }
+    
+    // Fallback to featured image
+    return stories[currentStoryIndex]?._embedded?.['wp:featuredmedia']?.[0]?.source_url || '';
+  };
+
+  // Preload media
   useEffect(() => {
-    const preloadImages = async () => {
+    const preloadMedia = async () => {
       if (stories.length === 0) return;
 
       setIsLoading(true);
 
-      // پیش‌بارگذاری تصویر فعلی
+      // Preload current media
       const currentStory = stories[currentStoryIndex];
       if (!currentStory) return;
 
-      const gallery = currentStory.meta?.gallery_images || [];
+      const gallery = processStoryGallery(currentStory);
       
-      // اگر گالری خالی است، تصویر اصلی استوری را بارگذاری کنیم
-      if (gallery.length === 0 && currentStory._embedded?.['wp:featuredmedia']) {
-        const featuredImageUrl = currentStory._embedded['wp:featuredmedia'][0]?.source_url;
+      // Preload current media item
+      if (gallery[currentImageIndex]) {
+        const mediaItem = gallery[currentImageIndex];
+        const mediaUrl = mediaItem.url;
+        const mediaType = mediaItem.type || detectMediaType(mediaUrl);
         
-        if (featuredImageUrl && !preloadedImages[featuredImageUrl]) {
-          await preloadImage(featuredImageUrl);
-          setPreloadedImages(prev => ({ ...prev, [featuredImageUrl]: true }));
-        }
-        
-        setIsLoading(false);
-        return;
-      }
-
-      // بارگذاری تصویر فعلی در گالری
-      if (gallery[currentImageIndex] && !preloadedImages[gallery[currentImageIndex]]) {
-        await preloadImage(gallery[currentImageIndex]);
-        setPreloadedImages(prev => ({ ...prev, [gallery[currentImageIndex]]: true }));
-      }
-
-      // پیش‌بارگذاری تصاویر بعدی در گالری فعلی
-      const nextImagesToPreload = gallery.slice(currentImageIndex + 1, currentImageIndex + 3);
-      for (const imgUrl of nextImagesToPreload) {
-        if (!preloadedImages[imgUrl]) {
-          preloadImage(imgUrl).then(() => {
-            setPreloadedImages(prev => ({ ...prev, [imgUrl]: true }));
-          });
+        if (mediaUrl && !preloadedMedia[mediaUrl]) {
+          if (mediaType === 'image') {
+            await preloadImage(mediaUrl);
+          } else if (mediaType === 'video') {
+            await preloadVideo(mediaUrl);
+          }
+          setPreloadedMedia(prev => ({ ...prev, [mediaUrl]: true }));
         }
       }
 
-      // پیش‌بارگذاری استوری بعدی
-      if (currentStoryIndex < stories.length - 1) {
-        const nextStory = stories[currentStoryIndex + 1];
-        const nextGallery = nextStory.meta?.gallery_images || [];
+      // Preload next media items in current gallery
+      const nextMediaToPreload = gallery.slice(currentImageIndex + 1, currentImageIndex + 3);
+      for (const mediaItem of nextMediaToPreload) {
+        const mediaUrl = mediaItem.url;
+        const mediaType = mediaItem.type || detectMediaType(mediaUrl);
         
-        if (nextGallery.length > 0 && !preloadedImages[nextGallery[0]]) {
-          preloadImage(nextGallery[0]).then(() => {
-            setPreloadedImages(prev => ({ ...prev, [nextGallery[0]]: true }));
-          });
-        } else if (nextStory._embedded?.['wp:featuredmedia']) {
-          const nextFeaturedImage = nextStory._embedded['wp:featuredmedia'][0]?.source_url;
-          if (nextFeaturedImage && !preloadedImages[nextFeaturedImage]) {
-            preloadImage(nextFeaturedImage).then(() => {
-              setPreloadedImages(prev => ({ ...prev, [nextFeaturedImage]: true }));
+        if (mediaUrl && !preloadedMedia[mediaUrl]) {
+          if (mediaType === 'image') {
+            preloadImage(mediaUrl).then(() => {
+              setPreloadedMedia(prev => ({ ...prev, [mediaUrl]: true }));
+            });
+          } else if (mediaType === 'video') {
+            preloadVideo(mediaUrl).then(() => {
+              setPreloadedMedia(prev => ({ ...prev, [mediaUrl]: true }));
             });
           }
         }
       }
 
-      // پیش‌بارگذاری استوری قبلی
-      if (currentStoryIndex > 0) {
-        const prevStory = stories[currentStoryIndex - 1];
-        const prevGallery = prevStory.meta?.gallery_images || [];
+      // Preload adjacent stories
+      const adjacentStories = [
+        currentStoryIndex < stories.length - 1 ? stories[currentStoryIndex + 1] : null,
+        currentStoryIndex > 0 ? stories[currentStoryIndex - 1] : null
+      ];
+
+      for (const story of adjacentStories) {
+        if (!story) continue;
         
-        if (prevGallery.length > 0 && !preloadedImages[prevGallery[0]]) {
-          preloadImage(prevGallery[0]).then(() => {
-            setPreloadedImages(prev => ({ ...prev, [prevGallery[0]]: true }));
-          });
-        } else if (prevStory._embedded?.['wp:featuredmedia']) {
-          const prevFeaturedImage = prevStory._embedded['wp:featuredmedia'][0]?.source_url;
-          if (prevFeaturedImage && !preloadedImages[prevFeaturedImage]) {
-            preloadImage(prevFeaturedImage).then(() => {
-              setPreloadedImages(prev => ({ ...prev, [prevFeaturedImage]: true }));
-            });
+        const nextGallery = processStoryGallery(story);
+        
+        if (nextGallery.length > 0) {
+          const firstItem = nextGallery[0];
+          const mediaUrl = firstItem.url;
+          const mediaType = firstItem.type || detectMediaType(mediaUrl);
+          
+          if (mediaUrl && !preloadedMedia[mediaUrl]) {
+            if (mediaType === 'image') {
+              preloadImage(mediaUrl).then(() => {
+                setPreloadedMedia(prev => ({ ...prev, [mediaUrl]: true }));
+              });
+            } else if (mediaType === 'video') {
+              preloadVideo(mediaUrl).then(() => {
+                setPreloadedMedia(prev => ({ ...prev, [mediaUrl]: true }));
+              });
+            }
           }
         }
       }
@@ -121,10 +184,10 @@ const StoriesPage = ({ isDarkMode, stories = [] }) => {
       setIsLoading(false);
     };
 
-    preloadImages();
-  }, [currentStoryIndex, currentImageIndex, stories, preloadedImages]);
+    preloadMedia();
+  }, [currentStoryIndex, currentImageIndex, stories, preloadedMedia]);
 
-  // تابع کمکی برای پیش‌بارگذاری تصویر
+  // Helper functions for preloading
   const preloadImage = (src) => {
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -134,23 +197,54 @@ const StoriesPage = ({ isDarkMode, stories = [] }) => {
     });
   };
 
+  const preloadVideo = (src) => {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement('video');
+      video.src = src;
+      video.preload = 'auto';
+      video.onloadeddata = resolve;
+      video.onerror = reject;
+      // Set timeout to avoid hanging on video preload
+      const timeout = setTimeout(() => {
+        resolve(); // Resolve anyway after 5 seconds
+      }, 5000);
+      video.onloadeddata = () => {
+        clearTimeout(timeout);
+        resolve();
+      };
+    });
+  };
+
+  // Progress management
   const startProgress = (startFrom = 0) => {
     setProgress(startFrom);
     clearInterval(progressInterval.current);
 
     progressInterval.current = setInterval(() => {
       setProgress((prev) => {
+        // If video is playing, calculate progress from video time
+        if (getCurrentMediaType() === 'video' && videoRef.current) {
+          const video = videoRef.current;
+          if (video.readyState >= 2) { // Have enough data to calculate duration
+            const percentage = (video.currentTime / video.duration) * 100;
+            
+            // If video has ended, go to next item
+            if (video.ended) {
+              clearInterval(progressInterval.current);
+              handleMediaEnd();
+              return 0;
+            }
+            
+            return percentage;
+          }
+          return prev; // If video not ready, don't update progress
+        }
+        
+        // For images, use timer-based progress
         if (prev >= 100) {
           clearInterval(progressInterval.current);
-          if (currentImageIndex < currentGallery.length - 1) {
-            // برو به عکس بعدی در همین استوری
-            setCurrentImageIndex((prev) => prev + 1);
-            return 0;
-          } else {
-            // وقتی به آخرین تصویر رسیدیم، به استوری بعدی برو
-            goToNextStory();
-            return 0;
-          }
+          handleMediaEnd();
+          return 0;
         }
         
         return prev + 100 / (STORY_DURATION / UPDATE_INTERVAL);
@@ -158,6 +252,18 @@ const StoriesPage = ({ isDarkMode, stories = [] }) => {
     }, UPDATE_INTERVAL);
   };
 
+  // Handle media end
+  const handleMediaEnd = () => {
+    if (currentImageIndex < currentGallery.length - 1) {
+      // Go to next media in same story
+      setCurrentImageIndex((prev) => prev + 1);
+    } else {
+      // When we reach the last media, go to next story
+      goToNextStory();
+    }
+  };
+
+  // Set initial story based on URL
   useEffect(() => {
     const storyIndex = stories.findIndex(story => story.id === Number(storyId));
     if (storyIndex !== -1) {
@@ -165,40 +271,61 @@ const StoriesPage = ({ isDarkMode, stories = [] }) => {
     }
   }, [storyId, stories]);
   
+  // Start media playback after loading
   useEffect(() => {
     if (stories.length > 0 && !isLoading && !isDragging) {
+      // Set up video if current item is video
+      if (getCurrentMediaType() === 'video' && videoRef.current) {
+        const video = videoRef.current;
+        video.currentTime = 0;
+        video.muted = isMuted;
+        
+        try {
+          const playPromise = video.play();
+          if (playPromise !== undefined) {
+            playPromise.catch(error => {
+              console.error('Auto-play prevented:', error);
+              // If autoplay is prevented, try with muted video
+              if (!isMuted) {
+                setIsMuted(true);
+                video.muted = true;
+                video.play().catch(e => console.error('Still cannot play video:', e));
+              }
+            });
+          }
+        } catch (error) {
+          console.error('Error playing video:', error);
+        }
+      }
+      
       startProgress();
     }
+    
     return () => {
       clearInterval(progressInterval.current);
       clearTimeout(touchTimeoutRef.current);
     };
-  }, [currentStoryIndex, currentImageIndex, stories.length, isLoading, isDragging]);
+  }, [currentStoryIndex, currentImageIndex, stories.length, isLoading, isDragging, isMuted]);
 
-  // تعیین استایل مبتنی بر حالت کشیدن
-  const storyContainerStyle = {
-    transform: isDragging 
-      ? `translate3d(${dragOffset.x}px, ${dragOffset.y}px, 0) scale(${1 - Math.abs(dragOffset.y) / 800})` 
-      : 'translate3d(0, 0, 0) scale(1)',
-    opacity: isDragging ? 1 - Math.abs(dragOffset.y) / 400 : 1,
-    transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-  };
-
-  // توقف موقت استوری با تاچ
+  // Pause story on touch
   const handleTouchStart = (e) => {
     if (isLoading || transitionDirection) return;
 
-    // ذخیره موقعیت اولیه تاچ
+    // Store initial touch position
     setTouchStartX(e.touches[0].clientX);
     setTouchStartY(e.touches[0].clientY);
     setIsDragging(true);
     setDragOffset({ x: 0, y: 0 });
     
-    // ذخیره زمان شروع تاچ
+    // Store touch start time
     touchTimeoutRef.current = e.timeStamp;
     
-    // توقف پیشرفت
+    // Pause progress and video
     clearInterval(progressInterval.current);
+    if (getCurrentMediaType() === 'video' && videoRef.current) {
+      videoRef.current.pause();
+    }
+    
     setIsPaused(true);
   };
 
@@ -208,16 +335,16 @@ const StoriesPage = ({ isDarkMode, stories = [] }) => {
     const touchX = e.touches[0].clientX;
     const touchY = e.touches[0].clientY;
   
-    // محاسبه میزان حرکت
+    // Calculate drag distance
     const deltaX = touchX - touchStartX;
     const deltaY = touchY - touchStartY;
     
-    // تشخیص حرکت عمودی به سمت پایین (برای خروج)
+    // Detect vertical drag down (to exit)
     if (deltaY > 10 && Math.abs(deltaY) > Math.abs(deltaX)) {
       const boundedDeltaY = Math.max(0, Math.min(DRAG_LIMIT_Y, deltaY));
   
       setDragOffset({
-        x: 0,  // فقط عمودی
+        x: 0,  // only vertical
         y: boundedDeltaY
       });
   
@@ -227,13 +354,13 @@ const StoriesPage = ({ isDarkMode, stories = [] }) => {
         setIsExiting(false);
       }
     }
-    // تشخیص حرکت افقی (برای تغییر استوری)
+    // Detect horizontal drag (to change story)
     else if (Math.abs(deltaX) > 10 && Math.abs(deltaX) > Math.abs(deltaY)) {
       const boundedDeltaX = Math.max(-DRAG_LIMIT_X, Math.min(DRAG_LIMIT_X, deltaX));
   
       setDragOffset({
         x: boundedDeltaX,
-        y: 0, // حرکت عمودی دیگر انجام نشود
+        y: 0, // no vertical movement
       });
   
       setIsExiting(false);
@@ -251,7 +378,7 @@ const StoriesPage = ({ isDarkMode, stories = [] }) => {
     const deltaY = touchEndY - touchStartY;
     const swipeSpeed = Math.abs(deltaX) / (e.timeStamp - touchTimeoutRef.current);
     
-    // اگر در حال خروج هستیم و به اندازه کافی کشیده شده
+    // If exiting and dragged enough
     if (isExiting && deltaY > VERTICAL_SWIPE_THRESHOLD) {
       setDragOffset({ x: 0, y: window.innerHeight });
       setTimeout(() => {
@@ -260,18 +387,17 @@ const StoriesPage = ({ isDarkMode, stories = [] }) => {
       return;
     }
     
-    // اگر حرکت افقی وجود دارد و بیشتر از آستانه تعیین شده است
-    // اضافه کردن محدودیت سرعت برای جلوگیری از پرش چند صفحه‌ای
+    // If horizontal swipe and past threshold
     if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > SWIPE_THRESHOLD && swipeSpeed < 2.5) {
       if (deltaX < 0) {
-        // کشیدن به سمت چپ - استوری بعدی
+        // Swipe left - next story
         setTransitionDirection('next');
         setTimeout(() => {
           goToNextStory();
           setTimeout(() => setTransitionDirection(null), 150);
         }, 25);
       } else {
-        // کشیدن به سمت راست - استوری قبلی
+        // Swipe right - previous story
         setTransitionDirection('prev');
         setTimeout(() => {
           goToPrevStory();
@@ -279,90 +405,105 @@ const StoriesPage = ({ isDarkMode, stories = [] }) => {
         }, 25);
       }
     } else if (Math.abs(deltaX) < 10 && Math.abs(deltaY) < 10) {
-  // تعیین آیا این یک کلیک سریع است یا فقط نگه‌داشتن انگشت
-  const touchDuration = e.timeStamp - touchTimeoutRef.current;
+      // Determine if this is a quick tap or just holding
+      const touchDuration = e.timeStamp - touchTimeoutRef.current;
+      
+    // If tap less than 300ms, consider it a click
+if (touchDuration < 300) {
+  // Simple click, go to next or previous part of story
+  const halfWidth = window.innerWidth / 2;
   
-  // اگر لمس کمتر از 300 میلی‌ثانیه باشد، آن را به عنوان کلیک در نظر بگیرید
-  if (touchDuration < 300) {
-    // کلیک ساده، بخش بعدی یا قبلی استوری
-    const halfWidth = window.innerWidth / 2;
-    if (touchEndX < halfWidth) {
-      // کلیک سمت چپ - بخش قبلی
-      goToPrevImage();
+  if (touchEndX < halfWidth) {
+    // Left side click - restart current image if it's the first image
+    if (currentImageIndex === 0) {
+      // First image - restart timer
+      startProgress(0);
     } else {
-      // کلیک سمت راست - بخش بعدی
-      goToNextImage();
+      // Otherwise go to previous image
+      goToPrevImage();
     }
   } else {
-    // این فقط نگه‌داشتن و رها کردن است - فقط ادامه دادن از همان نقطه
-    // به جای تعیین مجدد پیشرفت، فقط شمارنده را دوباره شروع کنیم
-    clearInterval(progressInterval.current);
-    progressInterval.current = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(progressInterval.current);
-          if (currentImageIndex < currentGallery.length - 1) {
-            // برو به عکس بعدی در همین استوری
-            setCurrentImageIndex((prev) => prev + 1);
-            return 0;
-          } else {
-            // وقتی به آخرین تصویر رسیدیم، از استوری خارج شویم
-            navigate(-1);
-            return 0;
-          }
+    // Right side click - check if last story and last image
+    if (currentStoryIndex === stories.length - 1 && currentImageIndex === currentGallery.length - 1) {
+      // Last story, last image - exit app
+      navigate(-1);
+    } else {
+      // Otherwise go to next image
+      goToNextImage();
+    }
+  }
+} else {
+        // This is just holding and releasing - resume story
+        resetPosition();
+        
+        // If video, resume playback
+        if (getCurrentMediaType() === 'video' && videoRef.current) {
+          videoRef.current.play();
         }
         
-        return prev + 100 / (STORY_DURATION / UPDATE_INTERVAL);
-      });
-    }, UPDATE_INTERVAL);
-  }
-  resetPosition();
-  setIsPaused(false);
-}else {
-      // کشیدن کمتر از آستانه، برگشت به حالت اولیه
+        setIsPaused(false);
+      }
+    } else {
+      // Drag less than threshold, reset position
       resetPosition();
     }
 
-    // ادامه پیشرفت از همان نقطه
-    setIsPaused(false);
-    startProgress(progress);
+    // Resume progress from same point
+  // Resume progress from same point without restarting
+setIsPaused(false);
+if (!isExiting && Math.abs(deltaX) >= 10 || Math.abs(deltaY) >= 10) {
+  startProgress(progress);
+}
   };
 
-  // برگرداندن موقعیت محتوا به حالت اولیه
-  const resetPosition = () => {
-    setDragOffset({ x: 0, y: 0 });
-    setIsExiting(false);
-    // شروع مجدد پیشرفت
-    startProgress(progress);
-    setIsPaused(false);
-  };
-
-  // رفتن به تصویر بعدی در استوری فعلی
-// رفتن به تصویر بعدی در استوری فعلی
+  // Reset content position
+ // Reset content position
+const resetPosition = () => {
+  setDragOffset({ x: 0, y: 0 });
+  setIsExiting(false);
+  
+  // Resume progress from where it was paused
+  startProgress(progress);
+  
+  // If video, resume playback
+  if (getCurrentMediaType() === 'video' && videoRef.current) {
+    videoRef.current.play();
+  }
+  
+  setIsPaused(false);
+};
+  // Go to next image in current story
 const goToNextImage = () => {
   if (currentImageIndex < currentGallery.length - 1) {
     setCurrentImageIndex(prev => prev + 1);
     startProgress(0);
   } else {
-    // وقتی در آخرین تصویر هستیم و سمت راست را ضربه می‌زنیم، از استوری خارج شویم
-    navigate(-1);
+    // Right side click - check if last image in current story
+    if (currentImageIndex === currentGallery.length - 1) {
+      // Last image in story - exit app
+      navigate(-1);
+    } else {
+      // Otherwise go to next image
+      goToNextImage();
+    }
   }
-};
-  // رفتن به تصویر قبلی در استوری فعلی
+}
+  
+  // Go to previous image in current story
   const goToPrevImage = () => {
     if (currentImageIndex > 0) {
       setCurrentImageIndex(prev => prev - 1);
       startProgress(0);
     } else {
-      // وقتی در تصویر اول هستیم، همان تصویر را از ابتدا نمایش بده
+      // When on first image, restart it
       setCurrentImageIndex(0);
       startProgress(0);
     }
   };
 
-  // رفتن به استوری بعدی
+  // Go to next story
   const goToNextStory = () => {
-    // اگر در آخرین استوری هستیم، به اولین استوری برگردیم
+    // If on last story, go back to first
     if (currentStoryIndex === stories.length - 1) {
       setCurrentStoryIndex(0);
     } else {
@@ -372,9 +513,9 @@ const goToNextImage = () => {
     startProgress(0);
   };
 
-  // رفتن به استوری قبلی
+  // Go to previous story
   const goToPrevStory = () => {
-    // اگر در اولین استوری هستیم، به آخرین استوری برویم
+    // If on first story, go to last
     if (currentStoryIndex === 0) {
       setCurrentStoryIndex(stories.length - 1);
     } else {
@@ -384,11 +525,20 @@ const goToNextImage = () => {
     startProgress(0);
   };
 
+  // Toggle video mute
+  const toggleMute = () => {
+    if (videoRef.current) {
+      const newMutedState = !isMuted;
+      setIsMuted(newMutedState);
+      videoRef.current.muted = newMutedState;
+    }
+  };
+
   if (!stories || stories.length === 0) {
     return <CustomLoading />;
   }
 
-  // تعیین استایل انیمیشن تغییر استوری 3D
+  // Determine transition animation style
   const getTransitionStyle = () => {
     if (!transitionDirection) return {};
     
@@ -408,21 +558,32 @@ const goToNextImage = () => {
     
     return {};
   };
+  
+  // Determine drag-based style
+  const storyContainerStyle = {
+    transform: isDragging 
+      ? `translate3d(${dragOffset.x}px, ${dragOffset.y}px, 0) scale(${1 - Math.abs(dragOffset.y) / 800})`
+      : 'translate3d(0, 0, 0) scale(1)',
+    opacity: isDragging ? 1 - Math.abs(dragOffset.y) / 400 : 1,
+    transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  };
+
+  const isVideo = getCurrentMediaType() === 'video';
 
   return (
-<div
-  ref={containerRef}
-  className="fixed inset-0 bg-black select-none overflow-hidden perspective"
-  style={{
-    WebkitUserSelect: 'none',
-    WebkitTouchCallout: 'none',
-    WebkitTapHighlightColor: 'transparent',
-    userSelect: 'none',
-    touchAction: 'manipulation',
-    perspective: '1200px',
-  }}
->
-      {/* دکمه بستن استوری */}
+    <div
+      ref={containerRef}
+      className="fixed inset-0 bg-black select-none overflow-hidden perspective"
+      style={{
+        WebkitUserSelect: 'none',
+        WebkitTouchCallout: 'none',
+        WebkitTapHighlightColor: 'transparent',
+        userSelect: 'none',
+        touchAction: 'manipulation',
+        perspective: '1200px',
+      }}
+    >
+      {/* Close button */}
       <div className="absolute top-0 right-0 z-50 p-4">
         <button
           onClick={() => navigate(-1)}
@@ -432,7 +593,23 @@ const goToNextImage = () => {
         </button>
       </div>
 
-      {/* نوار پیشرفت */}
+      {/* Video mute/unmute button */}
+      {isVideo && (
+        <div className="absolute bottom-6 right-4 z-50">
+          <button
+            onClick={toggleMute}
+            className="text-white p-2 bg-black/30 hover:bg-black/50 rounded-full transition-all"
+          >
+            {isMuted ? (
+              <VolumeX className="w-6 h-6" />
+            ) : (
+              <Volume2 className="w-6 h-6" />
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* Progress bar */}
       <div className="absolute top-0 left-0 right-0 z-40 p-4">
         <div className="flex gap-1">
           {currentGallery.map((_, idx) => (
@@ -456,66 +633,88 @@ const goToNextImage = () => {
         </div>
       </div>
 
-      {/* محتوای اصلی */}
+      {/* Main content */}
       <div
-  ref={contentRef}
-  className={`h-full w-full ${isExiting ? 'exiting' : ''}`}
-  style={{
-    ...storyContainerStyle,
-    ...getTransitionStyle(),
-    WebkitTouchCallout: 'none',
-    WebkitUserSelect: 'none',
-    WebkitTapHighlightColor: 'transparent',
-    userSelect: 'none',
-    touchAction: 'manipulation',
-  }}
-  onTouchStart={handleTouchStart}
-  onTouchMove={handleTouchMove}
-  onTouchEnd={handleTouchEnd}
->
+        ref={contentRef}
+        className={`h-full w-full ${isExiting ? 'exiting' : ''}`}
+        style={{
+          ...storyContainerStyle,
+          ...getTransitionStyle(),
+          WebkitTouchCallout: 'none',
+          WebkitUserSelect: 'none',
+          WebkitTapHighlightColor: 'transparent',
+          userSelect: 'none',
+          touchAction: 'manipulation',
+        }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         <div className="absolute inset-0 z-10">
           {isLoading ? (
             <div className="h-full w-full flex items-center justify-center bg-black">
               <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
             </div>
           ) : (
-            <img
-  src={currentImageUrl}
-  alt={stories[currentStoryIndex]?.title?.rendered || 'Story image'}
-  className="h-full w-full object-cover"
-  style={{
-    WebkitTouchCallout: 'none',
-    WebkitUserSelect: 'none',
-    pointerEvents: 'none',
-  }}
-/>
+            <>
+              {getCurrentMediaType() === 'video' ? (
+                <video
+                  ref={videoRef}
+                  src={getCurrentMediaUrl()}
+                  className="h-full w-full object-cover"
+                  playsInline
+                  muted={isMuted}
+                  controls={false}
+                  autoPlay
+                  style={{
+                    WebkitTouchCallout: 'none',
+                    WebkitUserSelect: 'none',
+                    pointerEvents: 'none',
+                  }}
+                />
+              ) : (
+                <img
+                  src={getCurrentMediaUrl()}
+                  alt={stories[currentStoryIndex]?.title?.rendered || 'Story image'}
+                  className="h-full w-full object-cover"
+                  style={{
+                    WebkitTouchCallout: 'none',
+                    WebkitUserSelect: 'none',
+                    pointerEvents: 'none',
+                  }}
+                />
+              )}
+            </>
           )}
         </div>
       </div>
 
-      {/* ایجاد استایل‌های لازم برای افکت‌ها */}
+      {/* Caption or story title */}
+     
+
+      {/* Styles for effects */}
       <style jsx>{`
-  .perspective {
-    perspective: 1200px;
-  }
-  
-  .exiting {
-    filter: brightness(0.9);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  
-  /* Disable iOS text selection and highlighting */
-  * {
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -webkit-tap-highlight-color: transparent;
-    user-select: none;
-  }
-  
-  img {
-    -webkit-user-drag: none;
-  }
-`}</style>
+        .perspective {
+          perspective: 1200px;
+        }
+        
+        .exiting {
+          filter: brightness(0.9);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Disable iOS text selection and highlighting */
+        * {
+          -webkit-touch-callout: none;
+          -webkit-user-select: none;
+          -webkit-tap-highlight-color: transparent;
+          user-select: none;
+        }
+        
+        img, video {
+          -webkit-user-drag: none;
+        }
+      `}</style>
     </div>
   );
 };

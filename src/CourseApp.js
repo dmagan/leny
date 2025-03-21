@@ -156,6 +156,32 @@ const CourseApp = ({  // این قسمت رو جایگزین کنید
   const [currentSlide, setCurrentSlide] = useState(0); // برای ردیابی اسلاید فعلی
   const [autoplayEnabled, setAutoplayEnabled] = useState(true); // افزودن state جدید
 
+  const services = [
+    {
+      id: 1,
+      name: "VIP",
+      imageSrc: "/Services/vip.jpg",
+    },
+    {
+      id: 2,
+      name: "دکس ترید",
+      imageSrc: "/Services/dex.jpg",
+    },
+    {
+      id: 3,
+      name: "آموزش صفر تا صد ",
+      imageSrc: "/Services/0to100.jpg",
+    },
+    {
+      id: 4,
+       name: "سیگنال استریم",
+      imageSrc: "/Services/Signal-Stream.jpg",
+    
+    },
+
+  ];
+
+
   const handleVIPClick = () => {
     const userInfo = localStorage.getItem('userInfo') || sessionStorage.getItem('userInfo');
     if (!userInfo) {
@@ -566,53 +592,48 @@ const disableAutoplay = () => {
    
   </div>
 </div>
-      {/* Products */}
-      <div className=" p-4">
-      <h2 className={`text-xl mb-2   ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-خدمات ما
-</h2>
-        <div className="relative">
-          <div 
-            ref={sliderRef}
-            className="flex overflow-x-auto gap-3 -mx-2 px-2 scrollbar-hide snap-x snap-mandatory"
-            style={{
-              scrollSnapType: 'x mandatory',
-              scrollBehavior: 'smooth',
-              WebkitOverflowScrolling: 'touch'
-            }}
-            onScroll={(e) => {
-              const index = Math.round(e.target.scrollLeft / (280 + 16));
-              setCurrentIndex(index);
-            }}
-          >
-            {products.map((product, index) => (
-              <div key={product.id} 
-              className={`flex-shrink-0 w-32 p-2 rounded-2xl shadow-sm  ${isDarkMode ? '' : ''}`}>
-            
-              
-                <div className="flex flex-col items-center ">
-                  <div className="rounded-2xl p-2 bg-gray-0 w-full aspect-square">
-                  <a href={product.permalink} target="_blank" rel="noopener noreferrer"> 
-                    <img
-                      src={product.images[0]?.src || '/api/placeholder/100/100'}
-                      alt={product.name}
-                      className="w-full h-full rounded-xl object-cover"
-                    />
-                  </a>
-                  </div>
-                  <div className="w-full space-y-2">
-                  <h3 className={`font-medium text-sm text-center line-clamp-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>  {product.name}</h3>
-                  <div className={`text-sm text-center font-bold ${isDarkMode ? 'text-white' : 'text-green-600'}`}>  {parseInt(product.price).toLocaleString()} دلار</div>
-                  
-                  </div>
-                </div>
-              </div>
+{/* Services */}
+<div className="p-4">
+  <h2 className={`text-xl mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+    خدمات ما
+  </h2>
+  <div className="relative">
+    <div 
+      ref={sliderRef}
+      className="flex overflow-x-auto gap-3 -mx-2 px-2 scrollbar-hide snap-x snap-mandatory"
+      style={{
+        scrollSnapType: 'x mandatory',
+        scrollBehavior: 'smooth',
+        WebkitOverflowScrolling: 'touch'
+      }}
+      onScroll={(e) => {
+        const index = Math.round(e.target.scrollLeft / (280 + 16));
+        setCurrentIndex(index);
+      }}
+    >
+      {services.map((service, index) => (<div key={service.id} 
+          className={`flex-shrink-0 w-32 p-2 rounded-2xl shadow-sm  ${isDarkMode ? '' : ''}`}>
+          <div className="flex flex-col items-center">
+            <div className="rounded-2xl p-2 bg-gray-0 w-full aspect-square">
+              <img
+                src={service.imageSrc}
+                alt={service.name}
+                className="w-full h-full rounded-xl object-cover"
+              />
+            </div>
+            <div className="w-full space-y-2">
+              <h3 className={`font-medium text-sm text-center line-clamp-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                {service.name}
+              </h3>
+            </div>
+          </div>
+        </div>
             ))}
           </div>
           
-          {/* Dots Indicator */}
-          <div className="flex justify-center gap-2 mt-4">
-            {products.map((_, index) => (
+         {/* Dots Indicator */}
+    <div className="flex justify-center gap-2 mt-4">
+      {services.map((_, index) => (
               <button
                 key={index}
                 onClick={() => scrollToIndex(index)}
