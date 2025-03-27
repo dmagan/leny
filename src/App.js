@@ -12,7 +12,9 @@
   import DexPage from './dex'; 
   import CustomLoading from './CustomLoading';
   import FaqPage from './faq'; 
-
+  import VIPPage from './VIP-Service-Page';  
+  import ZeroTo100ServicePage from './0to100-Service-Page';
+  
   import ProductsPage from './ProductsPage';
   import PageTransition from './components/PageTransition';
   import { ReactNotifications } from 'react-notifications-component';
@@ -243,6 +245,7 @@
               
               <Route path="/asad" element={<AsadPage isDarkMode={isDarkMode} />} />
               <Route path="/chat" element={<Chat isDarkMode={isDarkMode} />} />
+              <Route path="/vip" element={<VIPPage isDarkMode={isDarkMode} />} />
               <Route path="/stories/:storyId" element={<StoriesPage isDarkMode={isDarkMode} stories={stories} />} />
               
               <Route path="/login" element={

@@ -4,6 +4,11 @@ import { Toaster, toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { Store } from 'react-notifications-component';
 import CustomLoading from './CustomLoading';
+import VIPPage from './VIP-Service-Page';
+import DexServicesPage from './Dex-Services-Page';
+import ZeroTo100ServicePage from './0to100-Service-Page';
+import SignalStreamServicePage from './SignalStream-Service-Page';
+
 
 const CoinIcon = ({ symbol }) => {
   // SVG icons for cryptocurrencies...
@@ -155,6 +160,11 @@ const CourseApp = ({  // این قسمت رو جایگزین کنید
   const [currentIndex, setCurrentIndex] = useState(0);
   const [currentSlide, setCurrentSlide] = useState(0); // برای ردیابی اسلاید فعلی
   const [autoplayEnabled, setAutoplayEnabled] = useState(true); // افزودن state جدید
+  const [showVIPPage, setShowVIPPage] = useState(false);
+  const [showDexPage, setShowDexPage] = useState(false);
+  const [showZeroTo100Page, setShowZeroTo100Page] = useState(false);
+  const [showSignalStreamPage, setShowSignalStreamPage] = useState(false);
+
 
   const services = [
     {
@@ -181,6 +191,17 @@ const CourseApp = ({  // این قسمت رو جایگزین کنید
 
   ];
 
+  const handleServiceClick = (service) => {
+    if (service.id === 1) { // VIP
+      setShowVIPPage(true); // نمایش صفحه VIP
+    } else if (service.id === 2) { // دکس ترید
+      setShowDexPage(true);
+    } else if (service.id === 3) { // آموزش صفر تا صد
+      setShowZeroTo100Page(true);
+    } else if (service.id === 4) { // سیگنال استریم
+      setShowSignalStreamPage(true);
+    }
+  };
 
   const handleVIPClick = () => {
     const userInfo = localStorage.getItem('userInfo') || sessionStorage.getItem('userInfo');
@@ -611,24 +632,29 @@ const disableAutoplay = () => {
         setCurrentIndex(index);
       }}
     >
-      {services.map((service, index) => (<div key={service.id} 
-          className={`flex-shrink-0 w-32 p-2 rounded-2xl shadow-sm  ${isDarkMode ? '' : ''}`}>
-          <div className="flex flex-col items-center">
-            <div className="rounded-2xl p-2 bg-gray-0 w-full aspect-square">
-              <img
-                src={service.imageSrc}
-                alt={service.name}
-                className="w-full h-full rounded-xl object-cover"
-              />
-            </div>
-            <div className="w-full space-y-2">
-              <h3 className={`font-medium text-sm text-center line-clamp-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                {service.name}
-              </h3>
-            </div>
-          </div>
-        </div>
-            ))}
+ {services.map((service, index) => (
+  <div 
+    key={service.id} 
+    className={`flex-shrink-0 w-32 p-2 rounded-2xl shadow-sm ${isDarkMode ? '' : ''}`}
+    onClick={() => handleServiceClick(service)}
+    style={{ cursor: 'pointer' }}
+  >
+    <div className="flex flex-col items-center">
+      <div className="rounded-2xl p-2 bg-gray-0 w-full aspect-square">
+        <img
+          src={service.imageSrc}
+          alt={service.name}
+          className="w-full h-full rounded-xl object-cover"
+        />
+      </div>
+      <div className="w-full space-y-2">
+        <h3 className={`font-medium text-sm text-center line-clamp-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+          {service.name}
+        </h3>
+      </div>
+    </div>
+  </div>
+))}
           </div>
           
          {/* Dots Indicator */}
@@ -765,61 +791,34 @@ const disableAutoplay = () => {
      
      {/*--------------------------- */}
      {/* Social Media Boxes */}
-<div className="px-4  mb- pb-28 "> {/* mb-20 برای فاصله از bottom navigation */}
-  <div className="grid grid-cols-4 gap-2">
+<div className="px-8  mb- pb-28 ">
+  <div className="grid grid-cols-3 gap-7">
     {/* Telegram */}
-    <div className={`p-1 rounded-2xl flex flex-col items-center justify-center gap-2 shadow-sm ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
-      <div className="w-5 h-5 flex items-center justify-center text-blue-500">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
-          <path d="M21.2 5L2.5 12.3c-1.3.5-1.3 1.8 0 2.3l4.1 1.3 1.6 4.8c.2.7 1.1.9 1.7.4l2.4-2.2 4.7 3.5c.7.5 1.7.1 1.9-.7l3.9-15.2c.3-1.1-.8-2-1.6-1.5zM6.8 13.9l9.4-5.8"></path>
-        </svg>
-      </div>
-      <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>تلگرام</span>
+    <div className={`p-1 rounded-xl flex flex-col items-center justify-center gap-2 shadow-sm border ${isDarkMode ? 'border-gray-600 bg-transparent' : 'border-gray-300 bg-transparent'}`}>
+          <div className="w-7 h-7 flex items-center justify-center">
+  <img src="/icons/telegram-icon.png" alt="Telegram" className="w-15 h-15" />
+</div>
     </div>
 
     {/* Instagram */}
-    <div className={`p-1 rounded-2xl flex flex-col items-center justify-center gap-2 shadow-sm ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
-      <div className="w-5 h-5 flex items-center justify-center text-pink-500">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
-          <rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect>
-          <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-          <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line>
-        </svg>
-      </div>
-      <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>اینستاگرام</span>
+    <div className={`p-1 rounded-xl flex flex-col items-center justify-center gap-2 shadow-sm border ${isDarkMode ? 'border-gray-600 bg-transparent' : 'border-gray-300 bg-transparent'}`}>
+          <div className="w-7 h-7 flex items-center justify-center">
+  <img src="/icons/Instagram.png" alt="Telegram" className="w-15 h-15" />
+</div>
     </div>
 
     {/* TikTok */}
-    <div className={`p-1 rounded-2xl flex flex-col items-center justify-center gap-2 shadow-sm ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
-      <div className="w-5 h-5 flex items-center justify-center text-black">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
-          <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"></path>
-        </svg>
-      </div>
-      <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>تیک تاک</span>
+    <div className={`p-1 rounded-xl flex flex-col items-center justify-center gap-2 shadow-sm border ${isDarkMode ? 'border-gray-600 bg-transparent' : 'border-gray-300 bg-transparent'}`}>
+          <div className="w-7 h-7 flex items-center justify-center">
+  <img src="/icons/TikTok.png" alt="Telegram" className="w-15 h-15" />
+</div>
     </div>
 
-    {/* About Us */}
-    <div className={`p-1 rounded-2xl flex flex-col items-center justify-center gap-2 shadow-sm ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
-      <div className="w-5 h-5 flex items-center justify-center text-gray-500">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
-          <circle cx="12" cy="12" r="10"></circle>
-          <path d="M12 16v-4"></path>
-          <path d="M12 8h.01"></path>
-        </svg>
-      </div>
-      <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>درباره ما</span>
-    </div>
+  
   </div>
 </div>
      
-     
-     
-     
-     
-     
-     
-     
+
      
       {/* Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0">
@@ -841,6 +840,42 @@ const disableAutoplay = () => {
 </div>
         </div>
       </div>
+       {/* اضافه کردن VIPPage */}
+       {showVIPPage && (
+        <VIPPage
+          isDarkMode={isDarkMode}
+          isOpen={showVIPPage}
+          onClose={() => setShowVIPPage(false)}
+        />
+      )}
+
+      {/* اضافه کردن ZeroTo100ServicePage */}
+{showZeroTo100Page && (
+  <ZeroTo100ServicePage
+    isDarkMode={isDarkMode}
+    isOpen={showZeroTo100Page}
+    onClose={() => setShowZeroTo100Page(false)}
+  />
+)}
+      
+      {/* اضافه کردن DexServicesPage */}
+{showDexPage && (
+  <DexServicesPage
+    isDarkMode={isDarkMode}
+    isOpen={showDexPage}
+    onClose={() => setShowDexPage(false)}
+    
+  />
+)}
+
+{/* اضافه کردن SignalStreamServicePage */}
+{showSignalStreamPage && (
+  <SignalStreamServicePage
+    isDarkMode={isDarkMode}
+    isOpen={showSignalStreamPage}
+    onClose={() => setShowSignalStreamPage(false)}
+  />
+)}
     </div>
   );
 };
