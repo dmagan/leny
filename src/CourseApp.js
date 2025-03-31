@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Menu, Play, Home, PlayCircle, Calendar, UserX, UserCheck, Headphones } from 'lucide-react';
+import { Menu, Play, Home, PlayCircle, Calendar, UserX, UserCheck, Headphones, Megaphone } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { Store } from 'react-notifications-component';
@@ -579,7 +579,7 @@ const disableAutoplay = () => {
 
 
 
-     {/* Sliders Section */}
+    {/* Sliders Section */}
 <div className="px-4">
   <div className="relative">
     <div 
@@ -589,10 +589,26 @@ const disableAutoplay = () => {
       {sliders.map((slider, index) => (
         <div 
           key={slider.id}
-          className="flex-none w-full snap-center"
+          className="flex-none w-full snap-center cursor-pointer"
           style={{
             width: '100%',
             minWidth: '100%'
+          }}
+          onClick={() => {
+            // استخراج لینک از متادیتای اسلایدر
+            const link = slider.meta?.slider_link || '';
+            
+            // بررسی آیا لینک داخلی است
+            if (link && link.startsWith('/')) {
+              // هدایت به مسیر داخلی با استفاده از React Router
+              navigate(link);
+            } else if (link && !link.startsWith('http')) {
+              // اگر لینک با http شروع نشود، فرض می‌کنیم مسیر داخلی بدون اسلش ابتدایی است
+              navigate('/' + link);
+            } else if (link) {
+              // لینک خارجی - ممکن است بخواهید به شکل متفاوتی مدیریت کنید
+              window.open(link, '_blank');
+            }
           }}
         >
           {slider._embedded && 
@@ -608,7 +624,6 @@ const disableAutoplay = () => {
         </div>
       ))}
     </div>
-
     {/* Navigation & Control */}
    
   </div>
@@ -657,18 +672,19 @@ const disableAutoplay = () => {
 ))}
           </div>
           
-         {/* Dots Indicator */}
-    <div className="flex justify-center gap-2 mt-4">
-      {services.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => scrollToIndex(index)}
-                className={`w-2 h-2 rounded-full transition-all ${
-                  currentIndex === index ? 'bg-yellow-500 w-4' : 'bg-gray-300'
-                }`}
-              />
-            ))}
-          </div>
+{/* Dots Indicator */}
+<div className="flex justify-center gap-2 mt-4">
+  {/* فقط 3 نقطه نمایش داده شود */}
+  {[0, 1,].map((index) => (
+    <button
+      key={index}
+      onClick={() => scrollToIndex(index)}
+      className={`w-2 h-2 rounded-full transition-all ${
+        currentIndex === index ? 'bg-yellow-500 w-4' : 'bg-gray-300'
+      }`}
+    />
+  ))}
+</div>
           {/* Courses */}
 <div className="px-4">
   <h2 className="text-xl mb-4"></h2>
@@ -827,7 +843,7 @@ const disableAutoplay = () => {
   ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
     <NavItem icon={<Home size={24} />} label="خانه" active={true} isDarkMode={isDarkMode}/>
     <NavItem icon={<PlayCircle size={24} />} label="محصولات" active={false} isDarkMode={isDarkMode} onLogout={onLogout} />
-    <NavItem icon={<Calendar size={24} />} label="سفارش‌ها" active={false} isDarkMode={isDarkMode} onLogout={onLogout} />
+    <NavItem icon={<Megaphone size={24} />} label="کانال عمومی" active={false} isDarkMode={isDarkMode} onLogout={onLogout} />
     <NavItem icon={isLoggedIn ? <UserCheck size={24} /> : <UserX size={24} />}  
                                                                                         active={false} label="پروفایل" isDarkMode={isDarkMode} isProfile={true}  isLoggedIn={isLoggedIn} onLogout={onLogout}/>     
     <NavItem 

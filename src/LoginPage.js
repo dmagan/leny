@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Store } from 'react-notifications-component';
 import { countries } from './countryList';
@@ -692,9 +692,17 @@ const LoginPage = ({ isDarkMode, setIsLoggedIn }) => {
           </button>
         )}
 
-        <div className="pt-2">
-          <div className="w-24 h-1 bg-gray-300 rounded-full mx-auto" />
-        </div>
+<div className="pt-2 relative">
+  <div className="w-24 h-1 bg-gray-300 rounded-full mx-auto" />
+  
+  {/* دکمه بستن (X) */}
+  <button 
+    onClick={closeCard}
+    className="absolute top-4 right-4 z-50 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100"
+  >
+    <X size={20} className="text-gray-600" />
+  </button>
+</div>
 
         <div className="scrollable-content h-full overflow-y-auto pb-safe">
           <div className="px-6 pb-8 pt-4">

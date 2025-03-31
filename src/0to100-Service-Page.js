@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeftCircle, Play } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import PaymentCard from './PaymentCard'; // کامپوننت کارت پرداخت را import می‌کنیم
 
 const ZeroTo100ServicePage = ({ isDarkMode, isOpen, onClose }) => {
   const [showCard, setShowCard] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
+  const [showPaymentCard, setShowPaymentCard] = useState(false); // state جدید برای نمایش کارت پرداخت
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if (isOpen) {
@@ -14,32 +19,60 @@ const ZeroTo100ServicePage = ({ isDarkMode, isOpen, onClose }) => {
   }, [isOpen]);
 
   useEffect(() => {
+    // Handle back button behavior for both browser and Android
     const handleBackButton = (event) => {
+      if (showPaymentCard) {
+        // اگر کارت پرداخت باز است، ابتدا آن را ببندیم
+        event.preventDefault();
+        setShowPaymentCard(false);
+        return false;
+      }
+      
       if (isOpen) {
         event.preventDefault();
         closeCard();
         return false;
       }
     };
-
+  
+    // Listen for the popstate event (back button)
     window.addEventListener('popstate', handleBackButton);
     
+    // Push a new history state to capture Android back button
     if (isOpen) {
       window.history.pushState(null, '', window.location.pathname);
     }
-
+    
+    // Push another history state if payment card is shown
+    if (showPaymentCard) {
+      window.history.pushState(null, '', window.location.pathname);
+    }
+    
+    // Clean up the event listener
     return () => {
       window.removeEventListener('popstate', handleBackButton);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, showPaymentCard]);
 
   const closeCard = () => {
     setIsExiting(true);
     setTimeout(() => {
       setShowCard(false);
       setIsExiting(false);
+      
+      // Always call onClose to inform parent component
       onClose();
+      
+      // Force URL to be '/' when returning to home if needed
+      if (location.pathname !== '/') {
+        navigate('/', { replace: true });
+      }
     }, 300);
+  };
+
+  // تابع جدید برای باز کردن کارت پرداخت
+  const handlePurchase = () => {
+    setShowPaymentCard(true);
   };
 
   if (!isOpen) return null;
@@ -100,84 +133,102 @@ const ZeroTo100ServicePage = ({ isDarkMode, isOpen, onClose }) => {
           
           {/* Scrollable Content Area */}
           <div className="flex-1 overflow-y-auto pb-24">
-            <div className="px-4">
-              {/* Course Content List */}
-              <div className="mb-6 p-4 rounded-xl bg-[#141e35] text-white" dir="rtl">
+            <div className="px-4 space-y-4">
+              {/* Introduction section */}
+              <div className="p-4 rounded-xl bg-[#141e35] text-white" dir="rtl">
                 <h3 className="text-lg font-bold mb-3 text-yellow-500 text-right">سر فصل های دوره صفر تا صد</h3>
-                
                 <div className="text-sm text-right mb-4">
                   <h3 className="text-white-400 font-bold mb-2">مهم: جهت جلوگیری از هرگونه کپی ناقص نام سرفصل ها و استراتژی های مهم در سرفصل ها ذکر نمیشود. محتوا های اصلی را داخل دوره مشاهده میکنید.</h3>
                 </div>
-                
-                <div className="space-y-4">
+              </div>
+              
+              {/* Introduction section */}
+              <div className="p-4 rounded-xl bg-[#141e35] text-white" dir="rtl">
+                <h3 className="text-lg font-bold mb-3 text-yellow-400 text-right">مقدمه:</h3>
+                <ul className="list-disc list-inside space-y-1 pr-4 text-right">
+                  <li>کریپتو و فلسفه آن چیست ؟</li>
+                  <li>توکن و کوین چیست ؟</li>
+                  <li>بلاکچین چیست ؟</li>
+                  <li>تریدر کیست و چرا ترید ؟</li>
+                  <li>مفاهیم و اصطلاحات تریدینگ</li>
+                  <li>روش های درآمد زایی در کریپتو</li>
+                  <li>عوامل موفقیت در کریپتو</li>
+                  <li>روش های کلاهبرداری</li>
+                  <li>امنیت در کریپتو</li>
+                  <li>اصطلاحات بازار</li>
+                  <li>اصطلاحات معامله گری و اصطلاحات بلاکچین</li>
+                </ul>
+              </div>
+              
+              {/* Roadmap section */}
+              <div className="p-4 rounded-xl bg-[#141e35] text-white" dir="rtl">
+                <h3 className="text-lg font-bold mb-3 text-yellow-400 text-right">نقشه راه:</h3>
+                <ul className="list-disc list-inside space-y-1 pr-4 text-right">
+                  <li>نصب صرافی و آموزش کامل ( ۲ صرافی متفاوت )</li>
+                  <li>نصب و آموزش تمامی ولت ها</li>
+                  <li>آموزش کامل تریدینگ ویو</li>
+                  <li>آموزش دیبانک</li>
+                  <li>آموزش سایت های مانیتورینگ</li>
+                  <li>آموزش سایت های انچین</li>
+                  <li>بررسی و آموزش سایت های فاندامنتال</li>
+                  <li>و...</li>
+                </ul>
+              </div>
+              
+              {/* Technical concepts section */}
+              <div className="p-4 rounded-xl bg-[#141e35] text-white" dir="rtl">
+                <h3 className="text-lg font-bold mb-3 text-yellow-400 text-right">مفاهیم تکنیکال:</h3>
+                <ul className="list-disc list-inside space-y-1 pr-4 text-right">
+                  <li>آموزش ...</li>
+                  <li>پرایس اکشن</li>
+                  <li>اصطلاحات تکنیکال</li>
+                  <li>کندل شناسی</li>
+                  <li>مفهوم پولبک</li>
+                  <li>فشار خرید و فروش ( مومنتوم )</li>
+                  <li>استراتژی کانال</li>
+                  <li>بریم اوت</li>
+                  <li>تریدینگ رنج</li>
+                  <li>استراتژی اینتری پرایس</li>
+                  <li>موج شماری</li>
+                  <li>انواع فیبوناچی</li>
+                  <li>والیوم پروفایل</li>
+                  <li>واگرایی</li>
+                  <li>مووینگ اورج</li>
+                  <li>و...</li>
+                </ul>
+              </div>
+              
+              {/* Psychology section */}
+              <div className="p-4 rounded-xl bg-[#141e35] text-white" dir="rtl">
+                <h3 className="text-lg font-bold mb-3 text-yellow-400 text-right">سر فصل های روانشناسی:</h3>
+                <ul className="list-disc list-inside space-y-1 pr-4 text-right">
+                  <li>عوامل شکست در تریدینگ</li>
+                  <li>عوامل موفقیت در کریپتو</li>
+                  <li>از بین بردن ترس</li>
+                  <li>شکست طمع</li>
+                  <li>دید بیزنس به کریپتو</li>
+                  <li>صبر عامل موفقیت</li>
+                  <li>و...</li>
+                </ul>
+              </div>
+              
+              {/* Final note */}
+              <div className="p-4 rounded-xl bg-[#141e35] text-white" dir="rtl">
+                <p className="text-gray-300 text-right italic">برای آموزش کامل‌تر و جزئیات بیشتر در دوره با ما همراه باشید</p>
+              </div>
+              
+              {/* Course Price */}
+              <div className="p-4 rounded-xl bg-[#141e35] text-white" dir="rtl">
+                <div className="flex justify-between items-center">
                   <div>
-                    <h4 className="font-bold text-yellow-400">مقدمه:</h4>
-                    <ul className="list-disc list-inside space-y-1 pr-4 mt-1">
-                      <li>کریپتو و فلسفه آن چیست ؟</li>
-                      <li>توکن و کوین چیست ؟</li>
-                      <li>بلاکچین چیست ؟</li>
-                      <li>تریدر کیست و چرا ترید ؟</li>
-                      <li>مفاهیم و اصطلاحات تریدینگ</li>
-                      <li>روش های درآمد زایی در کریپتو</li>
-                      <li>عوامل موفقیت در کریپتو</li>
-                      <li>روش های کلاهبرداری</li>
-                      <li>امنیت در کریپتو</li>
-                      <li>اصطلاحات بازار</li>
-                      <li>اصطلاحات معامله گری و اصطلاحات بلاکچین</li>
-                    </ul>
+                    <h3 className="text-lg font-bold mb-2 text-yellow-400 text-right">قیمت دوره:</h3>
+                    <p className="text-2xl font-bold text-green-500">۸۹ دلار</p>
                   </div>
-                  
-                  <div>
-                    <h4 className="font-bold text-yellow-400">نقشه راه:</h4>
-                    <ul className="list-disc list-inside space-y-1 pr-4 mt-1">
-                      <li>نصب صرافی و آموزش کامل ( ۲ صرافی متفاوت )</li>
-                      <li>نصب و آموزش تمامی ولت ها</li>
-                      <li>آموزش کامل تریدینگ ویو</li>
-                      <li>آموزش دیبانک</li>
-                      <li>آموزش سایت های مانیتورینگ</li>
-                      <li>آموزش سایت های انچین</li>
-                      <li>بررسی و آموزش سایت های فاندامنتال</li>
-                      <li>و...</li>
-                    </ul>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-bold text-yellow-400">مفاهیم تکنیکال:</h4>
-                    <ul className="list-disc list-inside space-y-1 pr-4 mt-1">
-                      <li>آموزش ...</li>
-                      <li>پرایس اکشن</li>
-                      <li>اصطلاحات تکنیکال</li>
-                      <li>کندل شناسی</li>
-                      <li>مفهوم پولبک</li>
-                      <li>فشار خرید و فروش ( مومنتوم )</li>
-                      <li>استراتژی کانال</li>
-                      <li>بریم اوت</li>
-                      <li>تریدینگ رنج</li>
-                      <li>استراتژی اینتری پرایس</li>
-                      <li>موج شماری</li>
-                      <li>انواع فیبوناچی</li>
-                      <li>والیوم پروفایل</li>
-                      <li>واگرایی</li>
-                      <li>مووینگ اورج</li>
-                      <li>و...</li>
-                    </ul>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-bold text-yellow-400">سر فصل های روانشناسی:</h4>
-                    <ul className="list-disc list-inside space-y-1 pr-4 mt-1">
-                      <li>عوامل شکست در تریدینگ</li>
-                      <li>عوامل موفقیت در کریپتو</li>
-                      <li>از بین بردن ترس</li>
-                      <li>شکست طمع</li>
-                      <li>دید بیزنس به کریپتو</li>
-                      <li>صبر عامل موفقیت</li>
-                      <li>و...</li>
-                    </ul>
+                  <div className="bg-yellow-500/20 text-yellow-400 rounded-xl p-2 text-sm">
+                    <p>دسترسی نامحدود</p>
+                    <p>آپدیت دائمی</p>
                   </div>
                 </div>
-                
-                <p className="mt-4 text-gray-300 text-right italic">برای آموزش کامل‌تر و جزئیات بیشتر در دوره با ما همراه باشید</p>
               </div>
             </div>
           </div>
@@ -191,6 +242,7 @@ const ZeroTo100ServicePage = ({ isDarkMode, isOpen, onClose }) => {
           {/* Fixed Button at Bottom */}
           <div className="absolute bottom-6 left-4 right-4 z-10">
             <button 
+              onClick={handlePurchase} // رویداد کلیک برای باز کردن کارت پرداخت
               className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-4 rounded-xl transition-colors shadow-lg"
             >
               ثبت نام در دوره
@@ -198,6 +250,16 @@ const ZeroTo100ServicePage = ({ isDarkMode, isOpen, onClose }) => {
           </div>
         </div>
       </div>
+      
+      {/* Payment Card Component */}
+      {showPaymentCard && (
+        <PaymentCard
+          isDarkMode={isDarkMode}
+          onClose={() => setShowPaymentCard(false)}
+          productTitle="دوره آموزش ۰ تا ۱۰۰ کریپتو"
+          price="89"
+        />
+      )}
     </div>
   );
 };

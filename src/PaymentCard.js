@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { X, Upload } from 'lucide-react';
 import { Store } from 'react-notifications-component';
 
@@ -163,6 +163,75 @@ const PaymentCard = ({ isDarkMode, onClose, productTitle, price }) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
+  
+  // برای انیمیشن کشویی از پایین به بالا
+  const [showCard, setShowCard] = useState(false);
+  const cardRef = useRef(null);
+  const isDragging = useRef(false);
+  const startY = useRef(0);
+
+  // انیمیشن ورود کارت
+  useEffect(() => {
+    setTimeout(() => {
+      setShowCard(true);
+    }, 100);
+  }, []);
+
+  // مدیریت تعامل کاربر با کارت (امکان کشیدن به پایین)
+  useEffect(() => {
+    const card = cardRef.current;
+    if (!card) return;
+
+    const handleTouchStart = (e) => {
+      if (e.target.closest('.scrollable-content') && 
+          e.target.closest('.scrollable-content').scrollTop !== 0) {
+        return;
+      }
+      isDragging.current = true;
+      startY.current = e.touches[0].clientY;
+    };
+
+    const handleTouchMove = (e) => {
+      if (!isDragging.current) return;
+      const currentY = e.touches[0].clientY;
+      const diff = currentY - startY.current;
+      if (diff < 0) return;
+      e.preventDefault();
+      card.style.transform = `translateY(${diff}px)`;
+    };
+
+    const handleTouchEnd = () => {
+      if (!isDragging.current) return;
+      isDragging.current = false;
+      const currentTransform = card.style.transform;
+      const match = currentTransform.match(/translateY\(([0-9.]+)px\)/);
+      if (match) {
+        const currentValue = parseFloat(match[1]);
+        if (currentValue > 150) {
+          closeCard();
+        } else {
+          card.style.transform = 'translateY(0)';
+        }
+      }
+    };
+
+    card.addEventListener('touchstart', handleTouchStart, { passive: false });
+    card.addEventListener('touchmove', handleTouchMove, { passive: false });
+    card.addEventListener('touchend', handleTouchEnd);
+
+    return () => {
+      card.removeEventListener('touchstart', handleTouchStart);
+      card.removeEventListener('touchmove', handleTouchMove);
+      card.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, []);
+
+  const closeCard = () => {
+    setShowCard(false);
+    setTimeout(() => {
+      onClose();
+    }, 300);
+  };
 
   const handleFileSelect = async (event) => {
     const file = event.target.files[0];
@@ -218,102 +287,123 @@ const PaymentCard = ({ isDarkMode, onClose, productTitle, price }) => {
         return;
       }
       notify("موفق", "تراکنش با موفقیت تایید شد", "success", 3000);
-      setTimeout(() => onClose(), 1000);
+      setTimeout(() => closeCard(), 1000);
     } else {
       notify("خطا", result.message || "تراکنش معتبر نیست", "danger");
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 overflow-hidden transition-opacity duration-300">
-      <div className={`fixed bottom-0 left-0 right-0 w-full ${isDarkMode ? 'bg-gray-900' : 'bg-white'} rounded-t-3xl shadow-lg transition-transform duration-300 ease-out max-h-[92vh] overflow-hidden`}>
+    <div className="fixed inset-0 z-[9999] bg-black/75 overflow-hidden transition-opacity duration-300"
+      onClick={(e) => {
+        // اگر کلیک روی خود overlay بود (نه روی کارت)، کارت رو ببند
+        if (e.target === e.currentTarget) {
+          closeCard();
+        }
+      }}
+      style={{ 
+        opacity: showCard ? 1 : 0,
+        pointerEvents: showCard ? 'auto' : 'none'
+      }}>
+      <div 
+        ref={cardRef}
+        className={`fixed bottom-0 left-0 right-0 w-full ${
+          isDarkMode ? 'bg-[#0d1822]' : 'bg-white'
+        } rounded-t-3xl shadow-lg transition-transform duration-300 ease-out max-h-[92vh] overflow-hidden`}
+        style={{ 
+          transform: `translateY(${showCard ? '0' : '100%'})`,
+          touchAction: 'none',
+        }}
+      >
         <div className="pt-2">
           <div className="w-24 h-1 bg-gray-300 rounded-full mx-auto" />
         </div>
 
         <button 
-          onClick={onClose}
+          onClick={closeCard}
           className="absolute top-4 right-4 z-50 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100"
         >
           <X size={20} className="text-gray-600" />
         </button>
 
-        <div className="p-6 pb-8">
-          <div className="mb-8 text-center">
-            <h1 className={`text-2xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-              VIP
-            </h1>
-            <p className={`text-lg font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-              {productTitle}
-            </p>
-            <p className="text-[#f7d55d] font-bold mt-2 text-lg">
-              {price} دلار
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            <div className="relative">
-              <input
-                type="text"
-                value={transactionHash}
-                onChange={(e) => setTransactionHash(e.target.value)}
-                className={`w-full px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#f7d55d] ${
-                  isDarkMode 
-                    ? 'bg-gray-800 text-white placeholder-gray-500'
-                    : 'bg-gray-100 text-gray-900 placeholder-gray-500'
-                }`}
-                placeholder="هش تراکنش را وارد کنید"
-                dir="rtl"
-              />
-            </div>
-
-            <div className="relative flex items-center justify-center my-4">
-              <div className={`px-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                یا
-              </div>
-            </div>
-
-            <div 
-              onClick={() => fileInputRef.current?.click()}
-              className={`w-full p-4 rounded-xl border-2 border-dashed text-center cursor-pointer ${
-                isDarkMode 
-                  ? 'border-gray-700 hover:border-gray-600'
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
-            >
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileSelect}
-                className="hidden"
-                accept="image/*"
-              />
-              <Upload className={`w-6 h-6 mx-auto mb-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-              <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                {selectedFile ? selectedFile.name : 'آپلود تصویر رسید'}
+        <div className="scrollable-content overflow-y-auto h-full pb-safe">
+          <div className="p-6 pb-8">
+            <div className="mb-8 text-center">
+              <h1 className={`text-2xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                پرداخت
+              </h1>
+              <p className={`text-lg font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                {productTitle}
+              </p>
+              <p className="text-[#f7d55d] font-bold mt-2 text-lg">
+                {price} دلار
               </p>
             </div>
 
-            {isUploading && (
-              <div className="mt-2">
-                <div className="h-2 bg-gray-200 rounded">
-                  <div 
-                    className="h-full bg-[#f7d55d] rounded transition-all duration-200" 
-                    style={{ width: `${uploadProgress}%` }}
-                  />
+            <div className="space-y-4">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={transactionHash}
+                  onChange={(e) => setTransactionHash(e.target.value)}
+                  className={`w-full px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#f7d55d] ${
+                    isDarkMode 
+                      ? 'bg-gray-800 text-white placeholder-gray-500'
+                      : 'bg-gray-100 text-gray-900 placeholder-gray-500'
+                  }`}
+                  placeholder="هش تراکنش را وارد کنید"
+                  dir="rtl"
+                />
+              </div>
+
+              <div className="relative flex items-center justify-center my-4">
+                <div className={`px-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  یا
                 </div>
-                <p className="text-sm text-center mt-1">
-                  {uploadProgress}%
+              </div>
+
+              <div 
+                onClick={() => fileInputRef.current?.click()}
+                className={`w-full p-4 rounded-xl border-2 border-dashed text-center cursor-pointer ${
+                  isDarkMode 
+                    ? 'border-gray-700 hover:border-gray-600'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  accept="image/*"
+                />
+                <Upload className={`w-6 h-6 mx-auto mb-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  {selectedFile ? selectedFile.name : 'آپلود تصویر رسید'}
                 </p>
               </div>
-            )}
 
-            <button 
-              onClick={handleSubmit}
-              className="w-full bg-[#f7d55d] text-gray-900 rounded-xl py-3 text-sm font-medium hover:bg-[#e5c44c] transition-colors mt-4"
-            >
-              ارسال
-            </button>
+              {isUploading && (
+                <div className="mt-2">
+                  <div className="h-2 bg-gray-200 rounded">
+                    <div 
+                      className="h-full bg-[#f7d55d] rounded transition-all duration-200" 
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                  <p className="text-sm text-center mt-1">
+                    {uploadProgress}%
+                  </p>
+                </div>
+              )}
+
+              <button 
+                onClick={handleSubmit}
+                className="w-full bg-[#f7d55d] text-gray-900 rounded-xl py-3 text-sm font-medium hover:bg-[#e5c44c] transition-colors mt-4"
+              >
+                ارسال
+              </button>
+            </div>
           </div>
         </div>
       </div>
