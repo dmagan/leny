@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeftCircle, Play, ExternalLink } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import PaymentCard from './PaymentCard'; // کامپوننت کارت پرداخت را import می‌کنیم
+import UIDSubmissionCard from './UIDSubmissionCard';
+import LoginPage from './LoginPage';
+
 
 const SignalStreamServicePage = ({ isDarkMode, isOpen, onClose }) => {
   const [showCard, setShowCard] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
-  const [showPaymentCard, setShowPaymentCard] = useState(false); // state جدید برای نمایش کارت پرداخت
+  const [showUIDCard, setShowUIDCard] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const [showLoginOverlay, setShowLoginOverlay] = useState(false);
+
+
   
   useEffect(() => {
     if (isOpen) {
@@ -18,63 +23,85 @@ const SignalStreamServicePage = ({ isDarkMode, isOpen, onClose }) => {
     }
   }, [isOpen]);
 
+// اضافه کردن مدیریت history برای overlay لاگین
+useEffect(() => {
+  // اگر overlay لاگین باز است، یک state جدید به history اضافه کنیم
+  if (showLoginOverlay) {
+    window.history.pushState({ loginOverlay: true }, '');
+  }
+  
+  // یک listener برای مدیریت دکمه برگشت اضافه کنیم
+  const handleBackButtonForLogin = (event) => {
+    if (showLoginOverlay) {
+      event.preventDefault();
+      setShowLoginOverlay(false);
+      return;
+    }
+  };
+  
+  window.addEventListener('popstate', handleBackButtonForLogin);
+  
+  return () => {
+    window.removeEventListener('popstate', handleBackButtonForLogin);
+  };
+}, [showLoginOverlay]);
+
+
+  // مدیریت بهینه دکمه برگشت
   useEffect(() => {
-    // Handle back button behavior for both browser and Android
     const handleBackButton = (event) => {
-      if (showPaymentCard) {
-        // اگر کارت پرداخت باز است، ابتدا آن را ببندیم
+      // اگر کارت UID باز است، ابتدا آن را ببندیم
+      if (showUIDCard) {
         event.preventDefault();
-        setShowPaymentCard(false);
-        return false;
+        setShowUIDCard(false);
+        return;
       }
       
+      // بستن صفحه اصلی
       if (isOpen) {
         event.preventDefault();
         closeCard();
-        return false;
+        return;
       }
     };
   
-    // Listen for the popstate event (back button)
+    // افزودن یک state به تاریخچه مرورگر برای مدیریت دکمه برگشت اندروید
+    window.history.pushState({ signalStreamPage: true }, '');
+    
+    // اضافه کردن state جدید برای کارت UID اگر باز است
+    if (showUIDCard) {
+      window.history.pushState({ uidCard: true }, '');
+    }
+    
+    // شنونده برای رویداد popstate (فشردن دکمه برگشت)
     window.addEventListener('popstate', handleBackButton);
     
-    // Push a new history state to capture Android back button
-    if (isOpen) {
-      window.history.pushState(null, '', window.location.pathname);
-    }
-    
-    // Push another history state if payment card is shown
-    if (showPaymentCard) {
-      window.history.pushState(null, '', window.location.pathname);
-    }
-    
-    // Clean up the event listener
+    // پاکسازی event listener
     return () => {
       window.removeEventListener('popstate', handleBackButton);
     };
-  }, [isOpen, onClose, showPaymentCard]);
+  }, [isOpen, onClose, showUIDCard]);
 
   const closeCard = () => {
     setIsExiting(true);
     setTimeout(() => {
       setShowCard(false);
       setIsExiting(false);
-      
-      // Always call onClose to inform parent component
       onClose();
-      
-      // Force URL to be '/' when returning to home if needed
-      if (location.pathname !== '/') {
-        navigate('/', { replace: true });
-      }
     }, 300);
   };
 
-  // تابع جدید برای باز کردن کارت پرداخت
-  const handlePurchase = () => {
-    setShowPaymentCard(true);
+  const handleSubmitUID = () => {
+    const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+    
+    if (!token) {
+      // به جای navigate، overlay لاگین را نمایش می‌دهیم
+      setShowLoginOverlay(true);
+    } else {
+      setShowUIDCard(true);
+      window.history.pushState({ uidCard: true }, '');
+    }
   };
-
   // تابع برای باز کردن لینک رفرال ال‌بانک
   const openReferralLink = () => {
     window.open('https://www.lbank.com/en-US/login/?icode=PCSVIP', '_blank');
@@ -168,7 +195,7 @@ const SignalStreamServicePage = ({ isDarkMode, isOpen, onClose }) => {
                   <li>بعد از افتتاح حساب، اپلیکیشن البانک را نصب و به حساب خود وارد شوید.</li>
                   <li>حساب خود را حداقل ۵۰ دلار شارژ کنید تا بتوانید از موقعیت‌های ارائه شده استفاده کنید.</li>
                   <li>از منو پروفایل در بالای صفحه سمت راست، UID یا شناسه حساب خود را کپی کنید.</li>
-                  <li>سپس بر روی دکمه زرد رنگ پایین صفحه (اشتراک در کانال سیگنال) کلیک کنید و UID خودتون رو وارد کنید.</li>
+                  <li>سپس بر روی دکمه زرد رنگ پایین صفحه (ثبت UID) کلیک کنید و UID خودتون رو وارد کنید.</li>
                   <li>درصورتی که حساب شما با لینک ما ثبت‌نام شده باشد و موجودی شما حداقل ۵۰ دلار باشد، دسترسی کانال برای شما باز می‌شود و می‌توانید از خدمات ما استفاده کنید.</li>
                 </ol>
               </div>
@@ -222,10 +249,10 @@ const SignalStreamServicePage = ({ isDarkMode, isOpen, onClose }) => {
           {/* Fixed Button at Bottom - Two Buttons */}
           <div className="absolute bottom-6 left-4 right-4 z-10 grid grid-cols-2 gap-3">
             <button 
-              onClick={handlePurchase}
+              onClick={handleSubmitUID}
               className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-4 rounded-xl transition-colors shadow-lg"
             >
-              خرید UID
+              ثبت UID
             </button>
             <button 
               onClick={openReferralLink} 
@@ -237,15 +264,30 @@ const SignalStreamServicePage = ({ isDarkMode, isOpen, onClose }) => {
         </div>
       </div>
       
-      {/* Payment Card Component */}
-      {showPaymentCard && (
-        <PaymentCard
-          isDarkMode={isDarkMode}
-          onClose={() => setShowPaymentCard(false)}
-          productTitle="خرید UID کانال سیگنال استریم"
-          price="50"
-        />
-      )}
+     {/* Login Overlay */}
+{showLoginOverlay && (
+  <LoginPage 
+    isDarkMode={isDarkMode} 
+    setIsLoggedIn={(status) => {
+      setShowLoginOverlay(false);
+      if (status) {
+        // اگر لاگین موفق بود، UID کارت را نمایش می‌دهیم
+        setShowUIDCard(true);
+      }
+    }}
+    onClose={() => setShowLoginOverlay(false)} 
+  />
+)}
+
+{/* UID Submission Card */}
+{showUIDCard && (
+  <UIDSubmissionCard
+    isDarkMode={isDarkMode}
+    onClose={() => setShowUIDCard(false)}
+    productTitle="سیگنال استریم رایگان"
+  />
+)}
+      
     </div>
   );
 };

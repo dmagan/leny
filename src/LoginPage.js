@@ -60,7 +60,7 @@ const validateRegister = async (userData, selectedCountry) => {
   }
 };
 
-const LoginPage = ({ isDarkMode, setIsLoggedIn }) => {
+const LoginPage = ({ isDarkMode, setIsLoggedIn, onClose }) => {
   const [selectedCountry, setSelectedCountry] = useState({ code: '+98', flag: '🇮🇷', name: 'Iran' });
   const [showCountries, setShowCountries] = useState(false);
   const [isLandscape, setIsLandscape] = useState(window.innerHeight < window.innerWidth);
@@ -161,7 +161,13 @@ const LoginPage = ({ isDarkMode, setIsLoggedIn }) => {
   const closeCard = () => {
     setShowCard(false);
     setTimeout(() => {
-      navigate(-1);
+      // اگر onClose به عنوان prop منتقل شده باشد، از آن استفاده کن
+      if (onClose) {
+        onClose();
+      } else {
+        // در غیر این صورت، از navigate استفاده کن (برای حالت‌های مستقل)
+        navigate(-1);
+      }
     }, 300);
   };
 

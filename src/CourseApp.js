@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Menu, Play, Home, PlayCircle, Calendar, UserX, UserCheck, Headphones, Megaphone } from 'lucide-react';
+import { Menu, Play, Home, PlayCircle, Calendar, UserX, UserCheck, Headphones, Megaphone , MonitorPlay} from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { Store } from 'react-notifications-component';
@@ -471,14 +471,15 @@ const disableAutoplay = () => {
     style: {
       background: isDarkMode ? '#1F2937' : '#363636',
       color: '#fff',
-      fontFamily: 'IranSans'
+      fontFamily: 'IranSans',
+      direction: 'rtl',
     },
     success: {
       duration: 3000,
       icon: '',
     },
     error: {
-      duration: 3000,
+      duration: 7000,
       icon: '❌',
     }
   }}
@@ -706,7 +707,7 @@ const disableAutoplay = () => {
       </div>
       <div>
       <h3 className={`font-medium text-base ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-          عضو رایگان سیگنال فیوچرز
+          ورود به کانال رایگان سیگنال فیوچرز
         </h3>
         <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
         درآمد ماهانه رایگان
@@ -726,7 +727,7 @@ const disableAutoplay = () => {
       </div>
       <div>
       <h3 className={`font-medium text-base ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-          کانال VIP
+          ورود به کانال VIP
           </h3>
           <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
           کانال ویژه تیم PCS
@@ -749,7 +750,7 @@ const disableAutoplay = () => {
       </div>
       <div>
       <h3 className={`font-medium text-base ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-          کلاس حرفه ای دکس تریدینگ
+          ورود به کلاس حرفه ای دکس تریدینگ
           </h3>
           <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
           نحوه پیدا کردن میم کوین های پامپی 
@@ -767,7 +768,7 @@ const disableAutoplay = () => {
       </div>
       <div>
       <h3 className={`font-medium text-base ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-          آموزش ۰ تا ۱۰۰ کریپتو
+          ورود به آموزش ۰ تا ۱۰۰ کریپتو
           </h3>
           <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
           آشنایی با مفاهیم پایه تا حرفه ای
@@ -792,7 +793,7 @@ const disableAutoplay = () => {
       </div>
       <div>
       <h3 className={`font-medium text-base ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-      کوچینگ شخصی ( منتور )
+      ورود به کوچینگ شخصی ( منتور )
       </h3>
           <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
           ارتباط مستقیم با اساتید
@@ -841,8 +842,8 @@ const disableAutoplay = () => {
         <div className="mx-4 mb-4">
         <div className={`flex items-center justify-between rounded-full px-6 py-2 shadow-lg
   ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
-    <NavItem icon={<Home size={24} />} label="خانه" active={true} isDarkMode={isDarkMode}/>
-    <NavItem icon={<PlayCircle size={24} />} label="محصولات" active={false} isDarkMode={isDarkMode} onLogout={onLogout} />
+<NavItem icon={<Home size={24} />} label="خانه" active={true} isDarkMode={isDarkMode}/>
+<NavItem icon={<MonitorPlay size={24} />} label="پست ها" active={false} isDarkMode={isDarkMode}/>
     <NavItem icon={<Megaphone size={24} />} label="کانال عمومی" active={false} isDarkMode={isDarkMode} onLogout={onLogout} />
     <NavItem icon={isLoggedIn ? <UserCheck size={24} /> : <UserX size={24} />}  
                                                                                         active={false} label="پروفایل" isDarkMode={isDarkMode} isProfile={true}  isLoggedIn={isLoggedIn} onLogout={onLogout}/>     
