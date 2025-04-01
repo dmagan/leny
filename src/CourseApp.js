@@ -690,19 +690,11 @@ const disableAutoplay = () => {
 <div className="px-4">
   <h2 className="text-xl mb-4"></h2>
   <div className="grid grid-cols-1 gap-4" dir="rtl">
-  <div  onClick={() => navigate('/asad')} className={`p-4 rounded-2xl flex items-center gap-3 border ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900'  }`}>
-      <div className="w-16 h-16 rounded-xl flex items-center justify-center">
-      <div className="w-10 h-10 text-[#f7d55d]">
-      <svg width="37" height="37" viewBox="0 0 37 37" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M10.7917 15.4167H4.625V26.2084H10.7917V15.4167Z" stroke="#F7D55D" stroke-width="2" stroke-linejoin="round"/>
-<path d="M21.5834 10.7917H15.4167V30.8334H21.5834V10.7917Z" stroke="#F7D55D" stroke-width="2" stroke-linejoin="round"/>
-<path d="M18.5 33.9166V30.8333" stroke="#F7D55D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M32.375 9.25H26.2083V16.1875H32.375V9.25Z" stroke="#F7D55D" stroke-width="2" stroke-linejoin="round"/>
-<path d="M7.70831 15.4166V7.70831" stroke="#F7D55D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M29.2917 26.2083V16.1875" stroke="#F7D55D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M29.2917 9.24998V3.08331" stroke="#F7D55D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>
 
+  <div  onClick={() => navigate('/asad')} className={`p-4 rounded-2xl flex items-center gap-3 border-2 ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900' }`}>
+      <div className="w-16 h-16 rounded-xl flex items-center justify-center">
+      <div className="w-16 h-16 text-[#f7d55d]">
+      <img src="/Services/Signal-Stream.jpg" alt="Signal Stream" className="w-full h-full object-cover rounded-lg" />
 </div>
       </div>
       <div>
@@ -715,13 +707,10 @@ const disableAutoplay = () => {
       </div>
     </div>
 
-    <div  onClick={handleVIPClick}  className={`p-4 rounded-2xl flex items-center gap-3 border ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900'  }`}>
+    <div  onClick={handleVIPClick}  className={`p-4 rounded-2xl flex items-center gap-3 border-2 ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900' }`}>
       <div className="">
-        <div className="w-10 h-10 text-blue-100">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M12.7526 5.92418C12.2059 6.28608 11.679 6.70574 11.1924 7.19239C10.4754 7.90932 10.4947 7.94822 9.85359 8.68204M12.7526 5.92418C16.178 3.65685 20.3848 3.65685 20.3848 3.65685C20.3848 3.65685 20.3848 7.86362 18.1174 11.289M12.7526 5.92418L18.1174 11.289M18.1174 11.289C17.7555 11.8358 17.3359 12.3626 16.8492 12.8492C16.1323 13.5662 16.0934 13.5469 15.3596 14.188M6.11523 13.429C5.74278 13.9526 5.53552 14.2635 5.53552 14.2635L9.77816 18.5061C9.77816 18.5061 10.0891 18.2988 10.6127 17.9264M6.11523 13.429L2.70709 10.0208L8.36394 7.19239L9.85359 8.68204M6.11523 13.429C6.83965 12.4105 8.18898 10.5874 9.85359 8.68204M10.6127 17.9264L14.0208 21.3345L16.8492 15.6777L15.3596 14.188M10.6127 17.9264C11.6311 17.202 13.4542 15.8526 15.3596 14.188" stroke="#f7d55d"/>
-<path d="M5.00002 19C5.3503 17.5825 5.99994 17.0001 6.5 17.5C7.00002 18 6.4175 18.6497 5.00002 19Z" stroke="#f7d55d"/>
-</svg>
+        <div className="w-16 h-16 text-blue-100">
+        <img src="/Services/VIP.jpg" alt="Signal Stream" className="w-full h-full object-cover rounded-lg" />
 
         </div>
       </div>
@@ -735,22 +724,15 @@ const disableAutoplay = () => {
       </div>
     </div>
 
-    <div  onClick={() => navigate('/dex')} className={`p-4 rounded-2xl flex items-center gap-3 border ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900'  }`}>
+    <div  onClick={() => navigate('/dex')} className={`p-4 rounded-2xl flex items-center gap-3 border-2 ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900' }`}>
       <div className="">
-        <div className="w-10 h-10 text-purple-500">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 160">
-  <g>
-    <path d="m76.1194,62.98507a2,2 0 0 0 1.07,-3.69l-22,-14a2,2 0 0 0 -2.14,0l-22,14a2,2 0 0 0 1.07,3.69l4,0l0,20l-3,0a2,2 0 0 0 0,4l42,0a2,2 0 0 0 0,-4l-3,0l0,-20l4,0zm-24,20l-12,0l0,-20l12,0l0,20zm16,0l-12,0l0,-20l12,0l0,20zm-29.13,-24l15.13,-9.63l15.13,9.63l-30.26,0z" fill="#f7d55d"/>
-    <path d="m24.9894,52.23507l4.13,2.46a1.94,1.94 0 0 0 1,0.29a2,2 0 0 0 1,-3.71l-3.83,-2.29a9.94,9.94 0 0 0 0.83,-4a9.65,9.65 0 0 0 -0.26,-2.23l34.81,-13.45a10,10 0 1 0 -1.55,-5.32a9.19,9.19 0 0 0 0.14,1.58l-35.06,13.55a10,10 0 1 0 -1.21,13.12zm46.13,-34.25a6,6 0 1 1 -6,6a6,6 0 0 1 6,-6zm-59,27a6,6 0 1 1 6,6a6,6 0 0 1 -6,-6z" fill="#f7d55d"/>
-    <path d="m106.1194,42.98507a10,10 0 0 0 -10,10c0,0.15 0,0.3 0,0.46l-13.52,3.61a2,2 0 0 0 0.52,3.93a1.91,1.91 0 0 0 0.52,-0.07l13.48,-3.59a10.07,10.07 0 0 0 4.92,4.78l-6.54,29a10.43,10.43 0 0 0 -1.38,-0.12a12,12 0 0 0 -10.13,5.59l-8.87,-5.3a2,2 0 0 0 -2,3.42l9.34,5.61a11.84,11.84 0 0 0 -0.34,2.68a12,12 0 1 0 17.23,-10.78l6.6,-29.22l0.17,0a10,10 0 1 0 0,-20zm-4,60a8,8 0 1 1 -8,-8a8,8 0 0 1 8,8zm4,-44a6,6 0 1 1 6,-6a6,6 0 0 1 -6,6z" fill="#f7d55d"/>
-    <path d="m38.7094,91.57507l-4.87,4.86a12.11,12.11 0 1 0 3.16,2.55l4.53,-4.54a2,2 0 0 0 -2.82,-2.82l0,-0.05zm-10.59,23.41a8,8 0 1 1 8,-8a8,8 0 0 1 -8,8z" fill="#f7d55d"/>
-  </g>
-</svg>
+        <div className="w-16 h-16 text-purple-500">
+        <img src="/Services/Dex.jpg" alt="Signal Stream" className="w-full h-full object-cover rounded-lg" />
         </div>
       </div>
       <div>
       <h3 className={`font-medium text-base ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-          ورود به کلاس حرفه ای دکس تریدینگ
+          ورود به دوره حرفه ای دکس تریدینگ
           </h3>
           <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
           نحوه پیدا کردن میم کوین های پامپی 
@@ -758,17 +740,16 @@ const disableAutoplay = () => {
       </div>
     </div>
 
-    <div  onClick={() => navigate('')} className={`p-4 rounded-2xl flex items-center gap-3 border ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900'  }`}>
+    <div  onClick={() => navigate('')} className={`p-4 rounded-2xl flex items-center gap-3 border-2 ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900' }`}>
       <div className="">
-        <div className="w-10 h-10 text-yellow-500">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 98.94">
-  <path fill="#f7d55d" fill-rule="evenodd" clip-rule="evenodd" d="M26.76,22.96c-4.81,0-10.08-0.78-14.56,1v-0.12c-1.04,0.46-2.06,1.09-3.04,1.86l-0.03,0.03 c-0.91,0.72-1.78,1.57-2.59,2.53l0,0.01c-0.09,0.11-0.18,0.22-0.27,0.33l0,0c-0.04,0.05-0.08,0.1-0.13,0.16l-0.01,0.02 C6.03,28.89,5.94,29,5.86,29.11l-0.01,0.01c-0.04,0.05-0.07,0.1-0.11,0.15l-0.02,0.02L5.72,29.3c-0.04,0.05-0.07,0.1-0.11,0.15 l-0.03,0.05l-0.1,0.14l-0.01,0.02c-0.04,0.05-0.08,0.11-0.12,0.16l-0.03,0.04l-0.09,0.12L5.2,30.02c-0.04,0.05-0.07,0.1-0.1,0.15 l-0.01,0.01l-0.02,0.03c-0.03,0.04-0.06,0.09-0.09,0.13L4.94,30.4c-0.04,0.05-0.07,0.11-0.11,0.16l0,0.01 c-0.04,0.05-0.07,0.11-0.11,0.17L4.7,30.78l-0.09,0.14l-0.02,0.04c-0.03,0.06-0.07,0.11-0.1,0.17l-0.03,0.05l-0.07,0.12l-0.04,0.07 c-0.03,0.05-0.06,0.11-0.1,0.16l-0.02,0.03L4.15,31.7l-0.03,0.06c-0.03,0.06-0.06,0.11-0.09,0.17l0,0.01l0,0 c-0.03,0.06-0.07,0.12-0.1,0.18l-0.02,0.04l-0.08,0.15l-0.02,0.04L3.7,32.52l-0.03,0.07l-0.07,0.14l-0.02,0.04 c-0.03,0.06-0.06,0.12-0.09,0.18L3.46,33l-0.07,0.14l-0.02,0.05c-0.03,0.06-0.06,0.13-0.09,0.19c-1.7,3.59-2.15,6.29-2.43,10.12 C0.28,47.36-0.02,51.19,0,54.96c0.01,0.09,0.03,0.18,0.05,0.27l0,0.01c0.02,0.08,0.04,0.17,0.06,0.25l0,0.01 c0.02,0.08,0.04,0.16,0.06,0.23l0.01,0.02c0.02,0.07,0.04,0.15,0.07,0.22l0.01,0.02c0.02,0.07,0.05,0.13,0.07,0.2l0.01,0.03 c0.02,0.06,0.05,0.12,0.08,0.18l0.02,0.04c0.03,0.06,0.05,0.11,0.08,0.17c1.69,3.32,6.41,2.42,8.01-0.28l0.01-0.02l0.01-0.02 c0.02-0.03,0.04-0.06,0.05-0.1c0.02-0.03,0.03-0.06,0.04-0.09c0.01-0.02,0.02-0.05,0.03-0.07c0.02-0.04,0.04-0.08,0.05-0.11 l0.02-0.05c0.02-0.05,0.04-0.09,0.06-0.14l0.01-0.03c0.02-0.05,0.04-0.1,0.05-0.16l0-0.01c0.02-0.06,0.04-0.12,0.05-0.18l0-0.01 c0.02-0.06,0.03-0.12,0.04-0.18l0,0c0.01-0.06,0.02-0.13,0.03-0.19l0.91-11.84c0.14-1.79,0.26-3,0.98-4.7 c0.34-0.8,0.75-1.49,1.23-2.05l0.07,3.17v0L12.58,58L6.64,93.54c0.07,6.96,9.44,6.92,10.46,1.18l5.38-31.7l5.26,31.21 c2.21,7.79,11.33,4.88,10.46-1.05l-1.56-11.92L32.54,57.8l0.32-18.62v0.36l0.01-0.5l4.04,5.58c0.8,1.11,1.98,1.79,3.23,2l9.51,1.83 v15.28h-8.24c-1.04,0-1.91,0.87-1.91,1.91c0,1.04,0.87,1.91,1.91,1.91h38.44v8.54c-0.23,0.07-0.44,0.23-0.64,0.4h-0.03L67.26,87.8 c-0.77,0.7-0.8,1.91-0.07,2.68c0.7,0.77,1.91,0.8,2.68,0.07l9.95-9.44v8.61c0,1.04,0.87,1.91,1.91,1.91c1.04,0,1.91-0.87,1.91-1.91 v-8.24l9.58,9.08c0.74,0.74,1.94,0.7,2.68-0.07c0.74-0.74,0.7-1.94-0.07-2.68L83.91,76.48c-0.1-0.07-0.17-0.13-0.27-0.2v-8.74 h37.33c1.04,0,1.91-0.87,1.91-1.91c0-1.04-0.87-1.91-1.91-1.91h-8.34V16.49h8.14c1.04,0,1.91-0.87,1.91-1.91 c0-1.04-0.87-1.91-1.91-1.91h-37.4V7.11c0-1.04-0.87-1.91-1.91-1.91s-1.91,0.87-1.91,1.91v5.56H41.42c-1.04,0-1.91,0.87-1.91,1.91 c0,1.04,0.87,1.91,1.91,1.91h8.24v21.74l-5.78-1.11l-8.1-11.19c-0.74-1.02-1.79-1.68-2.93-1.94C31.06,23.3,29.05,22.96,26.76,22.96 L26.76,22.96z M54.72,39.21L66.36,27c0.47-0.49,1.25-0.51,1.75-0.04c0.49,0.47,0.51,1.25,0.04,1.75L56.96,40.44 c1.2,1.14,1.81,2.84,1.48,4.59c-0.46,2.42-2.59,4.1-4.97,4.08v14.63h55.37V16.49H53.47v22.48l0.98,0.19 C54.54,39.17,54.63,39.19,54.72,39.21L54.72,39.21z M22.49,0c5.86,0,10.62,4.75,10.62,10.62c0,5.86-4.75,10.62-10.62,10.62 c-5.86,0-10.62-4.75-10.62-10.62C11.87,4.75,16.62,0,22.49,0L22.49,0z"/>
-</svg>
+        <div className="w-16 h-16 text-yellow-500">
+        <img src="/Services/0To100.jpg" alt="Signal Stream" className="w-full h-full object-cover rounded-lg" />
+
         </div>
       </div>
       <div>
       <h3 className={`font-medium text-base ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-          ورود به آموزش ۰ تا ۱۰۰ کریپتو
+          ورود به دوره ۰ تا ۱۰۰ کریپتو
           </h3>
           <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
           آشنایی با مفاهیم پایه تا حرفه ای
@@ -776,7 +757,7 @@ const disableAutoplay = () => {
       </div>
     </div>
 
-    <div  onClick={() => navigate('/mentor')} className={`p-4 rounded-2xl flex items-center gap-3 border ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900'  }`}>
+    <div  onClick={() => navigate('/mentor')} className={`p-4 rounded-2xl flex items-center gap-3 border-2 ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900' }`}>
       <div className="">
         <div className="w-10 h-10 text-yellow-500">
         <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">

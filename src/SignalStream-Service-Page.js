@@ -12,9 +12,11 @@ const SignalStreamServicePage = ({ isDarkMode, isOpen, onClose }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [showLoginOverlay, setShowLoginOverlay] = useState(false);
-
-
   
+  // state جدید برای نگهداری وضعیت UID کاربر
+  const [uidStatus, setUidStatus] = useState(null); // می‌تواند null, 'pending', 'approved', یا 'rejected' باشد
+  const [isCheckingUid, setIsCheckingUid] = useState(true);
+
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => {
@@ -23,64 +25,105 @@ const SignalStreamServicePage = ({ isDarkMode, isOpen, onClose }) => {
     }
   }, [isOpen]);
 
-// اضافه کردن مدیریت history برای overlay لاگین
-useEffect(() => {
-  // اگر overlay لاگین باز است، یک state جدید به history اضافه کنیم
-  if (showLoginOverlay) {
-    window.history.pushState({ loginOverlay: true }, '');
-  }
-  
-  // یک listener برای مدیریت دکمه برگشت اضافه کنیم
-  const handleBackButtonForLogin = (event) => {
-    if (showLoginOverlay) {
-      event.preventDefault();
-      setShowLoginOverlay(false);
-      return;
-    }
-  };
-  
-  window.addEventListener('popstate', handleBackButtonForLogin);
-  
-  return () => {
-    window.removeEventListener('popstate', handleBackButtonForLogin);
-  };
-}, [showLoginOverlay]);
-
-
-  // مدیریت بهینه دکمه برگشت
+  // بررسی وضعیت UID هنگام لود صفحه
   useEffect(() => {
-    const handleBackButton = (event) => {
-      // اگر کارت UID باز است، ابتدا آن را ببندیم
-      if (showUIDCard) {
-        event.preventDefault();
-        setShowUIDCard(false);
+    // فقط وقتی صفحه باز است و کاربر لاگین کرده، وضعیت UID را بررسی می‌کنیم
+    if (isOpen) {
+      const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+      if (token) {
+        checkUidStatus();
+      } else {
+        setIsCheckingUid(false); // اگر کاربر لاگین نکرده، بررسی را متوقف می‌کنیم
+      }
+    }
+  }, [isOpen]);
+
+  // بررسی وضعیت لاگین کاربر
+  const isLoggedIn = () => {
+    return !!(localStorage.getItem('userToken') || sessionStorage.getItem('userToken'));
+  };
+
+  // تابع بررسی وضعیت UID کاربر
+  const checkUidStatus = async () => {
+    setIsCheckingUid(true);
+    try {
+      const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+      
+      if (!token) {
+        setUidStatus(null);
+        setIsCheckingUid(false);
         return;
       }
       
-      // بستن صفحه اصلی
-      if (isOpen) {
-        event.preventDefault();
-        closeCard();
-        return;
+      // درخواست به API
+      const response = await fetch('https://alicomputer.com/wp-json/lbank/v1/check-uid-status', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (data.has_request) {
+        // بررسی وضعیت درخواست‌ها
+        const approvedRequest = data.requests.find(req => req.status === 'approved');
+        if (approvedRequest) {
+          setUidStatus('approved');
+        } else if (data.requests.some(req => req.status === 'pending')) {
+          setUidStatus('pending');
+        } else {
+          setUidStatus('rejected');
+        }
+      } else {
+        setUidStatus(null);
       }
-    };
-  
-    // افزودن یک state به تاریخچه مرورگر برای مدیریت دکمه برگشت اندروید
-    window.history.pushState({ signalStreamPage: true }, '');
-    
-    // اضافه کردن state جدید برای کارت UID اگر باز است
-    if (showUIDCard) {
-      window.history.pushState({ uidCard: true }, '');
+    } catch (error) {
+      console.error('Error checking UID status:', error);
+      setUidStatus(null);
+    } finally {
+      setIsCheckingUid(false);
     }
-    
-    // شنونده برای رویداد popstate (فشردن دکمه برگشت)
-    window.addEventListener('popstate', handleBackButton);
-    
-    // پاکسازی event listener
-    return () => {
-      window.removeEventListener('popstate', handleBackButton);
-    };
-  }, [isOpen, onClose, showUIDCard]);
+  };
+
+// اضافه کردن مدیریت بهینه دکمه برگشت
+useEffect(() => {
+  // فقط یک بار pushState انجام دهیم وقتی کامپوننت ماونت می‌شود
+  if (isOpen) {
+    // چک کنیم که آیا قبلاً state اضافه کرده‌ایم
+    const historyState = window.history.state;
+    if (!historyState || !historyState.signalStreamPage) {
+      window.history.pushState({ signalStreamPage: true }, '');
+    }
+  }
+
+  const handleBackButton = () => {
+    // اگر کارت UID باز است، ابتدا آن را ببندیم
+    if (showUIDCard) {
+      setShowUIDCard(false);
+    } 
+    // اگر overlay لاگین باز است، آن را ببندیم
+    else if (showLoginOverlay) {
+      setShowLoginOverlay(false);
+    }
+    // در غیر این صورت، صفحه را ببندیم
+    else if (isOpen) {
+      closeCard();
+    }
+  };
+  
+  // شنونده برای رویداد popstate (فشردن دکمه برگشت)
+  window.addEventListener('popstate', handleBackButton);
+  
+  // پاکسازی event listener
+  return () => {
+    window.removeEventListener('popstate', handleBackButton);
+  };
+}, [isOpen, showUIDCard, showLoginOverlay]);
+
+// حذف useEffect اضافی برای مدیریت overlay لاگین
+// چون این مدیریت در useEffect بالا انجام می‌شود
 
   const closeCard = () => {
     setIsExiting(true);
@@ -99,12 +142,18 @@ useEffect(() => {
       setShowLoginOverlay(true);
     } else {
       setShowUIDCard(true);
-      window.history.pushState({ uidCard: true }, '');
     }
   };
+  
   // تابع برای باز کردن لینک رفرال ال‌بانک
   const openReferralLink = () => {
     window.open('https://www.lbank.com/en-US/login/?icode=PCSVIP', '_blank');
+  };
+
+  // تابع برای باز کردن کانال سیگنال
+  const openSignalChannel = () => {
+    // اینجا می‌توانید مسیر یا URL مناسب برای هدایت کاربر به کانال سیگنال را قرار دهید
+    navigate('/chat'); // فرض می‌کنیم مسیر کانال سیگنال به این صورت باشد
   };
 
   if (!isOpen) return null;
@@ -237,6 +286,34 @@ useEffect(() => {
                   </div>
                 </div>
               </div>
+              
+              {/* Status Messages */}
+              {uidStatus === 'pending' && (
+                <div className="p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-white" dir="rtl">
+                  <h3 className="text-lg font-bold mb-1 text-yellow-400 text-right">درخواست شما در حال بررسی است</h3>
+                  <p className="text-right text-gray-100">
+                    درخواست UID شما ثبت شده و در حال بررسی است. لطفاً تا ۲۴ ساعت آینده صبر کنید.
+                  </p>
+                </div>
+              )}
+              
+              {uidStatus === 'approved' && (
+                <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/30 text-white" dir="rtl">
+                  <h3 className="text-lg font-bold mb-1 text-green-400 text-right">درخواست شما تایید شده است</h3>
+                  <p className="text-right text-gray-100">
+                    UID شما تایید شده است و می‌توانید به کانال سیگنال استریم دسترسی داشته باشید.
+                  </p>
+                </div>
+              )}
+              
+              {uidStatus === 'rejected' && (
+                <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-white" dir="rtl">
+                  <h3 className="text-lg font-bold mb-1 text-red-400 text-right">درخواست شما رد شده است</h3>
+                  <p className="text-right text-gray-100">
+                    متأسفانه درخواست UID شما رد شده است. برای اطلاعات بیشتر به بخش پشتیبانی مراجعه کنید.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
           
@@ -246,48 +323,79 @@ useEffect(() => {
             background: 'linear-gradient(to top, rgba(0,0,0,100), rgba(0,0,0,0))'
           }}></div>
 
-          {/* Fixed Button at Bottom - Two Buttons */}
-          <div className="absolute bottom-6 left-4 right-4 z-10 grid grid-cols-2 gap-3">
-            <button 
-              onClick={handleSubmitUID}
-              className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-4 rounded-xl transition-colors shadow-lg"
-            >
-              ثبت UID
-            </button>
-            <button 
-              onClick={openReferralLink} 
-              className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-xl transition-colors shadow-lg"
-            >
-              ثبت‌نام ال‌بانک
-            </button>
+          {/* Fixed Button at Bottom - نمایش دکمه‌ها بر اساس وضعیت UID */}
+          <div className="absolute bottom-6 left-4 right-4 z-10">
+            {isCheckingUid ? (
+              // نمایش لودینگ هنگام بررسی وضعیت
+              <div className="flex justify-center">
+                <div className="w-8 h-8 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            ) : uidStatus === 'approved' ? (
+              // کاربر تایید شده - نمایش دکمه ورود به کانال
+              <button 
+                onClick={openSignalChannel} 
+                className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl transition-colors shadow-lg"
+              >
+                ورود به کانال سیگنال
+              </button>
+            ) : uidStatus === 'pending' ? (
+              // درخواست در حال بررسی - دکمه غیرفعال
+              <button 
+                disabled dir="Rtl"
+                className="w-full bg-gray-500 text-white font-bold py-4 rounded-xl transition-colors shadow-lg opacity-70 cursor-not-allowed"
+              >
+                در حال بررسی درخواست ...
+              </button>
+            ) : (
+              // درخواست رد شده یا هنوز ثبت نشده - نمایش دو دکمه
+              <div className="grid grid-cols-2 gap-3">
+                <button 
+                  onClick={handleSubmitUID}
+                  className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-4 rounded-xl transition-colors shadow-lg"
+                >
+                  ثبت UID
+                </button>
+                <button 
+                  onClick={openReferralLink} 
+                  className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-xl transition-colors shadow-lg"
+                >
+                  ثبت‌نام ال‌بانک
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
       
-     {/* Login Overlay */}
-{showLoginOverlay && (
-  <LoginPage 
-    isDarkMode={isDarkMode} 
-    setIsLoggedIn={(status) => {
-      setShowLoginOverlay(false);
-      if (status) {
-        // اگر لاگین موفق بود، UID کارت را نمایش می‌دهیم
-        setShowUIDCard(true);
-      }
-    }}
-    onClose={() => setShowLoginOverlay(false)} 
-  />
-)}
+      {/* Login Overlay */}
+      {showLoginOverlay && (
+        <LoginPage 
+          isDarkMode={isDarkMode} 
+          setIsLoggedIn={(status) => {
+            setShowLoginOverlay(false);
+            if (status) {
+              // اگر لاگین موفق بود، UID کارت را نمایش می‌دهیم
+              setShowUIDCard(true);
+              // بررسی مجدد وضعیت UID بعد از لاگین
+              checkUidStatus();
+            }
+          }}
+          onClose={() => setShowLoginOverlay(false)} 
+        />
+      )}
 
-{/* UID Submission Card */}
-{showUIDCard && (
-  <UIDSubmissionCard
-    isDarkMode={isDarkMode}
-    onClose={() => setShowUIDCard(false)}
-    productTitle="سیگنال استریم رایگان"
-  />
-)}
-      
+      {/* UID Submission Card */}
+      {showUIDCard && (
+        <UIDSubmissionCard
+          isDarkMode={isDarkMode}
+          onClose={() => {
+            setShowUIDCard(false);
+            // بررسی مجدد وضعیت UID بعد از ثبت
+            checkUidStatus();
+          }}
+          productTitle="سیگنال استریم رایگان"
+        />
+      )}
     </div>
   );
 };
