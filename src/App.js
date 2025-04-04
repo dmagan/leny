@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import CourseApp from './CourseApp';
 import AsadPage from './AsadPage';
-import Chat from './chat';
+import Chat from './vipChanel';
 import StoriesPage from './components/StoriesPage';
 import ProfilePage from './ProfilePage';
 import LoginPage from './LoginPage';
@@ -24,6 +24,10 @@ import 'animate.css';
 import 'react-notifications-component/dist/theme.css'
 import 'animate.css/animate.min.css'
 import { Navigate } from 'react-router-dom';
+import SignalStreamChannel from './chanel-signal-stream';
+import PublicChannel from './chanel-public';
+
+
 
 // این کامپوننت برای استفاده از useNavigate ایجاد شده است
 function AppRoutes({
@@ -59,6 +63,47 @@ function AppRoutes({
       <Route path="/asad" element={<AsadPage isDarkMode={isDarkMode} />} />
       <Route path="/chat" element={<Chat isDarkMode={isDarkMode} />} />
 
+      <Route path="/chanel-signal-stream" element={
+  <>
+    <CourseApp 
+      isDarkMode={isDarkMode} 
+      setIsDarkMode={setIsDarkMode} 
+      products={products} 
+      cryptoPrices={cryptoPrices} 
+      stories={stories} 
+      loading={loading} 
+      sliders={sliders}
+      isLoggedIn={isLoggedIn}
+      onLogout={handleLogout}
+    />
+    <SignalStreamChannel 
+      isDarkMode={isDarkMode}
+      isOpen={true}
+      onClose={() => navigate(-1)}
+    />
+  </>
+} />
+
+      <Route path="/chanel-public" element={
+  <>
+    <CourseApp 
+      isDarkMode={isDarkMode} 
+      setIsDarkMode={setIsDarkMode} 
+      products={products} 
+      cryptoPrices={cryptoPrices} 
+      stories={stories} 
+      loading={loading} 
+      sliders={sliders}
+      isLoggedIn={isLoggedIn}
+      onLogout={handleLogout}
+    />
+    <PublicChannel 
+      isDarkMode={isDarkMode}
+      isOpen={true}
+      onClose={() => navigate(-1)}
+    />
+  </>
+} />
 
       <Route path="/vip" element={
   <>

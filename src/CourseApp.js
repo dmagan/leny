@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Menu, Play, Home, PlayCircle, Calendar, UserX, UserCheck, Headphones, Megaphone , MonitorPlay} from 'lucide-react';
+import { Menu, Play, Home, PlayCircle, Calendar, UserX, UserCheck, Headphones, Megaphone , MonitorPlay, Gauge} from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { Store } from 'react-notifications-component';
@@ -95,7 +95,7 @@ const ThemeSwitcher = ({ isDarkMode, setIsDarkMode }) => {
       <div className={`shadow-sm flex h-8 w-16 items-center justify-center rounded-full ${isDarkMode ? 'bg-gray-700' : 'bg-slate-200'}`}>
         <span
           className={`flex h-6 w-6 items-center justify-center rounded-full transition-all ${
-            !isDarkMode ? 'bg-blue-500 text-white' : 'text-gray-500'
+            !isDarkMode ? 'bg-yellow-500 text-white' : 'text-gray-500'
           }`}
         >
           <svg
@@ -117,7 +117,7 @@ const ThemeSwitcher = ({ isDarkMode, setIsDarkMode }) => {
         </span>
         <span
           className={`flex h-6 w-6 items-center justify-center rounded-full transition-all ${
-            isDarkMode ? 'bg-blue-500 text-white' : 'text-gray-500'
+            isDarkMode ? 'bg-yellow-500 text-white' : 'text-gray-500'
           }`}
         >
           <svg
@@ -164,6 +164,7 @@ const CourseApp = ({  // این قسمت رو جایگزین کنید
   const [showDexPage, setShowDexPage] = useState(false);
   const [showZeroTo100Page, setShowZeroTo100Page] = useState(false);
   const [showSignalStreamPage, setShowSignalStreamPage] = useState(false);
+  
 
 
   const services = [
@@ -486,8 +487,8 @@ const disableAutoplay = () => {
 />
 
       {/* Header */}
-      <div className={`px-6 py-4 flex items-center justify-between ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
-  <Menu size={24} className={`${isDarkMode ? 'text-white' : 'text-gray-700'}`} />
+     <div className={`px-6 py-4 flex items-center justify-between ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+  <img src="/Logo-App2.png" alt="Logo" className="h-8 w-auto" />
   <span className={`text-lg ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>خانه</span>
   <ThemeSwitcher isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />
 </div>
@@ -691,7 +692,7 @@ const disableAutoplay = () => {
   <h2 className="text-xl mb-4"></h2>
   <div className="grid grid-cols-1 gap-4" dir="rtl">
 
-  <div  onClick={() => navigate('/asad')} className={`p-4 rounded-2xl flex items-center gap-3 border-2 ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900' }`}>
+  <div  onClick={() => navigate('/chanel-signal-stream')} className={`p-4 rounded-2xl flex items-center gap-3 border-2 ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900' }`}>
       <div className="w-16 h-16 rounded-xl flex items-center justify-center">
       <div className="w-16 h-16 text-[#f7d55d]">
       <img src="/Services/Signal-Stream.jpg" alt="Signal Stream" className="w-full h-full object-cover rounded-lg" />
@@ -699,7 +700,7 @@ const disableAutoplay = () => {
       </div>
       <div>
       <h3 className={`font-medium text-base ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-          ورود به کانال رایگان سیگنال فیوچرز
+          ورود به کانال رایگان سیگنال استریم
         </h3>
         <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
         درآمد ماهانه رایگان
@@ -760,16 +761,7 @@ const disableAutoplay = () => {
     <div  onClick={() => navigate('/mentor')} className={`p-4 rounded-2xl flex items-center gap-3 border-2 ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900' }`}>
       <div className="">
         <div className="w-10 h-10 text-yellow-500">
-        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
-<g>
-  <path fill="#f7d55d" d="M151,13.1c-6.5,3.3-7.7,11.6-2.6,16.6c5.2,5.1,13.3,3.8,16.6-2.6C169.7,17.9,160.2,8.4,151,13.1z"/>
-  <path fill="#f7d55d" d="M177.3,23.2c-1.8,0.6-5.7,4.3-26,24.5c-19.5,19.5-24.1,24.2-25.1,26.3l-1.2,2.5l-0.1,21.9l-0.1,21.9l-9.2,9.3c-8.9,8.9-9.2,9.3-9.2,11.1c0,3.9,3.6,6.5,7.1,5.1c2.3-1,19.9-19,21-21.5c0.7-1.7,1-3.6,1.2-10.3l0.3-8.2h9.4h9.4V117c0,10.1,0.1,11.3,0.9,12.6c1.8,2.9,5.7,3.2,8.2,0.6l1.3-1.4l0.1-14.2c0.2-15.5,0-16.8-2.3-18.7c-1.4-1.2-1.4-1.2-10.1-1.2h-8.7V82V69.2l14.7-14.7L173.4,40l11.5,0.1l11.5,0.1l-6.8,7.1c-3.7,3.9-7.2,7.7-7.7,8.5c-0.6,0.9-0.9,2.2-0.9,3.6c0,1.9,0.2,2.5,1.5,3.8c1.1,1.1,2.1,1.6,3.6,1.8c1.1,0.1,8.8,0.2,17.1,0.1c14.4-0.1,15.1-0.2,16.4-1.1c2-1.5,2.7-3.2,2-5.3c-1-3.4-1.2-3.5-13.2-3.6c-5.9-0.1-10.8-0.3-10.8-0.5c0-0.2,3.3-3.6,7.3-7.6l7.3-7.3l12.4,12.4c10.1,10.2,12.7,12.5,14,12.7c2.2,0.4,4.7-0.9,5.8-3c1.8-3.3,1.6-3.5-16.4-21.4c-10.3-10.2-17-16.5-18.1-17.1c-1.7-0.8-3.1-0.9-16.1-1C181.7,22.5,179.1,22.6,177.3,23.2z"/>
-  <path fill="#f7d55d" d="M118.3,45.9c-7.5,3.9-7.4,14.7,0.3,18.7c5.1,2.6,12,0,14.2-5.3c2.9-6.9-2.3-14.7-9.6-14.7C121.4,44.6,120.1,44.9,118.3,45.9z"/>
-  <path fill="#f7d55d" d="M171.4,157.1l0.1,86.8l37.2,0.1l37.2,0.1v-86.9V70.4h-37.3h-37.3L171.4,157.1z"/>
-  <path fill="#f7d55d" d="M90.7,198.5v45.6H128h37.3v-45.6v-45.6H128H90.7V198.5z"/>
-  <path fill="#f7d55d" d="M10,226.9v17.3h37.3h37.3L84.6,227l-0.1-17.1l-37.2-0.1L10,209.6V226.9z"/>
-</g>
-</svg>
+        <Gauge size={32} />
         </div>
       </div>
       <div>
@@ -888,6 +880,8 @@ const NavItem = ({ icon, label, active, isDarkMode, isProfile, onLogout, isLogge
       } else {
         navigate('/login');
       }
+    } else if (label === "کانال عمومی") {
+      navigate('/chanel-public');
     } else if (label === "محصولات") {
       navigate('/products');
     } else if (label === "سفارش‌ها") {
@@ -905,15 +899,16 @@ const NavItem = ({ icon, label, active, isDarkMode, isProfile, onLogout, isLogge
     }
   };
   
+  
   return (
     <button 
       onClick={handleClick} 
       className="flex flex-col items-center p-2"
     >
-      <div className={active ? "text-blue-500" : isDarkMode ? "text-gray-400" : "text-gray-500"}>
+      <div className={active ? "text-yellow-500" : isDarkMode ? "text-gray-400" : "text-gray-500"}>
         {icon}
       </div>
-      <span className={`text-xs mt-1 ${active ? "text-blue-500" : isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
+      <span className={`text-xs mt-1 ${active ? "text-yellow-500" : isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
         {label}
       </span>
     </button>

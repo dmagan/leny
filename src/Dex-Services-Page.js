@@ -164,7 +164,7 @@ const DexServicesPage = ({ isDarkMode, isOpen, onClose }) => {
                   <li>دکس تولز</li>
                   <li>دکس اسکرینر</li>
                   <li>توییت اسکات</li>
-                  <li>راک چک</li>
+                  <li>راگ چک</li>
                   <li>اوردر بوک های انچین</li>
                   <li>کریپتو متر</li>
                   <li>کوین گکو</li>

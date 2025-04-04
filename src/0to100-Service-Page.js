@@ -164,7 +164,7 @@ const ZeroTo100ServicePage = ({ isDarkMode, isOpen, onClose }) => {
               <div className="p-4 rounded-xl bg-[#141e35] text-white" dir="rtl">
                 <h3 className="text-lg font-bold mb-3 text-yellow-400 text-right">نقشه راه:</h3>
                 <ul className="list-disc list-inside space-y-1 pr-4 text-right">
-                  <li>نصب صرافی و آموزش کامل ( ۲ صرافی متفاوت )</li>
+                  <li>نصب صرافی و آموزش کامل(۲ صرافی متفاوت)</li>
                   <li>نصب و آموزش تمامی ولت ها</li>
                   <li>آموزش کامل تریدینگ ویو</li>
                   <li>آموزش دیبانک</li>
@@ -186,7 +186,7 @@ const ZeroTo100ServicePage = ({ isDarkMode, isOpen, onClose }) => {
                   <li>مفهوم پولبک</li>
                   <li>فشار خرید و فروش ( مومنتوم )</li>
                   <li>استراتژی کانال</li>
-                  <li>بریم اوت</li>
+                  <li>بریک اوت</li>
                   <li>تریدینگ رنج</li>
                   <li>استراتژی اینتری پرایس</li>
                   <li>موج شماری</li>
