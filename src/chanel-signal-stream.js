@@ -252,13 +252,15 @@ const SignalStreamChannel = ({ isDarkMode, isOpen, onClose }) => {
             )}
 
             <div className="flex-grow">
-              {[...welcomeMessages].reverse().map((msg) => (
-                <ChatMessage 
-                  key={msg.id}
-                  message={msg}
-                  isDarkMode={isDarkMode}
-                />
-              ))}
+            {[...welcomeMessages].reverse().map((msg, index) => (
+  <div key={msg.id} className={index === 0 ? 'mt-3' : ''}>
+    <ChatMessage 
+      message={msg}
+      isDarkMode={isDarkMode}
+    />
+  </div>
+))}
+
 
               {[...posts].map((post) => (
                 <ChatMessage 

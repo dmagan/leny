@@ -61,7 +61,29 @@ function AppRoutes({
       } />
       
       <Route path="/asad" element={<AsadPage isDarkMode={isDarkMode} />} />
-      <Route path="/chat" element={<Chat isDarkMode={isDarkMode} />} />
+
+      <Route path="/chat" element={
+  <>
+    <CourseApp 
+      isDarkMode={isDarkMode} 
+      setIsDarkMode={setIsDarkMode} 
+      products={products} 
+      cryptoPrices={cryptoPrices} 
+      stories={stories} 
+      loading={loading} 
+      sliders={sliders}
+      isLoggedIn={isLoggedIn}
+      onLogout={handleLogout}
+    />
+    <Chat
+      isDarkMode={isDarkMode}
+      isOpen={true}
+      onClose={() => navigate(-1)}
+    />
+  </>
+} />
+
+
 
       <Route path="/chanel-signal-stream" element={
   <>
@@ -227,8 +249,30 @@ function AppRoutes({
         </>
       } />
       
-      <Route path="/dex" element={<DexPage isDarkMode={isDarkMode} />} />
-      
+
+      <Route path="/dex" element={
+  <>
+    <CourseApp 
+      isDarkMode={isDarkMode} 
+      setIsDarkMode={setIsDarkMode} 
+      products={products} 
+      cryptoPrices={cryptoPrices} 
+      stories={stories} 
+      loading={loading} 
+      sliders={sliders}
+      isLoggedIn={isLoggedIn}
+      onLogout={handleLogout}
+    />
+    <DexPage 
+      isDarkMode={isDarkMode}
+      isOpen={true}
+      onClose={() => navigate(-1)}
+    />
+  </>
+} />
+
+
+
       <Route path="/support" element={
         isLoggedIn ? (
           <>

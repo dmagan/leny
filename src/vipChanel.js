@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeftCircle, X } from 'lucide-react';
 import AudioPlayer from './AudioPlayer';
@@ -89,7 +89,7 @@ const ChatMessage = ({ message, isDarkMode }) => {
   );
 };
 
-const Chat = ({ isDarkMode }) => {
+const VIPChannel = ({ isDarkMode, isOpen, onClose }) => {
   const navigate = useNavigate();
   const messagesEndRef = useRef(null);
   const [posts, setPosts] = useState([]);
@@ -98,6 +98,10 @@ const Chat = ({ isDarkMode }) => {
   const [hasMore, setHasMore] = useState(true);
   const containerRef = useRef(null);
   const loadingMoreRef = useRef(null);
+  
+  // انیمیشن
+  const [showChannel, setShowChannel] = useState(false);
+  const [channelExiting, setChannelExiting] = useState(false);
 
   // Welcome messages
   const welcomeMessages = [
@@ -152,6 +156,42 @@ const Chat = ({ isDarkMode }) => {
     }
   };
 
+  // مدیریت دکمه بازگشت و انیمیشن
+  useEffect(() => {
+    const handleBackButton = (event) => {
+      event.preventDefault();
+      closeChannel();
+    };
+
+    // اگر صفحه باز است، یک state به تاریخچه اضافه کنیم
+    if (isOpen) {
+      window.history.pushState({ vipChannelPage: true }, '');
+      
+      // انیمیشن ورود
+      setTimeout(() => {
+        setShowChannel(true);
+      }, 100);
+    }
+    
+    // شنونده برای رویداد popstate (فشردن دکمه برگشت)
+    window.addEventListener('popstate', handleBackButton);
+    
+    // پاکسازی event listener
+    return () => {
+      window.removeEventListener('popstate', handleBackButton);
+    };
+  }, [isOpen]);
+
+  // بستن چنل
+  const closeChannel = useCallback(() => {
+    setChannelExiting(true);
+    setTimeout(() => {
+      setShowChannel(false);
+      setChannelExiting(false);
+      onClose ? onClose() : navigate(-1);
+    }, 300);
+  }, [onClose, navigate]);
+
   useEffect(() => {
     fetchPosts(1);
   }, []);
@@ -180,122 +220,138 @@ const Chat = ({ isDarkMode }) => {
   }, [loading, hasMore, page]);
 
   return (
-    <div className={`relative min-h-screen select-none ${isDarkMode ? 'bg-gray-900' : 'bg-gray-100'} font-iransans`}>
+    <div 
+      className="fixed inset-0 z-50 bg-black/40 overflow-hidden transition-opacity duration-300"
+      style={{ 
+        opacity: channelExiting ? 0 : (showChannel ? 1 : 0),
+        pointerEvents: showChannel ? 'auto' : 'none',
+        transition: 'opacity 0.3s ease-out'
+      }}
+    >
       <div 
-        className={`fixed top-0 left-0 right-0 z-40 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} h-[70px] shadow-md select-none`}
+        className={`fixed inset-0 w-full ${isDarkMode ? 'bg-gray-900' : 'bg-gray-100'} shadow-lg transition-transform duration-300 ease-out`}
+        style={{ 
+          transform: channelExiting 
+            ? 'translateX(100%)' 
+            : `translateX(${showChannel ? '0' : '100%'})`,
+          transition: 'transform 0.3s cubic-bezier(0.17, 0.67, 0.24, 0.99), opacity 0.3s ease-out'
+        }}
       >
-        <div className="h-full flex items-center px-4">
-          <div className="flex-grow flex justify-center">
-            <h1 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-               VIP کانال 
-            </h1>
-          </div>
-        </div>
-      </div>
-
-      <button 
-        onClick={() => navigate(-1)} 
-        className={`fixed top-4 left-4 z-50 flex items-center gap-1 rounded-full px-4 py-2 ${
-          isDarkMode ? 'text-[#f7d55d]' : 'text-gray-200'
-        }`}
-      >
-        <ArrowLeftCircle className="w-8 h-8 md:w-9 md:h-9" />
-      </button>
-
-      <div className="relative pt-[70px] h-[calc(100vh-10px)] overflow-hidden select-none">
+        {/* Header */}
         <div 
-          ref={containerRef}
-          className="h-full overflow-y-auto px-4 pb-4 select-none"
+          className={`h-16 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} flex items-center px-4 relative border-b ${
+            isDarkMode ? 'border-gray-700' : 'border-gray-200'
+          }`}
         >
-          {(loading && page > 1) && (
-            <div ref={loadingMoreRef} className="flex justify-center items-center p-4">
-              <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          )}
+          <button
+            onClick={closeChannel} 
+            className={`absolute left-4 ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}
+          >
+            <ArrowLeftCircle className="w-8 h-8" />
+          </button>
+          <h1 className={`w-full text-center text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+            VIP کانال
+          </h1>
+        </div>
 
-          <div className="flex-grow">
-            {[...welcomeMessages].reverse().map((msg) => (
-              <ChatMessage 
-                key={msg.id}
-                message={msg}
-                isDarkMode={isDarkMode}
-              />
-            ))}
-
-            {[...posts].map((post) => (
-              <ChatMessage 
-                key={post.id}
-                message={post}
-                isDarkMode={isDarkMode}
-              />
-            ))}
-
-            {loading && page === 1 && (
-              <div className="flex justify-center items-center p-4">
+        {/* Messages Area */}
+        <div className="absolute top-16 bottom-0 left-0 right-0 overflow-y-auto">
+          <div 
+            ref={containerRef}
+            className="px-4 pb-4"
+          >
+            {(loading && page > 1) && (
+              <div ref={loadingMoreRef} className="flex justify-center items-center p-4">
                 <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
               </div>
             )}
-          </div>
 
-          {!loading && !hasMore && posts.length > 0 && (
-            <div className="text-center text-gray-500 py-4">
-              پیام دیگری وجود ندارد
+            <div className="flex-grow">
+            {[...welcomeMessages].reverse().map((msg, index) => (
+  <div key={msg.id} className={index === 0 ? 'mt-3' : ''}>
+    <ChatMessage 
+      message={msg}
+      isDarkMode={isDarkMode}
+    />
+  </div>
+))}
+
+
+              {[...posts].map((post) => (
+                <ChatMessage 
+                  key={post.id}
+                  message={post}
+                  isDarkMode={isDarkMode}
+                />
+              ))}
+
+              {loading && page === 1 && (
+                <div className="flex justify-center items-center p-4">
+                  <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              )}
             </div>
-          )}
 
-          <div ref={messagesEndRef} />
+            {!loading && !hasMore && posts.length > 0 && (
+              <div className="text-center text-gray-500 py-4">
+                پیام دیگری وجود ندارد
+              </div>
+            )}
+
+            <div ref={messagesEndRef} />
+          </div>
         </div>
+
+        <style jsx global>{`
+          .message-bubble {
+            background-color: transparent;
+            color: ${isDarkMode ? '#fff' : '#1f2937'};
+            border: 2px solid rgba(247, 213, 93, 0.5);
+            border-radius: 24px;
+            border-top-right-radius: 4px;
+            padding: 1rem;
+            max-width: 80%;
+            direction: rtl;
+            text-align: right;
+            position: relative;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+          }
+          
+          .message-bubble ul {
+            padding-right: 20px;
+            list-style-position: inside;
+            user-select: none;
+          }
+
+          .message-bubble .timestamps {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1rem;
+            color: ${isDarkMode ? '#9CA3AF' : '#6B7280'};
+            font-size: 0.75rem;
+            user-select: none;
+          }
+
+          .message-bubble .time {
+            direction: ltr;
+            user-select: none;
+          }
+
+          .message-bubble .date {
+            direction: ltr;
+            user-select: none;
+          }
+
+          * {
+            -webkit-tap-highlight-color: transparent;
+          }
+        `}</style>
       </div>
-
-      <style jsx global>{`
-        .message-bubble {
-          background-color: transparent;
-          color: ${isDarkMode ? '#fff' : '#1f2937'};
-          border: 2px solid rgba(247, 213, 93, 0.5);
-          border-radius: 24px;
-          border-top-right-radius: 4px;
-          padding: 1rem;
-          max-width: 80%;
-          direction: rtl;
-          text-align: right;
-          position: relative;
-          user-select: none;
-          -webkit-user-select: none;
-          -moz-user-select: none;
-          -ms-user-select: none;
-        }
-        
-        .message-bubble ul {
-          padding-right: 20px;
-          list-style-position: inside;
-          user-select: none;
-        }
-
-        .message-bubble .timestamps {
-          display: flex;
-          justify-content: space-between;
-          margin-top: 1rem;
-          color: ${isDarkMode ? '#9CA3AF' : '#6B7280'};
-          font-size: 0.75rem;
-          user-select: none;
-        }
-
-        .message-bubble .time {
-          direction: ltr;
-          user-select: none;
-        }
-
-        .message-bubble .date {
-          direction: ltr;
-          user-select: none;
-        }
-
-        * {
-          -webkit-tap-highlight-color: transparent;
-        }
-      `}</style>
     </div>
   );
 };
 
-export default Chat;
+export default VIPChannel;

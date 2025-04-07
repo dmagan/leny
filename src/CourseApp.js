@@ -164,6 +164,9 @@ const CourseApp = ({  // این قسمت رو جایگزین کنید
   const [showDexPage, setShowDexPage] = useState(false);
   const [showZeroTo100Page, setShowZeroTo100Page] = useState(false);
   const [showSignalStreamPage, setShowSignalStreamPage] = useState(false);
+  const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
+
+
   
 
 
@@ -543,9 +546,20 @@ const disableAutoplay = () => {
 
 {/* Story Highlights */}
 <div className="px-4">
+<h2 className={`text-xl mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`} dir="rtl">
+هایلایت های ما
+  </h2>
   <div className="relative">
-  <div className="flex overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory gap-0.5">
-  {stories.map((story, index) => (
+    <div 
+      className="flex overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory gap-0.5"
+      onScroll={(e) => {
+        const scrollLeft = e.target.scrollLeft;
+        const itemWidth = 90; // تقریبی برای هر آیتم داستان
+        const index = Math.round(scrollLeft / itemWidth);
+        setCurrentStoryIndex(index);
+      }}
+    >
+      {stories.map((story, index) => (
         <div 
           key={story.id}
           className="flex-none snap-center cursor-pointer"
@@ -575,6 +589,32 @@ const disableAutoplay = () => {
         </div>
       ))}
     </div>
+    
+ {/* Dots Indicator for Stories */}
+{stories.length > 0 && (
+  <div className="flex justify-center gap-2 mt-2 mb-4">
+    {/* فقط 2 نقطه نمایش داده شود */}
+    {[0, 1,2,3,4,5,6].filter(index => index < stories.length).map((index) => (
+      <button
+        key={index}
+        onClick={() => {
+          // اسکرول به موقعیت استوری مورد نظر
+          const storyContainer = document.querySelector('.flex.overflow-x-auto.pb-4');
+          if (storyContainer) {
+            storyContainer.scrollTo({
+              left: index * 90, // عرض تقریبی هر آیتم
+              behavior: 'smooth'
+            });
+          }
+          setCurrentStoryIndex(index);
+        }}
+        className={`w-2 h-2 rounded-full transition-all ${
+          currentStoryIndex === index ? 'bg-yellow-500 w-4' : isDarkMode ? 'bg-gray-700' : 'bg-gray-300'
+        }`}
+      />
+    ))}
+  </div>
+)}
   </div>
 </div>
 
@@ -632,9 +672,9 @@ const disableAutoplay = () => {
 </div>
 {/* Services */}
 <div className="p-4">
-  <h2 className={`text-xl mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-    خدمات ما
-  </h2>
+<h2 dir="rtl" className={`text-xl mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+  خدمات ما
+</h2>
   <div className="relative">
     <div 
       ref={sliderRef}

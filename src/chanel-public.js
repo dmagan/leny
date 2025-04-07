@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeftCircle, X } from 'lucide-react';
 import AudioPlayer from './AudioPlayer';
@@ -28,9 +28,134 @@ const ImageModal = ({ isOpen, onClose, imageUrl }) => {
 // Chat Message Component
 const ChatMessage = ({ message, isDarkMode }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-
+  
+  // YouTube URL helper function
+  const getYouTubeEmbedUrl = (url) => {
+    if (!url) return null;
+    
+    // YouTube URL patterns
+    const patterns = [
+      /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([^&]+)/i,
+      /(?:https?:\/\/)?(?:www\.)?youtu\.be\/([^?]+)/i,
+      /(?:https?:\/\/)?(?:www\.)?youtube\.com\/embed\/([^?]+)/i
+    ];
+    
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match && match[1]) {
+        return `https://www.youtube.com/embed/${match[1]}`;
+      }
+    }
+    
+    return url; // Return original URL if not a YouTube URL
+  };
+  
+  // Function to find and extract media URLs from content and clean HTML
+  const extractMediaContent = (htmlContent) => {
+    if (!htmlContent) return { audioUrls: [], videoUrls: [], youtubeUrls: [], cleanedHTML: "" };
+    
+    const audioUrls = [];
+    const videoUrls = [];
+    const youtubeUrls = [];
+    let cleanedHTML = htmlContent;
+    
+    try {
+      // Create a temporary DOM element to parse HTML
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = htmlContent;
+      
+      // Find and process audio elements
+      const audioElements = tempDiv.querySelectorAll('audio');
+      audioElements.forEach(audio => {
+        const source = audio.querySelector('source');
+        const url = source ? source.getAttribute('src') : audio.getAttribute('src');
+        if (url) audioUrls.push(url);
+        
+        // Remove the audio element from content to avoid duplication
+        if (audio.parentNode) {
+          audio.parentNode.removeChild(audio);
+        }
+      });
+      
+      // Find and process video elements
+      const videoElements = tempDiv.querySelectorAll('video');
+      videoElements.forEach(video => {
+        const source = video.querySelector('source');
+        const url = source ? source.getAttribute('src') : video.getAttribute('src');
+        if (url) videoUrls.push(url);
+        
+        // Remove the video element from content to avoid duplication
+        if (video.parentNode) {
+          video.parentNode.removeChild(video);
+        }
+      });
+      
+      // Find and process iframes (for YouTube, etc.)
+      const iframeElements = tempDiv.querySelectorAll('iframe');
+      iframeElements.forEach(iframe => {
+        const src = iframe.getAttribute('src');
+        if (src && (src.includes('youtube.com') || src.includes('youtu.be'))) {
+          youtubeUrls.push(src);
+          
+          // Remove the iframe from content
+          if (iframe.parentNode) {
+            iframe.parentNode.removeChild(iframe);
+          }
+        }
+      });
+      
+      // Find links to media files and YouTube
+      const links = tempDiv.querySelectorAll('a');
+      links.forEach(link => {
+        const href = link.getAttribute('href');
+        if (href) {
+          if (/\.(mp3|wav|ogg)$/i.test(href)) {
+            audioUrls.push(href);
+          } else if (/\.(mp4|webm|ogv|mov)$/i.test(href)) {
+            videoUrls.push(href);
+          } else if (href.includes('youtube.com/watch') || href.includes('youtu.be/')) {
+            const embedUrl = getYouTubeEmbedUrl(href);
+            if (embedUrl) youtubeUrls.push(embedUrl);
+          }
+        }
+      });
+      
+      // Update cleanedHTML with content after removing media elements
+      cleanedHTML = tempDiv.innerHTML;
+    } catch (error) {
+      console.error('Error extracting media from HTML:', error);
+    }
+    
+    return { audioUrls, videoUrls, youtubeUrls, cleanedHTML };
+  };
+  
+  // Get featured image if available
   const image = message._embedded?.['wp:featuredmedia']?.[0]?.source_url;
-  const audioUrl = message.meta?.audio_url;
+  
+  // Check if we have audio or video URL in meta
+  const metaAudioUrl = message.meta?.audio_url;
+  const metaVideoUrl = message.meta?.video_url;
+  
+  // Extract media URLs from content and get cleaned HTML
+  const { audioUrls: contentAudioUrls, videoUrls: contentVideoUrls, youtubeUrls: contentYoutubeUrls, cleanedHTML } = 
+    message.content?.rendered 
+      ? extractMediaContent(message.content.rendered) 
+      : { audioUrls: [], videoUrls: [], youtubeUrls: [], cleanedHTML: "" };
+  
+  // Combine all audio URLs (meta + content)
+  const allAudioUrls = metaAudioUrl 
+    ? [metaAudioUrl, ...contentAudioUrls] 
+    : contentAudioUrls;
+    
+  // Combine all video URLs (meta + content)
+  const allVideoUrls = metaVideoUrl
+    ? [metaVideoUrl, ...contentVideoUrls]
+    : contentVideoUrls;
+    
+  // Get all YouTube URLs
+  const allYoutubeUrls = [...contentYoutubeUrls];
+  
+  // Format date for display
   const getFormattedDate = (date) => {
     const d = new Date(date);
     const year = d.getFullYear();
@@ -39,6 +164,7 @@ const ChatMessage = ({ message, isDarkMode }) => {
     return `${year}-${month}-${day}`;
   };
 
+  // Format time for display
   const getFormattedTime = (date) => {
     const d = new Date(date);
     const hours = String(d.getHours()).padStart(2, '0');
@@ -48,11 +174,16 @@ const ChatMessage = ({ message, isDarkMode }) => {
   
   const dateStr = message.date ? getFormattedDate(message.date) : getFormattedDate(new Date());
   const timeStr = message.date ? getFormattedTime(message.date) : getFormattedTime(new Date());
-  const content = message.content || message.excerpt?.rendered || '';
 
   return (
     <div className="flex w-full justify-start mb-4 select-none" dir="rtl">
       <div className="message-bubble">
+        {/* Title */}
+        {message.title && message.title.rendered && (
+          <h3 className="font-bold mb-2" dangerouslySetInnerHTML={{ __html: message.title.rendered }} />
+        )}
+        
+        {/* Main Image */}
         {image && (
           <>
             <img 
@@ -69,17 +200,46 @@ const ChatMessage = ({ message, isDarkMode }) => {
             />
           </>
         )}
-        {message.title && (
-          <h3 className="font-bold mb-2" dangerouslySetInnerHTML={{ __html: message.title.rendered }} />
+        
+        {/* Content */}
+        {message.content && message.content.rendered && (
+          <div className="message-content" dangerouslySetInnerHTML={{ __html: cleanedHTML }} />
         )}
-        {typeof content === 'string' && content ? (
-          <div dangerouslySetInnerHTML={{ __html: content }} />
-        ) : (
-          typeof content === 'object' && React.isValidElement(content) ? content : null
-        )}
-        {audioUrl && (
-          <AudioPlayer audioUrl={audioUrl} isDarkMode={isDarkMode} />
-        )}
+        
+        {/* Video Players - Regular videos */}
+        {allVideoUrls.map((videoUrl, index) => (
+          <div key={`video-${index}`} className="video-container mb-4">
+            <video 
+              src={videoUrl}
+              controls
+              preload="metadata"
+              poster={message?.meta?.video_thumbnail}
+              className="rounded-xl w-full max-h-96"
+              controlsList="nodownload"
+              playsInline
+            />
+          </div>
+        ))}
+        
+        {/* YouTube Videos */}
+        {allYoutubeUrls.map((youtubeUrl, index) => (
+          <div key={`youtube-${index}`} className="youtube-container mb-4">
+            <iframe 
+              src={youtubeUrl}
+              className="rounded-xl w-full h-64"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        ))}
+        
+        {/* Audio Players */}
+        {allAudioUrls.map((audioUrl, index) => (
+          <AudioPlayer key={`audio-${index}`} audioUrl={audioUrl} isDarkMode={isDarkMode} />
+        ))}
+        
+        {/* Timestamps */}
         <div className="timestamps">
           <span className="date">{dateStr}</span>
           <span className="time">{timeStr}</span>
@@ -89,7 +249,7 @@ const ChatMessage = ({ message, isDarkMode }) => {
   );
 };
 
-const PublicChannel = ({ isDarkMode }) => {
+const PublicChat = ({ isDarkMode }) => {
   const navigate = useNavigate();
   const messagesEndRef = useRef(null);
   const [posts, setPosts] = useState([]);
@@ -98,16 +258,32 @@ const PublicChannel = ({ isDarkMode }) => {
   const [hasMore, setHasMore] = useState(true);
   const containerRef = useRef(null);
   const loadingMoreRef = useRef(null);
-  const [channelExiting, setChannelExiting] = useState(false);
-  const [showChannel, setShowChannel] = useState(false);
+  const [showPage, setShowPage] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
+
+  // Animation effect
+  useEffect(() => {
+    // Entrance animation
+    setTimeout(() => {
+      setShowPage(true);
+    }, 100);
+  }, []);
+
+  // Handle back navigation
+  const handleGoBack = () => {
+    setIsExiting(true);
+    setTimeout(() => {
+      navigate(-1);
+    }, 300);
+  };
 
   // Welcome messages
   const welcomeMessages = [
     {
       id: 'welcome-1',
-      content: 'سلام! به کانال عمومی خوش اومدید 👋',
+      content: { rendered: '<p>سلام! به کانال عمومی خوش اومدید 👋</p>' },
       date: new Date()
-    },
+    }
   ];
 
   // Fetch posts function
@@ -138,40 +314,6 @@ const PublicChannel = ({ isDarkMode }) => {
       setHasMore(false);
     }
   };
-
-  // مدیریت دکمه بازگشت
-  useEffect(() => {
-    const handleBackButton = (event) => {
-      event.preventDefault();
-      closeChannel();
-    };
-
-    // افزودن یک state به تاریخچه مرورگر برای مدیریت دکمه برگشت اندروید
-    window.history.pushState({ channelPage: true }, '');
-    
-    // شنونده برای رویداد popstate (فشردن دکمه برگشت)
-    window.addEventListener('popstate', handleBackButton);
-    
-    // انیمیشن ورود
-    setTimeout(() => {
-      setShowChannel(true);
-    }, 100);
-    
-    // پاکسازی event listener
-    return () => {
-      window.removeEventListener('popstate', handleBackButton);
-    };
-  }, []);
-
-  // بستن کانال
-  const closeChannel = useCallback(() => {
-    setChannelExiting(true);
-    setTimeout(() => {
-      setShowChannel(false);
-      setChannelExiting(false);
-      navigate(-1);
-    }, 300);
-  }, [navigate]);
 
   useEffect(() => {
     fetchPosts(1);
@@ -204,40 +346,46 @@ const PublicChannel = ({ isDarkMode }) => {
     <div 
       className="fixed inset-0 z-50 bg-black/40 overflow-hidden transition-opacity duration-300"
       style={{ 
-        opacity: channelExiting ? 0 : (showChannel ? 1 : 0),
-        pointerEvents: showChannel ? 'auto' : 'none',
-        transition: 'opacity 0.3s ease-out'
+        opacity: isExiting ? 0 : (showPage ? 1 : 0),
+        pointerEvents: showPage ? 'auto' : 'none'
       }}
     >
       <div 
-        className={`fixed inset-0 w-full ${isDarkMode ? 'bg-gray-900' : 'bg-gray-100'} shadow-lg transition-transform duration-300 ease-out`}
+        className={`fixed inset-0 w-full ${isDarkMode ? 'bg-gray-900' : 'bg-gray-100'} shadow-lg transition-transform duration-300 ease-out font-iransans`}
         style={{ 
-          transform: channelExiting 
+          transform: isExiting 
             ? 'translateX(100%)' 
-            : `translateX(${showChannel ? '0' : '100%'})`,
+            : `translateX(${showPage ? '0' : '100%'})`,
           transition: 'transform 0.3s cubic-bezier(0.17, 0.67, 0.24, 0.99), opacity 0.3s ease-out'
         }}
       >
         {/* Header */}
         <div 
-          className={`h-16 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} flex items-center px-4 relative border-b ${
-            isDarkMode ? 'border-gray-700' : 'border-gray-200'
-          }`}
+          className={`fixed top-0 left-0 right-0 z-40 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} h-[70px] shadow-md select-none`}
         >
-          <button
-            onClick={closeChannel} 
-            className={`absolute left-4 ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}
-          >
-            <ArrowLeftCircle className="w-8 h-8" />
-          </button>
-          <h1 className={`w-full text-center text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-            کانال عمومی
-          </h1>
+          <div className="h-full flex items-center px-4">
+            <div className="flex-grow flex justify-center">
+              <h1 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                کانال عمومی
+              </h1>
+            </div>
+          </div>
         </div>
 
-        {/* Messages Area */}
-        <div className="absolute top-16 bottom-0 left-0 right-0 overflow-y-auto">
-          <div ref={containerRef} className="px-4 pb-4">
+        <button 
+          onClick={handleGoBack} 
+          className={`fixed top-4 left-4 z-50 flex items-center gap-1 rounded-full px-4 py-2 ${
+            isDarkMode ? 'text-[#f7d55d]' : 'text-gray-200'
+          }`}
+        >
+          <ArrowLeftCircle className="w-8 h-8 md:w-9 md:h-9" />
+        </button>
+
+        <div className="relative pt-[70px] h-[calc(100vh-10px)] overflow-hidden select-none">
+          <div 
+            ref={containerRef}
+            className="h-full overflow-y-auto px-4 pb-4 select-none"
+          >
             {(loading && page > 1) && (
               <div ref={loadingMoreRef} className="flex justify-center items-center p-4">
                 <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
@@ -277,57 +425,129 @@ const PublicChannel = ({ isDarkMode }) => {
             <div ref={messagesEndRef} />
           </div>
         </div>
-
-        <style jsx global>{`
-          .message-bubble {
-            background-color: transparent;
-            color: ${isDarkMode ? '#fff' : '#1f2937'};
-            border: 2px solid rgba(247, 213, 93, 0.5);
-            border-radius: 24px;
-            border-top-right-radius: 4px;
-            padding: 1rem;
-            max-width: 80%;
-            direction: rtl;
-            text-align: right;
-            position: relative;
-            user-select: none;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-          }
-          
-          .message-bubble ul {
-            padding-right: 20px;
-            list-style-position: inside;
-            user-select: none;
-          }
-
-          .message-bubble .timestamps {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 1rem;
-            color: ${isDarkMode ? '#9CA3AF' : '#6B7280'};
-            font-size: 0.75rem;
-            user-select: none;
-          }
-
-          .message-bubble .time {
-            direction: ltr;
-            user-select: none;
-          }
-
-          .message-bubble .date {
-            direction: ltr;
-            user-select: none;
-          }
-
-          * {
-            -webkit-tap-highlight-color: transparent;
-          }
-        `}</style>
       </div>
+
+      <style jsx global>{`
+        @keyframes slideInRight {
+          from {
+            transform: translateX(100%);
+          }
+          to {
+            transform: translateX(0);
+          }
+        }
+        
+        @keyframes slideOutRight {
+          from {
+            transform: translateX(0);
+          }
+          to {
+            transform: translateX(100%);
+          }
+        }
+        
+        .message-bubble {
+          background-color: transparent;
+          color: ${isDarkMode ? '#fff' : '#1f2937'};
+          border: 2px solid rgba(247, 213, 93, 0.5);
+          border-radius: 24px;
+          border-top-right-radius: 4px;
+          padding: 1rem;
+          max-width: 80%;
+          direction: rtl;
+          text-align: right;
+          position: relative;
+          user-select: none;
+          -webkit-user-select: none;
+          -moz-user-select: none;
+          -ms-user-select: none;
+        }
+        
+        .message-bubble ul {
+          padding-right: 20px;
+          list-style-position: inside;
+          user-select: none;
+        }
+
+        .message-bubble .timestamps {
+          display: flex;
+          justify-content: space-between;
+          margin-top: 1rem;
+          color: ${isDarkMode ? '#9CA3AF' : '#6B7280'};
+          font-size: 0.75rem;
+          user-select: none;
+        }
+
+        .message-bubble .time {
+          direction: ltr;
+          user-select: none;
+        }
+
+        .message-bubble .date {
+          direction: ltr;
+          user-select: none;
+        }
+
+        .message-content {
+          width: 100%;
+          overflow: hidden;
+        }
+
+        .message-content img,
+        .message-content video,
+        .message-content iframe {
+          max-width: 100%;
+          height: auto;
+          border-radius: 0.75rem;
+          margin: 0.5rem 0;
+          object-fit: contain;
+        }
+
+        .message-content video {
+          width: 100%;
+          max-height: 450px;
+          display: block;
+          margin: 1rem auto;
+        }
+        
+        .video-container,
+        .youtube-container {
+          position: relative;
+          width: 100%;
+          overflow: hidden;
+          border-radius: 0.75rem;
+        }
+        
+        .video-container video,
+        .youtube-container iframe {
+          display: block;
+          width: 100%;
+          object-fit: contain;
+        }
+        
+        .youtube-container {
+          aspect-ratio: 16/9;
+        }
+        
+        .youtube-container iframe {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+        }
+
+        .message-bubble audio {
+          width: 100%;
+          margin: 0.5rem 0;
+        }
+
+        * {
+          -webkit-tap-highlight-color: transparent;
+        }
+      `}</style>
     </div>
   );
 };
 
-export default PublicChannel;
+export default PublicChat;
