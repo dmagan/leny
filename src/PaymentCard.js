@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Upload } from 'lucide-react';
 import { Store } from 'react-notifications-component';
+import { X, Upload, Copy, Check } from 'lucide-react';
 
 const notify = (title, message, type = 'danger', duration = 7000) => {
   Store.addNotification({
@@ -163,12 +163,64 @@ const PaymentCard = ({ isDarkMode, onClose, productTitle, price }) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
-  
-  // برای انیمیشن کشویی از پایین به بالا
+  // افزودن state های جدید:
+  const [copied, setCopied] = useState(false);
+  const walletAddress = "TRJ8KcHydFr3UDytiYmXiBPc1d4df5zGf6";
+
+  // انیمیشن کشویی از پایین به بالا
   const [showCard, setShowCard] = useState(false);
   const cardRef = useRef(null);
   const isDragging = useRef(false);
   const startY = useRef(0);
+
+  // تابع کپی کردن آدرس ولت
+  const copyToClipboard = () => {
+    if (navigator.clipboard && window.isSecureContext) {
+      // در بستر امن و اگر Clipboard API پشتیبانی شود
+      navigator.clipboard.writeText(walletAddress)
+        .then(() => {
+          setCopied(true);
+          notify("موفق", "آدرس ولت کپی شد", "success", 2000);
+          setTimeout(() => setCopied(false), 2000);
+        })
+        .catch(err => {
+          console.error('خطا در کپی کردن: ', err);
+          fallbackCopyTextToClipboard(walletAddress);
+        });
+    } else {
+      // اگر Clipboard API پشتیبانی نشود
+      fallbackCopyTextToClipboard(walletAddress);
+    }
+  };
+  
+  const fallbackCopyTextToClipboard = (text) => {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    // موقعیت textarea را خارج از دید کاربر قرار می‌دهیم
+    textArea.style.position = "fixed";
+    textArea.style.top = "-9999px";
+    textArea.style.left = "-9999px";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+  
+    try {
+      const successful = document.execCommand('copy');
+      if (successful) {
+        setCopied(true);
+        notify("موفق", "آدرس ولت کپی شد", "success", 2000);
+        setTimeout(() => setCopied(false), 2000);
+      } else {
+        console.error('خطا در استفاده از execCommand');
+        notify("خطا", "کپی آدرس با مشکل مواجه شد", "danger");
+      }
+    } catch (err) {
+      console.error('خطای execCommand:', err);
+      notify("خطا", "کپی آدرس با مشکل مواجه شد", "danger");
+    }
+    document.body.removeChild(textArea);
+  };
+  
 
   // انیمیشن ورود کارت
   useEffect(() => {
@@ -307,9 +359,7 @@ const PaymentCard = ({ isDarkMode, onClose, productTitle, price }) => {
       }}>
       <div 
         ref={cardRef}
-        className={`fixed bottom-0 left-0 right-0 w-full ${
-          isDarkMode ? 'bg-[#0d1822]' : 'bg-white'
-        } rounded-t-3xl shadow-lg transition-transform duration-300 ease-out max-h-[92vh] overflow-hidden`}
+        className={`fixed bottom-0 left-0 right-0 w-full ${isDarkMode ? 'bg-[#0d1822]' : 'bg-white'} rounded-t-3xl shadow-lg transition-transform duration-300 ease-out max-h-[92vh] overflow-hidden`}
         style={{ 
           transform: `translateY(${showCard ? '0' : '100%'})`,
           touchAction: 'none',
@@ -340,7 +390,33 @@ const PaymentCard = ({ isDarkMode, onClose, productTitle, price }) => {
               </p>
             </div>
 
-            <div className="space-y-4">
+            
+
+              {/* راهنمای پرداخت */}
+              <div className="my-6 p-4 rounded-xl bg-white  border border-yellow-500/30">
+              <p className="text-sm text-right mb-4" dir="rtl">
+  برای خرید اشتراک می‌بایست به آدرس ولت زیر <span className="text-red-500">تتر</span> بر روی <span className="text-red-500">شبکه trc20</span> ارسال کنید:
+</p>
+
+                <div className="flex items-center justify-between bg-gray-900/90 p-3 rounded-lg mb-2">
+                  <button
+                    onClick={copyToClipboard}
+                    className=" text-white p-2 rounded-full transition-colors"
+                  >
+                    {copied ? <Check size={18} /> : <Copy size={18} />}
+                  </button>
+                  <div className="font-mono text-[12px] text-yellow-500 select-all" onClick={copyToClipboard}>
+  {walletAddress}
+</div>
+                </div>
+                <div className="text-xs text-right text-gray-700" dir="rtl">
+                  <p className="mb-1 text-red-500">دقت کنید درصورتی که هر ارز دیگری غیر از USDT یا بر روی شبکه اشتباه ارسال کنید مورد قبول نیست‌.</p>
+                  <p className="mb-1">ترجیحا از صرافی‌های ایرانی اقدام به پرداخت نکنید.</p>
+                  <p>درصورتی که برای خرید آموزش نیاز دارید به قسمت پست‌ها بروید.</p>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
               <div className="relative">
                 <input
                   type="text"
@@ -355,7 +431,6 @@ const PaymentCard = ({ isDarkMode, onClose, productTitle, price }) => {
                   dir="rtl"
                 />
               </div>
-
               <div className="relative flex items-center justify-center my-4">
                 <div className={`px-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                   یا
