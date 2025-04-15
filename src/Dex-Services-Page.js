@@ -202,7 +202,7 @@ const DexServicesPage = ({ isDarkMode, isOpen, onClose }) => {
                 <div className="flex justify-between items-center">
                   <div>
                     <h3 className="text-lg font-bold mb-2 text-yellow-400 text-right">قیمت دوره:</h3>
-                    <p className="text-2xl font-bold text-green-500">۱۴۹ دلار</p>
+                    <p className="text-2xl font-bold text-green-500">۲۹۹ دلار</p>
                   </div>
                   <div className="bg-yellow-500/20 text-yellow-400 rounded-xl p-2 text-sm">
                     <p>دسترسی نامحدود</p>

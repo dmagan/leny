@@ -26,6 +26,7 @@ import 'animate.css/animate.min.css'
 import { Navigate } from 'react-router-dom';
 import SignalStreamChannel from './chanel-signal-stream';
 import PublicChannel from './chanel-public';
+import { Toaster } from 'react-hot-toast';
 
 
 
@@ -643,6 +644,11 @@ const App = () => {
   return (
     <div>
       <ReactNotifications />
+      {/** اضافه کردن Toaster در بالای BrowserRouter */}
+      <Toaster 
+        position="top-center" 
+        containerStyle={{ zIndex: 11000 }} 
+      />
       <BrowserRouter>
         <OrientationLock isDarkMode={isDarkMode}>
           {loading ? (
@@ -665,6 +671,7 @@ const App = () => {
       </BrowserRouter>
     </div>
   );
+  
 };
 
 export default App;
