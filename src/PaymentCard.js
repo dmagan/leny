@@ -393,28 +393,28 @@ const PaymentCard = ({ isDarkMode, onClose, productTitle, price }) => {
             
 
               {/* راهنمای پرداخت */}
-              <div className="my-6 p-4 rounded-xl bg-white  border border-yellow-500/30">
-              <p className="text-sm text-right mb-4" dir="rtl">
-  برای خرید اشتراک می‌بایست به آدرس ولت زیر <span className="text-red-500">تتر</span> بر روی <span className="text-red-500">شبکه trc20</span> ارسال کنید:
-</p>
-
-                <div className="flex items-center justify-between bg-gray-900/90 p-3 rounded-lg mb-2">
-                  <button
-                    onClick={copyToClipboard}
-                    className=" text-white p-2 rounded-full transition-colors"
-                  >
-                    {copied ? <Check size={18} /> : <Copy size={18} />}
-                  </button>
-                  <div className="font-mono text-[12px] text-yellow-500 select-all" onClick={copyToClipboard}>
-  {walletAddress}
+<div className="my-6 p-4 rounded-xl  border border-yellow-500/90">
+  <p className="text-gray-100 text-sm text-right mb-4 font-bold" dir="rtl">
+    برای خرید اشتراک می‌بایست به آدرس ولت زیر <span className="text-red-500">تتر</span> بر روی <span className="text-red-500">شبکه trc20</span> ارسال کنید:
+  </p>
+  
+  <div className="flex items-center justify-between bg-gray-800/50 p-3 rounded-lg mb-2">
+    <button
+      onClick={copyToClipboard}
+      className="text-white p-2 rounded-full transition-colors"
+    >
+      {copied ? <Check size={18} /> : <Copy size={18} />}
+    </button>
+    <div className="font-mono text-[12px] text-yellow-500 select-all font-bold" onClick={copyToClipboard}>
+      {walletAddress}
+    </div>
+  </div>
+  <div className="text-xs text-right text-gray-100 font-bold" dir="rtl">
+    <p className="mb-1 text-red-500 font-bold">دقت کنید درصورتی که هر ارز دیگری غیر از USDT یا بر روی شبکه اشتباه ارسال کنید مورد قبول نیســـــــت‌.</p>
+    <p className="mb-1 font-bold">ترجیحا از صرافی‌های ایرانی اقدام به پرداخت نکنید.</p>
+    <p className="font-bold">درصورتی که برای خرید آموزش نیاز دارید به قسمت پست‌ها بروید.</p>
+  </div>
 </div>
-                </div>
-                <div className="text-xs text-right text-gray-700" dir="rtl">
-                  <p className="mb-1 text-red-500">دقت کنید درصورتی که هر ارز دیگری غیر از USDT یا بر روی شبکه اشتباه ارسال کنید مورد قبول نیست‌.</p>
-                  <p className="mb-1">ترجیحا از صرافی‌های ایرانی اقدام به پرداخت نکنید.</p>
-                  <p>درصورتی که برای خرید آموزش نیاز دارید به قسمت پست‌ها بروید.</p>
-                </div>
-              </div>
               
               <div className="space-y-4">
               <div className="relative">

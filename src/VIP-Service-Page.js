@@ -105,28 +105,39 @@ const VIPPage = ({ isDarkMode, isOpen, onClose }) => {
 
         {/* Main Content Area */}
         <div className="absolute top-16 bottom-0 left-0 right-0 flex flex-col overflow-hidden">
-          {/* VIP Card (Fixed at top) */}
-          <div className="p-4">
-            <div className="bg-[#141e35] rounded-3xl relative overflow-hidden border border-gray-500" style={{ minHeight: "180px" }}>
-              {/* تصویر کاور */}
-              <img 
-                src="/cover-vip.jpg" 
-                alt="VIP Cover" 
-                className="w-full h-full object-cover absolute inset-0"
-              />
-              
-              {/* Play Button Overlay */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <button className="w-16 h-16 rounded-full bg-white/70 flex items-center justify-center z-10">
-                  <Play size={36} className="text-black-500 ml-1" />
-                </button>
-              </div>
-            </div>
-          </div>
+      {/* Header area with VIP Card (Fixed) */}
+<div className="relative header-area">
+  {/* VIP Card */}
+  <div className="p-4">
+    <div className="bg-[#141e35] rounded-3xl relative overflow-hidden border border-gray-500" style={{ minHeight: "180px" }}>
+      {/* تصویر کاور */}
+      <img 
+        src="/cover-vip.jpg" 
+        alt="VIP Cover" 
+        className="w-full h-full object-cover absolute inset-0"
+      />
+      
+      {/* Play Button Overlay */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <button className="w-16 h-16 rounded-full bg-white/70 flex items-center justify-center z-10">
+          <Play size={36} className="text-black-500 ml-1" />
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  {/* Gradient transition overlay - گرادینت جدید */}
+  <div className="absolute bottom-[-30px] left-0 right-0 pointer-events-none z-[5]" style={{
+    height: '30px',
+    background: isDarkMode 
+      ? 'linear-gradient(to bottom, rgba(17,24,39,1), rgba(17,24,39,0))'
+      : 'linear-gradient(to bottom, rgba(243,244,246,1), rgba(243,244,246,0))'
+  }}></div>
+</div>
           
           {/* Scrollable Content Area */}
-          <div className="flex-1 overflow-y-auto pb-24">
-            <div className="px-4 space-y-4">
+          <div className="flex-1 overflow-y-auto pb-24 scrollable-content">
+          <div className="px-4 space-y-4">
               {/* Trading Signals */}
               <div className="p-4 rounded-xl bg-[#141e35] text-white" dir="rtl">
                 <h3 className="text-lg font-bold mb-3 text-yellow-500 text-right">خدمات VIP عبارتند از :</h3>
@@ -205,12 +216,12 @@ const VIPPage = ({ isDarkMode, isOpen, onClose }) => {
 
           {/* Fixed Button at Bottom - اختیاری، می‌توانید نگه دارید یا حذف کنید */}
           <div className="absolute bottom-6 left-4 right-4 z-10">
-            <button 
-              onClick={() => handlePurchase({ title: "اشتراک یکساله", price: "299" })} // دکمه اصلی با اشتراک یکساله
-              className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-4 rounded-xl transition-colors shadow-lg"
-            >
-              خرید اشتراک
-            </button>
+          <button 
+  onClick={() => handlePurchase({ title: "اشتراک شش ماهه", price: "199" })} // تغییر به اشتراک شش ماهه
+  className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-4 rounded-xl transition-colors shadow-lg"
+>
+  خرید اشتراک
+</button>
           </div>
         </div>
       </div>

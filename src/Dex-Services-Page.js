@@ -96,28 +96,39 @@ const DexServicesPage = ({ isDarkMode, isOpen, onClose }) => {
 
         {/* Main Content Area */}
         <div className="absolute top-16 bottom-0 left-0 right-0 flex flex-col overflow-hidden">
-          {/* Dex Trading Card (Fixed at top) */}
-          <div className="p-4">
-            <div className="bg-[#141e35] rounded-3xl relative overflow-hidden border border-gray-500" style={{ minHeight: "180px" }}>
-              {/* تصویر کاور */}
-              <img 
-                src="/cover-dex.jpg" 
-                alt="Dex Trading Cover" 
-                className="w-full h-full object-cover absolute inset-0"
-              />
-              
-              {/* Play Button Overlay */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <button className="w-16 h-16 rounded-full bg-white/70 flex items-center justify-center z-10">
-                  <Play size={36} className="text-black-500 ml-1" />
-                </button>
-              </div>
-            </div>
-          </div>
+{/* Header area with Dex Trading Card (Fixed) */}
+<div className="relative header-area">
+  {/* Dex Trading Card */}
+  <div className="p-4">
+    <div className="bg-[#141e35] rounded-3xl relative overflow-hidden border border-gray-500" style={{ minHeight: "180px" }}>
+      {/* تصویر کاور */}
+      <img 
+        src="/cover-dex.jpg" 
+        alt="Dex Trading Cover" 
+        className="w-full h-full object-cover absolute inset-0"
+      />
+      
+      {/* Play Button Overlay */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <button className="w-16 h-16 rounded-full bg-white/70 flex items-center justify-center z-10">
+          <Play size={36} className="text-black-500 ml-1" />
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  {/* Gradient transition overlay - گرادینت جدید */}
+  <div className="absolute bottom-[-30px] left-0 right-0 pointer-events-none z-[5]" style={{
+    height: '30px',
+    background: isDarkMode 
+      ? 'linear-gradient(to bottom, rgba(17,24,39,1), rgba(17,24,39,0))'
+      : 'linear-gradient(to bottom, rgba(243,244,246,1), rgba(243,244,246,0))'
+  }}></div>
+</div>
           
           {/* Scrollable Content Area */}
-          <div className="flex-1 overflow-y-auto pb-24">
-            <div className="px-4 space-y-4">
+          <div className="flex-1 overflow-y-auto pb-24 scrollable-content">
+          <div className="px-4 space-y-4">
               {/* Introduction Section */}
               <div className="p-4 rounded-xl bg-[#141e35] text-white" dir="rtl">
                 <h3 className="text-lg font-bold mb-3 text-yellow-500 text-right">محتوای دوره دکس تریدینگ</h3>
@@ -237,7 +248,7 @@ const DexServicesPage = ({ isDarkMode, isOpen, onClose }) => {
           isDarkMode={isDarkMode}
           onClose={() => setShowPaymentCard(false)}
           productTitle="دوره دکس تریدینگ"
-          price="149"
+          price="299"
         />
       )}
     </div>

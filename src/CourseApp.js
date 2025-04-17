@@ -743,7 +743,7 @@ const disableAutoplay = () => {
           ورود به کانال رایگان سیگنال استریم
         </h3>
         <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-        درآمد ماهانه رایگان
+سیگنال فیوچرز رایگان
         </p>
       </div>
     </div>

@@ -189,7 +189,16 @@ useEffect(() => {
           <h2 className={`w-full text-center text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
             سیگنال استریم
           </h2>
+                  {/* گرادینت متقابل در پایین هدر ثابت برای نرم کردن انتقال */}
+        <div className="absolute bottom-[-240px] left-0 right-0 pointer-events-none z-[5]" style={{
+  height: '30px',
+  background: isDarkMode 
+    ? 'linear-gradient(to bottom, rgba(13,24,34,1), rgba(13,24,34,0))' 
+    : 'linear-gradient(to bottom, rgba(255,255,255,1), rgba(255,255,255,0))'
+}}></div>
+
         </div>
+
 
         {/* Main Content Area */}
         <div className="absolute top-16 bottom-0 left-0 right-0 flex flex-col overflow-hidden">
@@ -317,12 +326,13 @@ useEffect(() => {
             </div>
           </div>
           
-          {/* Gradient Overlay */}
-          <div className="absolute bottom-0 left-0 right-0 pointer-events-none z-[5]" style={{
-            height: '90px',
-            background: 'linear-gradient(to top, rgba(0,0,0,100), rgba(0,0,0,0))'
-          }}></div>
-
+{/* گرادینت مشکی به شفاف از پایین به بالا */}
+<div className="absolute bottom-0 left-0 right-0 pointer-events-none z-[5]" style={{
+  height: '90px',
+  background: isDarkMode 
+    ? 'linear-gradient(to top, rgba(13,24,34,1), rgba(13,24,34,0))' 
+    : 'linear-gradient(to top, rgba(255,255,255,1), rgba(255,255,255,0))'
+}}></div>
           {/* Fixed Button at Bottom - نمایش دکمه‌ها بر اساس وضعیت UID */}
           <div className="absolute bottom-6 left-4 right-4 z-10">
             {isCheckingUid ? (

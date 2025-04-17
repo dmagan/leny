@@ -368,11 +368,10 @@ function AppRoutes({
       isLoggedIn={isLoggedIn}    
       onLogout={handleLogout}     
     />
-    <VIPPage 
+    <DexServicesPage 
       isDarkMode={isDarkMode}
       isOpen={true}
       onClose={() => {
-        // به جای navigate(-1) باید به صفحه اصلی برگردیم و تاریخچه را جایگزین کنیم
         navigate('/', { replace: true });
       }}
     />
