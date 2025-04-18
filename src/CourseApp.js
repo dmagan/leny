@@ -165,6 +165,8 @@ const CourseApp = ({  // این قسمت رو جایگزین کنید
   const [showZeroTo100Page, setShowZeroTo100Page] = useState(false);
   const [showSignalStreamPage, setShowSignalStreamPage] = useState(false);
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
+  const [isUIDLoading, setIsUIDLoading] = useState(false);
+
 
 
   
@@ -450,6 +452,100 @@ const disableAutoplay = () => {
   };
 }, [autoplayEnabled]);
 
+const handleSignalStreamClick = async () => {
+  // نمایش وضعیت لودینگ
+  setIsUIDLoading(true);
+  
+  // بررسی اینکه آیا کاربر لاگین کرده است
+  const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+  
+  if (!token) {
+    // پنهان کردن لودینگ
+    setIsUIDLoading(false);
+    
+    Store.addNotification({
+      title: "خطا",
+      message: "شما باید ابتدا وارد حساب کاربری خود شوید",
+      type: "danger",
+      insert: "top",
+      container: "center",
+      animationIn: ["animate__animated", "animate__flipInX"],
+      animationOut: ["animate__animated", "animate__flipOutX"],
+      dismiss: { duration: 3000, showIcon: true, pauseOnHover: true },
+      style: { direction: 'rtl', textAlign: 'right' }
+    });
+    
+    // هدایت به صفحه لاگین
+    setTimeout(() => {
+      navigate('/login');
+    }, 3000);
+    return;
+  }
+  
+  try {
+    // بررسی وضعیت UID با استفاده از API
+    const response = await fetch('https://alicomputer.com/wp-json/lbank/v1/check-uid-status', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const data = await response.json();
+    
+    // پنهان کردن لودینگ
+    setIsUIDLoading(false);
+    
+    if (data.has_request && data.requests.some(req => req.status === 'approved')) {
+      // اگر UID تأیید شده، هدایت به کانال
+      navigate('/chanel-signal-stream');
+    } else {
+      // اگر UID ثبت نشده یا تأیید نشده
+      Store.addNotification({
+        title: "اطلاعیه",
+        message: "شما باید ابتدا در سیگنال استریم ثبت‌نام کنید. به صورت اتوماتیک به صفحه ثبت‌نام سیگنال استریم هدایت می‌شوید.",
+        type: "info",
+        insert: "top",
+        container: "center",
+        animationIn: ["animate__animated", "animate__flipInX"],
+        animationOut: ["animate__animated", "animate__flipOutX"],
+        dismiss: { duration: 4000, showIcon: true, pauseOnHover: true },
+        style: { direction: 'rtl', textAlign: 'right' }
+      });
+      
+      // هدایت به صفحه ثبت‌نام سیگنال استریم
+      setTimeout(() => {
+        setShowSignalStreamPage(true);
+      }, 4000);
+    }
+  } catch (error) {
+    console.error('Error checking UID status:', error);
+    
+    // پنهان کردن لودینگ
+    setIsUIDLoading(false);
+    
+    // در صورت خطا، پیام مناسب نمایش داده شود
+    Store.addNotification({
+      title: "خطا",
+      message: "خطا در بررسی وضعیت ثبت‌نام. به صفحه ثبت‌نام هدایت می‌شوید.",
+      type: "danger",
+      insert: "top",
+      container: "center",
+      animationIn: ["animate__animated", "animate__flipInX"],
+      animationOut: ["animate__animated", "animate__flipOutX"],
+      dismiss: { duration: 3000, showIcon: true, pauseOnHover: true },
+      style: { direction: 'rtl', textAlign: 'right' }
+    });
+    
+    // هدایت به صفحه ثبت‌نام سیگنال استریم
+    setTimeout(() => {
+      setShowSignalStreamPage(true);
+    }, 3000);
+  }
+};
+
+
   const scrollToIndex = (index) => {
     setCurrentIndex(index);
     if (sliderRef.current) {
@@ -546,9 +642,9 @@ const disableAutoplay = () => {
 
 {/* Story Highlights */}
 <div className="px-4">
-<h2 className={`text-xl mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`} dir="rtl">
+<h2 className={`text-2xl mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`} dir="rtl">
 هایلایت های ما
-  </h2>
+</h2>
   <div className="relative">
     <div 
       className="flex overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory gap-0.5"
@@ -672,9 +768,9 @@ const disableAutoplay = () => {
 </div>
 {/* Services */}
 <div className="p-4">
-<h2 dir="rtl" className={`text-xl mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+<h1 dir="rtl" className={`text-2xl mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
   خدمات ما
-</h2>
+</h1>
   <div className="relative">
     <div 
       ref={sliderRef}
@@ -732,8 +828,8 @@ const disableAutoplay = () => {
   <h2 className="text-xl mb-4"></h2>
   <div className="grid grid-cols-1 gap-4" dir="rtl">
 
-  <div  onClick={() => navigate('/chanel-signal-stream')} className={`p-4 rounded-2xl flex items-center gap-3 border-2 ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900' }`}>
-      <div className="w-16 h-16 rounded-xl flex items-center justify-center">
+  <div onClick={handleSignalStreamClick} className={`p-4 rounded-2xl flex items-center gap-3 border-2 ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900' }`}>
+  <div className="w-16 h-16 rounded-xl flex items-center justify-center">
       <div className="w-16 h-16 text-[#f7d55d]">
       <img src="/Services/Signal-Stream.jpg" alt="Signal Stream" className="w-full h-full object-cover rounded-lg" />
 </div>
@@ -823,26 +919,35 @@ const disableAutoplay = () => {
      {/* Social Media Boxes */}
 <div className="px-8  mb- pb-28 ">
   <div className="grid grid-cols-3 gap-7">
-    {/* Telegram */}
-    <div className={`p-1 rounded-xl flex flex-col items-center justify-center gap-2 shadow-sm border ${isDarkMode ? 'border-gray-600 bg-transparent' : 'border-gray-300 bg-transparent'}`}>
-          <div className="w-7 h-7 flex items-center justify-center">
-  <img src="/icons/telegram-icon.png" alt="Telegram" className="w-15 h-15" />
+   {/* Telegram */}
+<div 
+  onClick={() => window.open('https://t.me/persianCryptoSource', '_blank')}
+  className={`p-1 rounded-xl flex flex-col items-center justify-center gap-2 shadow-sm border cursor-pointer ${isDarkMode ? 'border-gray-600 bg-transparent hover:bg-gray-800' : 'border-gray-300 bg-transparent hover:bg-gray-100'}`}
+>
+  <div className="w-7 h-7 flex items-center justify-center">
+    <img src="/icons/telegram-icon.png" alt="Telegram" className="w-15 h-15" />
+  </div>
 </div>
-    </div>
 
     {/* Instagram */}
-    <div className={`p-1 rounded-xl flex flex-col items-center justify-center gap-2 shadow-sm border ${isDarkMode ? 'border-gray-600 bg-transparent' : 'border-gray-300 bg-transparent'}`}>
-          <div className="w-7 h-7 flex items-center justify-center">
-  <img src="/icons/Instagram.png" alt="Telegram" className="w-15 h-15" />
+<div 
+  onClick={() => window.open('https://www.instagram.com/persiancryptosource?igsh=OHBwcmRyNG56M3gy&utm_source=qr', '_blank')}
+  className={`p-1 rounded-xl flex flex-col items-center justify-center gap-2 shadow-sm border cursor-pointer ${isDarkMode ? 'border-gray-600 bg-transparent hover:bg-gray-800' : 'border-gray-300 bg-transparent hover:bg-gray-100'}`}
+>
+  <div className="w-7 h-7 flex items-center justify-center">
+    <img src="/icons/Instagram.png" alt="Instagram" className="w-15 h-15" />
+  </div>
 </div>
-    </div>
 
-    {/* TikTok */}
-    <div className={`p-1 rounded-xl flex flex-col items-center justify-center gap-2 shadow-sm border ${isDarkMode ? 'border-gray-600 bg-transparent' : 'border-gray-300 bg-transparent'}`}>
-          <div className="w-7 h-7 flex items-center justify-center">
-  <img src="/icons/TikTok.png" alt="Telegram" className="w-15 h-15" />
+{/* TikTok */}
+<div 
+  onClick={() => window.open('https://www.tiktok.com/@asadmindset?_t=ZN-8vc9U7GoGYA&_r=1', '_blank')}
+  className={`p-1 rounded-xl flex flex-col items-center justify-center gap-2 shadow-sm border cursor-pointer ${isDarkMode ? 'border-gray-600 bg-transparent hover:bg-gray-800' : 'border-gray-300 bg-transparent hover:bg-gray-100'}`}
+>
+  <div className="w-7 h-7 flex items-center justify-center">
+    <img src="/icons/TikTok.png" alt="TikTok" className="w-15 h-15" />
+  </div>
 </div>
-    </div>
 
   
   </div>
@@ -870,6 +975,19 @@ const disableAutoplay = () => {
 </div>
         </div>
       </div>
+
+      {isUIDLoading && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className={`p-6 rounded-xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'} flex flex-col items-center`}>
+      <div className="w-12 h-12 border-4 border-t-transparent border-yellow-500 rounded-full animate-spin mb-4"></div>
+      <p className={`text-center ${isDarkMode ? 'text-white' : 'text-gray-900'}`} dir='rtl'>
+        در حال بررسی وضعیت...
+      </p>
+    </div>
+  </div>
+)}
+
+
        {/* اضافه کردن VIPPage */}
        {showVIPPage && (
         <VIPPage
@@ -938,6 +1056,7 @@ const NavItem = ({ icon, label, active, isDarkMode, isProfile, onLogout, isLogge
       }
     }
   };
+  
   
   
   return (
