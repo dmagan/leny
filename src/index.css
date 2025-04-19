@@ -140,3 +140,9 @@ body::-webkit-scrollbar {
   --background-color: #1a1a1a;
   --text-color: #ffffff;
 }
+
+/* استایل برای همه اجزای نوتیفیکیشن */
+.notification-container * {
+  direction: rtl !important;
+  text-align: right !important;
+}

@@ -229,28 +229,125 @@ const CourseApp = ({  // این قسمت رو جایگزین کنید
   
     if (!vipProduct) {
       if (products.some(p => p.isVIP)) {
-        navigate('/login');
+        Store.addNotification({
+          title: (
+            <div dir="rtl" style={{ textAlign: 'right', paddingRight: '15px' }}>
+              خطا
+            </div>
+          ),
+          message: (
+            <div dir="rtl" style={{ textAlign: 'right' }}>
+              زمان اشتراک VIP شما به پایان رسیده است
+            </div>
+          ),
+          type: "warning",
+          insert: "top",
+          container: "center",
+          animationIn: ["animate__animated", "animate__flipInX"],
+          animationOut: ["animate__animated", "animate__flipOutX"],
+          dismiss: { duration: 4000, showIcon: true, pauseOnHover: true }
+        });
+        
       } else {
         Store.addNotification({
-          title: "خطا",
-          message: " شما این محصول را خریداری نکرده اید . به صفحه خرید محصولات هدایت می شوید ",
+          title: (
+            <div dir="rtl" style={{ textAlign: 'right', paddingRight: '15px' }}>
+              خطا
+            </div>
+          ),
+          message: (
+            <div dir="rtl" style={{ textAlign: 'right' }}>
+              شما هنوز اشتراک VIP را خریداری نکرده‌اید. به‌صورت خودکار به صفحه خرید هدایت می‌شوید
+            </div>
+          ),
           type: "danger",
           insert: "top",
           container: "center",
           animationIn: ["animate__animated", "animate__flipInX"],
           animationOut: ["animate__animated", "animate__flipOutX"],
-          dismiss: { duration: 4000, showIcon: true, pauseOnHover: true },
-          style: { direction: 'rtl', textAlign: 'right' }
+          dismiss: { duration: 5000, showIcon: true, pauseOnHover: true }
         });
-  
-        setTimeout(() => {
-          navigate('/products');
-        }, 4000);
+
       }
+      
+      // به جای هدایت به صفحه محصولات، صفحه VIP را نمایش می‌دهیم
+      setTimeout(() => {
+        setShowVIPPage(true);
+      }, 2000);
+      
+      return;
+    }
+
+    navigate('/chat');
+  };
+
+  const handleDexClick = () => {
+    const userInfo = localStorage.getItem('userInfo') || sessionStorage.getItem('userInfo');
+    if (!userInfo) {
+      navigate('/login');
       return;
     }
   
-    navigate('/chat');
+    const purchasedProducts = localStorage.getItem('purchasedProducts');
+    if (!purchasedProducts) {
+      // نمایش پیام مناسب و هدایت به صفحه Dex
+      Store.addNotification({
+        title: (
+          <div dir="rtl" style={{ textAlign: 'right', paddingRight: '15px' }}>
+            اطلاعیه
+          </div>
+        ),
+        message: (
+          <div dir="rtl" style={{ textAlign: 'right' }}>
+            شما هنوز دوره دکس تریدینگ را خریداری نکرده‌اید
+          </div>
+        ),
+        type: "danger",
+        insert: "top",
+        container: "center",
+        animationIn: ["animate__animated", "animate__flipInX"],
+        animationOut: ["animate__animated", "animate__flipOutX"],
+        dismiss: { duration: 3000, showIcon: true, pauseOnHover: true }
+      });
+      setTimeout(() => {
+        setShowDexPage(true);
+      }, 2000);
+      return;
+    }
+  
+    const products = JSON.parse(purchasedProducts);
+    // بررسی اینکه آیا محصول دکس تریدینگ خریداری شده است
+    const dexProduct = products.find(p => 
+      p.title && p.title.includes('دکس') && p.status === 'active'
+    );
+  
+    if (!dexProduct) {
+      Store.addNotification({
+        title: (
+          <div dir="rtl" style={{ textAlign: 'right' , paddingRight: '15px' }}>اطلاعیه </div>
+        ),
+        message: (
+                 <div dir="rtl" style={{ textAlign: 'right' }}>
+                   شما هنوز دوره دکس تریدینگ را خریداری نکرده‌اید . به صورت خودکار به صغحه مورد نظر هدایت می شوید
+                 </div>
+               ),
+        type: "danger",
+        insert: "top",
+        container: "center",
+        animationIn: ["animate__animated", "animate__flipInX"],
+        animationOut: ["animate__animated", "animate__flipOutX"],
+        dismiss: { duration: 5000, showIcon: true, pauseOnHover: true },
+     
+      });
+  
+      setTimeout(() => {
+        setShowDexPage(true);
+      }, 2000);
+      return;
+    }
+  
+    // اگر محصول خریداری شده باشد، به صفحه دکس تریدینگ هدایت می‌شود
+    navigate('/dex');
   };
 
   // ارسال وضعیت تم به اپ نیتیو در بارگذاری اولیه
@@ -464,15 +561,22 @@ const handleSignalStreamClick = async () => {
     setIsUIDLoading(false);
     
     Store.addNotification({
-      title: "خطا",
-      message: "شما باید ابتدا وارد حساب کاربری خود شوید",
+      title: (
+        <div dir="rtl" style={{ textAlign: 'right', paddingRight: '15px' }}>
+          خطا
+        </div>
+      ),
+      message: (
+        <div dir="rtl" style={{ textAlign: 'right' }}>
+          شما باید ابتدا وارد حساب کاربری خود شوید
+        </div>
+      ),
       type: "danger",
       insert: "top",
       container: "center",
       animationIn: ["animate__animated", "animate__flipInX"],
       animationOut: ["animate__animated", "animate__flipOutX"],
-      dismiss: { duration: 3000, showIcon: true, pauseOnHover: true },
-      style: { direction: 'rtl', textAlign: 'right' }
+      dismiss: { duration: 3000, showIcon: true, pauseOnHover: true }
     });
     
     // هدایت به صفحه لاگین
@@ -503,16 +607,24 @@ const handleSignalStreamClick = async () => {
     } else {
       // اگر UID ثبت نشده یا تأیید نشده
       Store.addNotification({
-        title: "اطلاعیه",
-        message: "شما باید ابتدا در سیگنال استریم ثبت‌نام کنید. به صورت اتوماتیک به صفحه ثبت‌نام سیگنال استریم هدایت می‌شوید.",
+        title: (
+          <div dir="rtl" style={{ textAlign: 'right', paddingRight: '15px' }}>
+            اطلاعیه
+          </div>
+        ),
+        message: (
+          <div dir="rtl" style={{ textAlign: 'right' }}>
+            شما باید ابتدا در سیگنال استریم ثبت‌نام کنید. به صورت اتوماتیک به صفحه ثبت‌نام سیگنال استریم هدایت می‌شوید.
+          </div>
+        ),
         type: "info",
         insert: "top",
         container: "center",
         animationIn: ["animate__animated", "animate__flipInX"],
         animationOut: ["animate__animated", "animate__flipOutX"],
-        dismiss: { duration: 4000, showIcon: true, pauseOnHover: true },
-        style: { direction: 'rtl', textAlign: 'right' }
+        dismiss: { duration: 4000, showIcon: true, pauseOnHover: true }
       });
+      
       
       // هدایت به صفحه ثبت‌نام سیگنال استریم
       setTimeout(() => {
@@ -527,16 +639,24 @@ const handleSignalStreamClick = async () => {
     
     // در صورت خطا، پیام مناسب نمایش داده شود
     Store.addNotification({
-      title: "خطا",
-      message: "خطا در بررسی وضعیت ثبت‌نام. به صفحه ثبت‌نام هدایت می‌شوید.",
+      title: (
+        <div dir="rtl" style={{ textAlign: 'right', paddingRight: '15px' }}>
+          خطا
+        </div>
+      ),
+      message: (
+        <div dir="rtl" style={{ textAlign: 'right' }}>
+          خطا در بررسی وضعیت ثبت‌نام. به صفحه ثبت‌نام هدایت می‌شوید.
+        </div>
+      ),
       type: "danger",
       insert: "top",
       container: "center",
       animationIn: ["animate__animated", "animate__flipInX"],
       animationOut: ["animate__animated", "animate__flipOutX"],
-      dismiss: { duration: 3000, showIcon: true, pauseOnHover: true },
-      style: { direction: 'rtl', textAlign: 'right' }
+      dismiss: { duration: 3000, showIcon: true, pauseOnHover: true }
     });
+    
     
     // هدایت به صفحه ثبت‌نام سیگنال استریم
     setTimeout(() => {
@@ -573,6 +693,7 @@ const handleSignalStreamClick = async () => {
       color: '#fff',
       fontFamily: 'IranSans',
       direction: 'rtl',
+       textAlign: 'right'
     },
     success: {
       duration: 3000,
@@ -861,8 +982,8 @@ const handleSignalStreamClick = async () => {
       </div>
     </div>
 
-    <div  onClick={() => navigate('/dex')} className={`p-4 rounded-2xl flex items-center gap-3 border-2 ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900' }`}>
-      <div className="">
+    <div onClick={handleDexClick} className={`p-4 rounded-2xl flex items-center gap-3 border-2 ${isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900'}`}>
+            <div className="">
         <div className="w-16 h-16 text-purple-500">
         <img src="/Services/Dex.jpg" alt="Signal Stream" className="w-full h-full object-cover rounded-lg" />
         </div>
