@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeftCircle, X } from 'lucide-react';
 import AudioPlayer from './AudioPlayer';
 
-// Image Modal Component
+// کامپوننت مودال تصویر
 const ImageModal = ({ isOpen, onClose, imageUrl }) => {
   if (!isOpen) return null;
 
@@ -25,7 +25,7 @@ const ImageModal = ({ isOpen, onClose, imageUrl }) => {
   );
 };
 
-// Chat Message Component
+// کامپوننت پیام چت
 const ChatMessage = ({ message, isDarkMode }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [mediaUrl, setMediaUrl] = useState('');
@@ -43,7 +43,7 @@ const ChatMessage = ({ message, isDarkMode }) => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(content, 'text/html');
     
-          // پردازش ویدیوها
+    // پردازش ویدیوها
     const videos = doc.querySelectorAll('video');
     videos.forEach((video, index) => {
       video.removeAttribute('autoplay');
@@ -208,7 +208,7 @@ const ChatMessage = ({ message, isDarkMode }) => {
         </div>
       </div>
       
-      {/* Media Modal */}
+      {/* مودال مدیا */}
       {isModalOpen && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90" 
@@ -246,7 +246,7 @@ const ChatMessage = ({ message, isDarkMode }) => {
   );
 };
 
-const PublicChannel = ({ isDarkMode, isOpen = true, onClose }) => {
+const PostsChannel = ({ isDarkMode, isOpen = true, onClose }) => {
   const navigate = useNavigate();
   const messagesEndRef = useRef(null);
   const [posts, setPosts] = useState([]);
@@ -260,12 +260,12 @@ const PublicChannel = ({ isDarkMode, isOpen = true, onClose }) => {
   const [showCard, setShowCard] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
 
-  // Welcome messages
+  // پیام خوش‌آمدگویی
   const welcomeMessages = [
     {
       id: 'welcome-1',
       content: {
-        rendered: 'سلام! به کانال عمومی خوش اومدید 👋'
+        rendered: 'به بخش پست‌ها خوش آمدید 👋'
       },
       date: new Date()
     },
@@ -315,13 +315,17 @@ const PublicChannel = ({ isDarkMode, isOpen = true, onClose }) => {
     }, 300);
   };
 
-  // Fetch posts function
+  // تابع دریافت پست‌ها
   const fetchPosts = async (pageNumber) => {
     try {
       setLoading(true);
       const auth = btoa('ck_20b3c33ef902d4ccd94fc1230c940a85be290e0a:cs_e8a85df738324996fd3608154ab5bf0ccc6ded99');
+      
+      // اینجا عدد دسته‌بندی "posts" را باید وارد کنید - فعلاً عدد 111 گذاشتم، شما باید آن را تغییر دهید
+      const categoryId = 112; // شماره دسته‌بندی پست‌ها
+      
       const response = await fetch(
-        `https://p30s.com/wp-json/wp/v2/posts?_embed&order=desc&orderby=date&per_page=10&page=${pageNumber}&categories=110`,
+        `https://p30s.com/wp-json/wp/v2/posts?_embed&order=desc&orderby=date&per_page=10&page=${pageNumber}&categories=${categoryId}`,
         {
           headers: {
             'Authorization': `Basic ${auth}`
@@ -391,7 +395,7 @@ const PublicChannel = ({ isDarkMode, isOpen = true, onClose }) => {
           transition: 'transform 0.3s cubic-bezier(0.17, 0.67, 0.24, 0.99), opacity 0.3s ease-out'
         }}
       >
-        {/* Header */}
+        {/* هدر */}
         <div className={`h-16 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} flex items-center px-4 relative border-b ${
           isDarkMode ? 'border-gray-700' : 'border-gray-200'
         }`}>
@@ -402,13 +406,13 @@ const PublicChannel = ({ isDarkMode, isOpen = true, onClose }) => {
             <ArrowLeftCircle className="w-8 h-8" />
           </button>
           <h2 className={`w-full text-center text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-            کانال عمومی
+            پست‌ ها
           </h2>
         </div>
 
-        {/* Main Content Area */}
+        {/* بخش محتوای اصلی */}
         <div className="absolute top-16 bottom-0 left-0 right-0 flex flex-col overflow-hidden">
-          {/* Scrollable Content Area */}
+          {/* بخش قابل اسکرول */}
           <div className="flex-1 overflow-y-auto pb-4">
             <div className="px-4">
               {(loading && page > 1) && (
@@ -443,15 +447,13 @@ const PublicChannel = ({ isDarkMode, isOpen = true, onClose }) => {
 
               {!loading && !hasMore && posts.length > 0 && (
                 <div className="text-center text-gray-500 py-4">
-                  پیام دیگری وجود ندارد
+                  پست دیگری وجود ندارد
                 </div>
               )}
 
               <div ref={messagesEndRef} />
             </div>
           </div>
-          
-          {/* گرادینت پایین صفحه حذف شد */}
         </div>
       </div>
 
@@ -500,19 +502,19 @@ const PublicChannel = ({ isDarkMode, isOpen = true, onClose }) => {
           user-select: none;
         }
 
-        /* استایل جدید برای کانتینر ویدیو */
+        /* استایل برای کانتینر ویدیو */
         .video-container {
-  width: auto !important;
-  max-width: 350px;
-  margin: 10px -7px 12px 1px; /* بالا 10px، راست 0، پایین 12px، چپ auto */
-  border-radius: 12px;
-  overflow: hidden;
-  position: relative;
-  background-color: #000;
-  display: flex;
-  align-items: center;
-}
-        
+          width: auto !important;
+          max-width: 350px;
+          margin: 10px -7px 12px 1px; /* بالا 10px، راست 0، پایین 12px، چپ auto */
+          border-radius: 12px;
+          overflow: hidden;
+          position: relative;
+          background-color: #000;
+          display: flex;
+          align-items: center;
+        }
+                
         /* استایل برای دکمه پخش */
         .video-play-button {
           position: absolute;
@@ -721,4 +723,4 @@ const PublicChannel = ({ isDarkMode, isOpen = true, onClose }) => {
   );
 };
 
-export default PublicChannel;
+export default PostsChannel;

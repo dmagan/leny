@@ -186,7 +186,7 @@ class FaqService {
     // دریافت سوالات متداول از سرور
     async _fetchFaqsFromServer() {
       const auth = btoa('ck_20b3c33ef902d4ccd94fc1230c940a85be290e0a:cs_e8a85df738324996fd3608154ab5bf0ccc6ded99');
-      const response = await fetch('https://alicomputer.com/wp-json/wp/v2/faqs?per_page=50', {
+      const response = await fetch('https://p30s.com/wp-json/wp/v2/faqs?per_page=50', {
         headers: {
           'Authorization': `Basic ${auth}`,
           'Accept': 'application/json'

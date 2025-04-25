@@ -1,7 +1,7 @@
 // src/auth-service.js
 class AuthService {
     constructor() {
-      this.baseUrl = 'https://alicomputer.com';
+      this.baseUrl = 'https://p30s.com';
     }
   
     // تابع لاگین

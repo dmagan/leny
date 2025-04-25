@@ -128,7 +128,7 @@ const UIDSubmissionCard = ({ isDarkMode, onClose, productTitle }) => {
       }
 
       // ارسال درخواست به سرور
-      const response = await fetch('https://alicomputer.com/wp-json/lbank/v1/submit-uid', {
+      const response = await fetch('https://p30s.com/wp-json/lbank/v1/submit-uid', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

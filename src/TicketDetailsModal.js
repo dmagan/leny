@@ -110,7 +110,7 @@ const TicketDetailsModal = ({ isOpen, onClose, ticketId, isDarkMode, isNewTicket
     try {
       const auth = btoa('test:test');
       // First fetch the ticket information
-      const ticketResponse = await fetch(`https://alicomputer.com/wp-json/wpas-api/v1/tickets/${ticketId}`, {
+      const ticketResponse = await fetch(`https://p30s.com/wp-json/wpas-api/v1/tickets/${ticketId}`, {
         headers: {
           'Authorization': `Basic ${auth}`,
           'Accept': 'application/json'
@@ -121,7 +121,7 @@ const TicketDetailsModal = ({ isOpen, onClose, ticketId, isDarkMode, isNewTicket
       const ticketData = await ticketResponse.json();
 
       // Fetch the replies
-      const repliesResponse = await fetch(`https://alicomputer.com/wp-json/wpas-api/v1/tickets/${ticketId}/replies`, {
+      const repliesResponse = await fetch(`https://p30s.com/wp-json/wpas-api/v1/tickets/${ticketId}/replies`, {
         headers: {
           'Authorization': `Basic ${auth}`,
           'Accept': 'application/json'
@@ -210,7 +210,7 @@ const TicketDetailsModal = ({ isOpen, onClose, ticketId, isDarkMode, isNewTicket
 
     try {
       const auth = btoa('test:test');
-      const response = await fetch(`https://alicomputer.com/wp-json/wpas-api/v1/tickets/${ticketId}/replies`, {
+      const response = await fetch(`https://p30s.com/wp-json/wpas-api/v1/tickets/${ticketId}/replies`, {
         method: 'POST',
         headers: {
           'Authorization': `Basic ${auth}`,

@@ -192,7 +192,7 @@ const MentorRegistrationCard = ({ isDarkMode, onClose = () => {} }) => {
         }
       };
 
-      const response = await fetch('https://alicomputer.com/wp-json/wp/v2/mentor_requests', {
+      const response = await fetch('https://p30s.com/wp-json/wp/v2/mentor_requests', {
         method: 'POST',
         headers: {
           'Authorization': 'Basic ' + auth,
@@ -208,7 +208,7 @@ const MentorRegistrationCard = ({ isDarkMode, onClose = () => {} }) => {
         notify("خطا", "مشکلی در ثبت درخواست به وجود آمد");
       }
     } catch (err) {
-      console.error(err);
+     // console.error(err);
       notify("خطا", "خطا در ارتباط با سرور");
     } finally {
       setIsSubmitting(false);

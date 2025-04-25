@@ -19,7 +19,7 @@ const validateEmail = (email) => {
 const validateRegister = async (userData, selectedCountry) => {
   try {
     const fullPhoneNumber = (selectedCountry.code.replace('+', '00') + userData.mobile).replace(/\s+/g, '');
-    const response = await fetch('https://alicomputer.com/wp-json/wp/v2/register', {
+    const response = await fetch('https://p30s.com/wp-json/wp/v2/register', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -51,7 +51,7 @@ const validateRegister = async (userData, selectedCountry) => {
     };
 
   } catch (error) {
-    console.error('Register error:', error);
+    //console.error('Register error:', error);
     return {
       success: false,
       message: 'خطا در ارتباط با سرور',
@@ -179,7 +179,7 @@ const LoginPage = ({ isDarkMode, setIsLoggedIn, onClose }) => {
     try {
       const auth = btoa('ck_20b3c33ef902d4ccd94fc1230c940a85be290e0a:cs_e8a85df738324996fd3608154ab5bf0ccc6ded99');
       const response = await fetch(
-        'https://alicomputer.com/wp-json/wc/v3/orders?status=completed',
+        'https://p30s.com/wp-json/wc/v3/orders?status=completed',
         {
           headers: {
             'Authorization': `Basic ${auth}`,
@@ -220,7 +220,7 @@ const LoginPage = ({ isDarkMode, setIsLoggedIn, onClose }) => {
       localStorage.setItem('purchasedProducts', JSON.stringify(products));
       localStorage.setItem('lastProductCheck', new Date().getTime());
     } catch (error) {
-      console.error('Error loading products:', error);
+      //console.error('Error loading products:', error);
     }
     navigate('/');
   };
@@ -231,7 +231,7 @@ const LoginPage = ({ isDarkMode, setIsLoggedIn, onClose }) => {
 
   const validateLogin = async (username, password, rememberMe) => {
     try {
-      const response = await fetch('https://alicomputer.com/wp-json/jwt-auth/v1/token', {
+      const response = await fetch('https://p30s.com/wp-json/jwt-auth/v1/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -275,7 +275,7 @@ const LoginPage = ({ isDarkMode, setIsLoggedIn, onClose }) => {
       };
   
     } catch (error) {
-      console.error('Network error:', error);
+      //console.error('Network error:', error);
       return {
         success: false,
         message: 'خطا در برقراری ارتباط با سرور. لطفاً اتصال اینترنت خود را بررسی کنید.',
@@ -515,12 +515,12 @@ const LoginPage = ({ isDarkMode, setIsLoggedIn, onClose }) => {
       params.append('redirect_to', '');
       params.append('wp-submit', 'دریافت رمز تازه');
 
-      const response = await fetch('https://alicomputer.com/wp-login.php?action=lostpassword', {
+      const response = await fetch('https://p30s.com/wp-login.php?action=lostpassword', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-          'Referer': 'https://alicomputer.com/wp-login.php?action=lostpassword'
+          'Referer': 'https://p30s.com/wp-login.php?action=lostpassword'
         },
         body: params.toString()
       });

@@ -26,7 +26,7 @@ const FaqPage = ({ isDarkMode , onBack }) => {
         await faqService.start();
         isInitializedRef.current = true;
       } catch (error) {
-        console.error('Error initializing FAQ service:', error);
+        //console.error('Error initializing FAQ service:', error);
         Store.addNotification({
           title: "خطا",
           message: "مشکلی در بارگذاری سوالات متداول پیش آمد",
@@ -112,7 +112,7 @@ const FaqPage = ({ isDarkMode , onBack }) => {
     try {
       await faqService.syncFaqs();
     } catch (error) {
-      console.error('Error refreshing FAQs:', error);
+      //console.error('Error refreshing FAQs:', error);
       Store.addNotification({
         title: "خطا",
         message: "خطا در بروزرسانی سوالات متداول",

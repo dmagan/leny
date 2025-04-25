@@ -136,7 +136,7 @@ const saveTransaction = async (hash, data) => {
       ? data.trc20TransferInfo?.[0]?.to_address
       : data.toAddress;
     
-    const response = await fetch('https://alicomputer.com/wp-json/transaction/v1/verify',{
+    const response = await fetch('https://p30s.com/wp-json/transaction/v1/verify',{
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

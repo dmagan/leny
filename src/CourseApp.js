@@ -77,10 +77,10 @@ const ThemeSwitcher = ({ isDarkMode, setIsDarkMode }) => {
     try {
       if (window.ReactNativeWebView && typeof window.ReactNativeWebView.postMessage === 'function') {
         window.ReactNativeWebView.postMessage(JSON.stringify({ theme: newThemeMode ? 'dark' : 'light' }));
-        console.log(`Theme change message sent to app: ${newThemeMode ? 'dark' : 'light'}`);
+        //console.log(`Theme change message sent to app: ${newThemeMode ? 'dark' : 'light'}`);
       }
     } catch (error) {
-      console.error('Error sending message to native app:', error);
+      //console.error('Error sending message to native app:', error);
     }
   };
 
@@ -355,10 +355,10 @@ useEffect(() => {
   try {
     if (window.ReactNativeWebView && typeof window.ReactNativeWebView.postMessage === 'function') {
       window.ReactNativeWebView.postMessage(JSON.stringify({ theme: isDarkMode ? 'dark' : 'light' }));
-      console.log(`Initial theme sent to app: ${isDarkMode ? 'dark' : 'light'}`);
+      //console.log(`Initial theme sent to app: ${isDarkMode ? 'dark' : 'light'}`);
     }
   } catch (error) {
-    console.error('Error sending initial theme to native app:', error);
+    //console.error('Error sending initial theme to native app:', error);
   }
   
   // ذخیره وضعیت اتوپلی در localStorage
@@ -436,7 +436,7 @@ setAutoplayEnabled(true);
           'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,binancecoin,ripple,dogecoin,cardano&vs_currencies=usd&include_24hr_change=true'
         );
         const data = await response.json();
-        console.log('API Response:', data);
+        //console.log('API Response:', data);
         
         const updatedData = staticData.map(crypto => ({
           ...crypto,
@@ -444,10 +444,10 @@ setAutoplayEnabled(true);
           change: data[crypto.id]?.usd_24h_change || crypto.change
         }));
 
-        console.log('Updated Data:', updatedData);
+        //console.log('Updated Data:', updatedData);
 
       } catch (error) {
-        console.error('Error fetching crypto prices:', error);
+        //console.error('Error fetching crypto prices:', error);
       }
     };
 
@@ -483,7 +483,7 @@ useEffect(() => {
   // اگر اسلایدری وجود ندارد یا autoplayEnabled غیرفعال است، اجرا نشود
   if (sliders.length === 0 || !autoplayEnabled) return;
   
-  console.log('اتوپلی اسلایدر فعال است');
+  //console.log('اتوپلی اسلایدر فعال است');
   
   const interval = setInterval(() => {
     if (slidersRef.current) {
@@ -510,13 +510,13 @@ useEffect(() => {
 const disableAutoplay = () => {
   // فقط موقتاً غیرفعال می‌کنیم، بدون ذخیره در localStorage
   if (autoplayEnabled) {
-    console.log('اتوپلی اسلایدر موقتاً غیرفعال شد');
+    //console.log('اتوپلی اسلایدر موقتاً غیرفعال شد');
     setAutoplayEnabled(false);
     
     // بعد از چند ثانیه دوباره فعال می‌کنیم
     setTimeout(() => {
       setAutoplayEnabled(true);
-      console.log('اتوپلی اسلایدر دوباره فعال شد');
+      //console.log('اتوپلی اسلایدر دوباره فعال شد');
     }, 7000); // 10 ثانیه بعد
   }
 };
@@ -588,7 +588,7 @@ const handleSignalStreamClick = async () => {
   
   try {
     // بررسی وضعیت UID با استفاده از API
-    const response = await fetch('https://alicomputer.com/wp-json/lbank/v1/check-uid-status', {
+    const response = await fetch('https://p30s.com/wp-json/lbank/v1/check-uid-status', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -632,7 +632,7 @@ const handleSignalStreamClick = async () => {
       }, 4000);
     }
   } catch (error) {
-    console.error('Error checking UID status:', error);
+    //console.error('Error checking UID status:', error);
     
     // پنهان کردن لودینگ
     setIsUIDLoading(false);
@@ -1161,7 +1161,12 @@ const NavItem = ({ icon, label, active, isDarkMode, isProfile, onLogout, isLogge
       }
     } else if (label === "کانال عمومی") {
       navigate('/chanel-public');
-    } else if (label === "محصولات") {
+    } 
+    else if (label === "پست ها") {
+      navigate('/chanel-posts');
+    }
+    
+    else if (label === "محصولات") {
       navigate('/products');
     } else if (label === "سفارش‌ها") {
       if (isLoggedIn) {

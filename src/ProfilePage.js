@@ -168,7 +168,7 @@ const ProfilePage = ({ isDarkMode, setIsLoggedIn }) => {
       
       // دریافت سفارشات از API
       const response = await fetch(
-        'https://alicomputer.com/wp-json/wc/v3/orders?status=completed',
+        'https://p30s.com/wp-json/wc/v3/orders?status=completed',
         {
           headers: {
             'Authorization': `Basic ${auth}`,

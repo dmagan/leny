@@ -26,6 +26,7 @@ import 'animate.css/animate.min.css'
 import { Navigate } from 'react-router-dom';
 import SignalStreamChannel from './chanel-signal-stream';
 import PublicChannel from './chanel-public';
+import PostsChannel from './chanel-posts';
 import { Toaster } from 'react-hot-toast';
 
 
@@ -61,6 +62,7 @@ function AppRoutes({
         />
       } />
       
+
       <Route path="/asad" element={<AsadPage isDarkMode={isDarkMode} />} />
 
       <Route path="/chat" element={
@@ -77,6 +79,27 @@ function AppRoutes({
       onLogout={handleLogout}
     />
     <Chat
+      isDarkMode={isDarkMode}
+      isOpen={true}
+      onClose={() => navigate(-1)}
+    />
+  </>
+} />
+
+<Route path="/chanel-posts" element={
+  <>
+    <CourseApp 
+      isDarkMode={isDarkMode} 
+      setIsDarkMode={setIsDarkMode} 
+      products={products} 
+      cryptoPrices={cryptoPrices} 
+      stories={stories} 
+      loading={loading} 
+      sliders={sliders}
+      isLoggedIn={isLoggedIn}
+      onLogout={handleLogout}
+    />
+    <PostsChannel 
       isDarkMode={isDarkMode}
       isOpen={true}
       onClose={() => navigate(-1)}
@@ -459,7 +482,7 @@ const App = () => {
   
 
   useEffect(() => {
-    console.log('Login state changed:', isLoggedIn);
+    //console.log('Login state changed:', isLoggedIn);
   }, [isLoggedIn]);
 
 
@@ -475,10 +498,10 @@ const App = () => {
     const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
     if (token) {
       setIsLoggedIn(true);
-      console.log('User is logged in:', token); 
+     // console.log('User is logged in:', token); 
     } else {
       setIsLoggedIn(false);
-      console.log('User is not logged in'); 
+     // console.log('User is not logged in'); 
     }
   }, []);
   
@@ -561,7 +584,7 @@ const App = () => {
 
         setCryptoPrices(updatedData);
       } catch (error) {
-        console.error('Error fetching crypto prices:', error);
+        //console.error('Error fetching crypto prices:', error);
       }
     };
 
@@ -575,7 +598,7 @@ const App = () => {
     const fetchSliders = async () => {
       try {
         const auth = btoa('ck_20b3c33ef902d4ccd94fc1230c940a85be290e0a:cs_e8a85df738324996fd3608154ab5bf0ccc6ded99');
-        const response = await fetch('https://alicomputer.com/wp-json/wp/v2/slider?_embed', {
+        const response = await fetch('https://p30s.com/wp-json/wp/v2/slider?_embed', {
           headers: {
             'Authorization': `Basic ${auth}`
           }
@@ -586,7 +609,7 @@ const App = () => {
         const data = await response.json();
         setSliders(data);
       } catch (error) {
-        console.error('Error fetching sliders:', error);
+        //console.error('Error fetching sliders:', error);
       }
     };
 
@@ -598,7 +621,7 @@ const App = () => {
     const fetchProducts = async () => {
       try {
         const auth = btoa('ck_20b3c33ef902d4ccd94fc1230c940a85be290e0a:cs_e8a85df738324996fd3608154ab5bf0ccc6ded99');
-        const response = await fetch('https://alicomputer.com/wp-json/wc/v3/products?per_page=10', {
+        const response = await fetch('https://p30s.com/wp-json/wc/v3/products?per_page=10', {
           headers: {
             'Authorization': `Basic ${auth}`
           }
@@ -610,7 +633,7 @@ const App = () => {
         setProducts(data);
         setLoading(false);
       } catch (err) {
-        console.error('Error fetching products:', err);
+        //console.error('Error fetching products:', err);
         setLoading(false);
       }
     };
@@ -623,7 +646,7 @@ const App = () => {
     const fetchStories = async () => {
       try {
         const auth = btoa('ck_20b3c33ef902d4ccd94fc1230c940a85be290e0a:cs_e8a85df738324996fd3608154ab5bf0ccc6ded99');
-        const response = await fetch('https://alicomputer.com/wp-json/wp/v2/story_highlights?_embed', {
+        const response = await fetch('https://p30s.com/wp-json/wp/v2/story_highlights?_embed', {
           headers: {
             'Authorization': `Basic ${auth}`
           }
@@ -633,7 +656,7 @@ const App = () => {
         const data = await response.json();
         setStories(data);
       } catch (error) {
-        console.error('خطا در دریافت استوری ها:', error);
+        //console.error('خطا در دریافت استوری ها:', error);
       }
     };
 

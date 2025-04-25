@@ -56,7 +56,7 @@ const SignalStreamServicePage = ({ isDarkMode, isOpen, onClose }) => {
       }
       
       // درخواست به API
-      const response = await fetch('https://alicomputer.com/wp-json/lbank/v1/check-uid-status', {
+      const response = await fetch('https://p30s.com/wp-json/lbank/v1/check-uid-status', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -80,7 +80,7 @@ const SignalStreamServicePage = ({ isDarkMode, isOpen, onClose }) => {
         setUidStatus(null);
       }
     } catch (error) {
-      console.error('Error checking UID status:', error);
+      //console.error('Error checking UID status:', error);
       setUidStatus(null);
     } finally {
       setIsCheckingUid(false);

@@ -179,7 +179,7 @@ const SupportPage = ({ isDarkMode }) => {
         dismiss: { duration: 2000 }
       });
     } catch (error) {
-      console.error('Error manual syncing:', error);
+     // console.error('Error manual syncing:', error);
       Store.addNotification({
         title: "خطا",
         message: "خطا در بروزرسانی پیام‌ها",
@@ -230,7 +230,7 @@ const SupportPage = ({ isDarkMode }) => {
         msg.id === tempId ? { ...msg, isPending: false } : msg
       ));
     } catch (error) {
-      console.error('Error sending message:', error);
+     // console.error('Error sending message:', error);
       // حذف پیام در صورت بروز خطا
       setMessages(prev => prev.filter(msg => msg.id !== tempId));
       pendingMessagesRef.current.delete(tempId);
@@ -292,7 +292,7 @@ const SupportPage = ({ isDarkMode }) => {
           }, messages.length > 0 ? 500 : 800);
         }
       } catch (error) {
-        console.error('Error initializing message service:', error);
+        //console.error('Error initializing message service:', error);
         setLoading(false);
         firstLoadRef.current = false;
       }

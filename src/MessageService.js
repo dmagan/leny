@@ -23,11 +23,11 @@ class MessageService {
     const userId = this._getCurrentUserId();
     const userChanged = userId !== this.currentUserId;
     
-    console.log('Message Service - User check:', { 
+  /*  console.log('Message Service - User check:', { 
       currentStored: this.currentUserId,
       newUser: userId,
       changed: userChanged
-    });
+    });*/
     
     if (userChanged) {
       // اگر کاربر تغییر کرده، داده‌ها را بازنشانی کنیم
@@ -59,7 +59,7 @@ class MessageService {
             this._syncTicketMessages(this.activeTicketId);
           }
         }).catch(error => {
-          console.error('Error in background sync:', error);
+          //console.error('Error in background sync:', error);
         });
       }
 
@@ -71,7 +71,7 @@ class MessageService {
       
       return true;
     } catch (error) {
-      console.error('Error starting message service:', error);
+     // console.error('Error starting message service:', error);
       this.isSyncing = false;
       this._notifyListeners();
       
@@ -133,7 +133,7 @@ class MessageService {
       this.lastSyncTime = new Date();
       this._saveToStorage();
     } catch (error) {
-      console.error('Error syncing messages:', error);
+      // console.error('Error syncing messages:', error);
     } finally {
       this.isSyncing = false;
       this._notifyListeners();
@@ -171,7 +171,7 @@ class MessageService {
     try {
       // ارسال پیام به سرور
       const response = await fetch(
-        `https://alicomputer.com/wp-json/wpas-api/v1/tickets/${this.activeTicketId}/replies`,
+        `https://p30s.com/wp-json/wpas-api/v1/tickets/${this.activeTicketId}/replies`,
         {
           method: 'POST',
           headers: {
@@ -244,7 +244,7 @@ class MessageService {
              userInfo.user_nicename ||
              'anonymous';
     } catch (error) {
-      console.error('Error getting current user ID:', error);
+      //console.error('Error getting current user ID:', error);
       return 'anonymous';
     }
   }
@@ -263,13 +263,13 @@ class MessageService {
         this.lastSyncTime = data.lastSyncTime ? new Date(data.lastSyncTime) : null;
         this.currentUserId = userId;
         
-        console.log('Loaded from cache:', {
+        /*console.log('Loaded from cache:', {
           ticketId: this.activeTicketId,
           messagesCount: this.activeTicketId ? (this.cachedMessages[this.activeTicketId]?.length || 0) : 0
-        });
+        });*/
       }
     } catch (error) {
-      console.error('Error loading from storage:', error);
+     // console.error('Error loading from storage:', error);
     }
   }
 
@@ -287,7 +287,7 @@ class MessageService {
         currentUserId: userId
       }));
     } catch (error) {
-      console.error('Error saving to storage:', error);
+     // console.error('Error saving to storage:', error);
     }
   }
 
@@ -304,7 +304,7 @@ class MessageService {
       try {
         listener(data);
       } catch (error) {
-        console.error('Error notifying listener:', error);
+      // console.error('Error notifying listener:', error);
       }
     });
   }
@@ -332,7 +332,7 @@ class MessageService {
 
     try {
       const response = await fetch(
-        'https://alicomputer.com/wp-json/wpas-api/v1/tickets',
+        'https://p30s.com/wp-json/wpas-api/v1/tickets',
         {
           headers: {
             'Authorization': authHeader,
@@ -354,80 +354,83 @@ class MessageService {
         await this._syncTicketMessages(this.activeTicketId);
       }
     } catch (error) {
-      console.error('Error syncing tickets:', error);
+      //console.error('Error syncing tickets:', error);
     }
   }
 
-  // همگام‌سازی پیام‌های یک تیکت خاص
-  async _syncTicketMessages(ticketId) {
-    const authHeader = this._getAuthHeader();
-    if (!authHeader || !ticketId) return;
+// همگام‌سازی پیام‌های یک تیکت خاص
+async _syncTicketMessages(ticketId) {
+  const authHeader = this._getAuthHeader();
+  if (!authHeader || !ticketId) return;
 
-    try {
-      // دریافت اطلاعات تیکت
-      const ticketResponse = await fetch(
-        `https://alicomputer.com/wp-json/wpas-api/v1/tickets/${ticketId}`,
-        {
-          headers: {
-            'Authorization': authHeader,
-            'Accept': 'application/json'
-          }
+  try {
+    // دریافت اطلاعات تیکت - با مدیریت خطای بهتر
+    const ticketResponse = await fetch(
+      `https://p30s.com/wp-json/wpas-api/v1/tickets/${ticketId}`,
+      {
+        headers: {
+          'Authorization': authHeader,
+          'Accept': 'application/json'
         }
-      );
-
-      if (!ticketResponse.ok) {
-        throw new Error('خطا در دریافت اطلاعات تیکت');
       }
-      
-      const ticketData = await ticketResponse.json();
+    ).catch(() => ({ ok: false })); // مدیریت خطا در سطح fetch
 
-      // دریافت پاسخ‌های تیکت
-      const repliesResponse = await fetch(
-        `https://alicomputer.com/wp-json/wpas-api/v1/tickets/${ticketId}/replies`,
-        {
-          headers: {
-            'Authorization': authHeader,
-            'Accept': 'application/json'
-          }
-        }
-      );
-
-      if (!repliesResponse.ok) {
-        throw new Error('خطا در دریافت پاسخ‌ها');
-      }
-      
-      const repliesData = await repliesResponse.json();
-
-      // تبدیل به فرمت مورد نظر
-      const initialMessage = {
-        id: ticketData.id,
-        content: ticketData.content?.rendered || ticketData.content,
-        date: ticketData.date,
-        isAdmin: false,
-        isPending: false
-      };
-
-      const formattedReplies = repliesData.map(reply => ({
-        id: reply.id,
-        content: reply.content.rendered || reply.content,
-        date: reply.date,
-        isAdmin: reply.author === 1 || !reply.author || reply.author === 'support',
-        isPending: false
-      }));
-
-      // مرتب‌سازی پیام‌ها بر اساس تاریخ
-      const allMessages = [initialMessage, ...formattedReplies].sort(
-        (a, b) => new Date(a.date) - new Date(b.date)
-      );
-
-      // به‌روزرسانی کش
-      this.cachedMessages[ticketId] = allMessages;
-      this._saveToStorage();
-      this._notifyListeners();
-    } catch (error) {
-      console.error(`Error syncing messages for ticket ${ticketId}:`, error);
+    if (!ticketResponse.ok) {
+      // به جای پرتاب خطا، فقط return می‌کنیم
+      return;
     }
+    
+    const ticketData = await ticketResponse.json();
+
+    // دریافت پاسخ‌های تیکت
+    const repliesResponse = await fetch(
+      `https://p30s.com/wp-json/wpas-api/v1/tickets/${ticketId}/replies`,
+      {
+        headers: {
+          'Authorization': authHeader,
+          'Accept': 'application/json'
+        }
+      }
+    ).catch(() => ({ ok: false })); // مدیریت خطا در سطح fetch
+
+    if (!repliesResponse.ok) {
+      // به جای پرتاب خطا، فقط return می‌کنیم
+      return;
+    }
+    
+    const repliesData = await repliesResponse.json();
+
+    // تبدیل به فرمت مورد نظر
+    const initialMessage = {
+      id: ticketData.id,
+      content: ticketData.content?.rendered || ticketData.content,
+      date: ticketData.date,
+      isAdmin: false,
+      isPending: false
+    };
+
+    const formattedReplies = repliesData.map(reply => ({
+      id: reply.id,
+      content: reply.content.rendered || reply.content,
+      date: reply.date,
+      isAdmin: reply.author === 1 || !reply.author || reply.author === 'support',
+      isPending: false
+    }));
+
+    // مرتب‌سازی پیام‌ها بر اساس تاریخ
+    const allMessages = [initialMessage, ...formattedReplies].sort(
+      (a, b) => new Date(a.date) - new Date(b.date)
+    );
+
+    // به‌روزرسانی کش
+    this.cachedMessages[ticketId] = allMessages;
+    this._saveToStorage();
+    this._notifyListeners();
+  } catch (error) {
+    // کامنت شده است - خطا را در کنسول نمایش نمی‌دهیم
+    // console.error(`Error syncing messages for ticket ${ticketId}:`, error);
   }
+}
 
   // یافتن یا ایجاد تیکت فعال
   async _getActiveTicket() {
@@ -443,7 +446,7 @@ class MessageService {
         await this._createNewTicket();
       }
     } catch (error) {
-      console.error('Error getting active ticket:', error);
+      // console.error('Error getting active ticket:', error);
       throw error;
     }
   }
@@ -474,7 +477,7 @@ class MessageService {
 
       // ایجاد تیکت جدید
       const response = await fetch(
-        'https://alicomputer.com/wp-json/wpas-api/v1/tickets',
+        'https://p30s.com/wp-json/wpas-api/v1/tickets',
         {
           method: 'POST',
           headers: {
@@ -501,7 +504,7 @@ class MessageService {
       
       return newTicket.id;
     } catch (error) {
-      console.error('Error creating new ticket:', error);
+     // console.error('Error creating new ticket:', error);
       throw error;
     }
   }
