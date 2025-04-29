@@ -138,116 +138,178 @@ const ProfilePage = ({ isDarkMode, setIsLoggedIn }) => {
       // بررسی وجود اطلاعات کاربر
       if (!userInfo?.user_email) {
         setPurchasedProducts([]);
-        return;
-      }
-  
-      // بررسی وجود کش و تطابق با کاربر فعلی
-      const cachedUserEmail = localStorage.getItem('cachedUserEmail');
-      const cachedData = localStorage.getItem('purchasedProducts');
-      const cacheTime = localStorage.getItem('purchasedProductsTime');
-      const now = new Date().getTime();
-  
-      // استفاده از کش اگر معتبر باشد
-      if (cachedData && 
-          cacheTime && 
-          (now - Number(cacheTime)) < 5 * 60 * 1000 && 
-          cachedUserEmail === userInfo.user_email) {
-        // بازسازی آیکون‌ها برای داده‌های کش شده
-        const parsedData = JSON.parse(cachedData);
-        const productsWithIcons = parsedData.map(product => ({
-          ...product,
-          icon: product.isVIP ? <ShoppingCart className="w-6 h-6" /> : <Package className="w-6 h-6" />
-        }));
-        setPurchasedProducts(productsWithIcons);
         setIsLoading(false);
         return;
       }
   
-      // کلید‌های احراز هویت برای API
-      const auth = btoa('ck_20b3c33ef902d4ccd94fc1230c940a85be290e0a:cs_e8a85df738324996fd3608154ab5bf0ccc6ded99');
-      
-      // دریافت سفارشات از API
-      const response = await fetch(
-        'https://p30s.com/wp-json/wc/v3/orders?status=completed',
-        {
-          headers: {
-            'Authorization': `Basic ${auth}`,
-            'Accept': 'application/json'
-          }
-        }
-      );
-  
-      // بررسی خطای API
-      if (!response.ok) {
-        throw new Error('خطا در دریافت سفارشات');
+      // دریافت محصولات خریداری شده از API جدید
+      const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+      if (!token) {
+        setPurchasedProducts([]);
+        setIsLoading(false);
+        return;
       }
       
-      // تبدیل پاسخ به JSON
-      const orders = await response.json();
-      
-      // فیلتر کردن سفارشات کاربر فعلی
-      const userOrders = orders.filter(order => 
-        order.billing?.email?.toLowerCase() === userInfo.user_email.toLowerCase()
-      );
-  
-      // تبدیل سفارشات به محصولات
-      const products = userOrders.flatMap(order => {
-        const orderDate = new Date(order.date_created_gmt);
-        
-        return order.line_items.map(item => {
-          // پیدا کردن مدت اشتراک از متادیتا
-          let subscriptionMonths = 1; // مقدار پیش‌فرض یک ماه
-          
-          item.meta_data.forEach(meta => {
-            if (typeof meta.value === 'string' && 
-                (meta.value.includes('ماه') || meta.value.includes('month'))) {
-              const match = meta.value.match(/(\d+)/);
-              if (match) {
-                subscriptionMonths = parseInt(match[1]);
-              }
-            }
-          });
-  
-          // محاسبه روزهای باقی‌مانده
-          const subscriptionDays = subscriptionMonths * 30;
-          const endDate = new Date(orderDate.getTime() + (subscriptionDays * 24 * 60 * 60 * 1000));
-          const remainingDays = Math.max(0, Math.ceil((endDate - new Date()) / (1000 * 60 * 60 * 24)));
-
-  
-          // ساخت آبجکت محصول
-          const productData = {
-            id: item.id,
-            title: item.name,
-            date: orderDate,
-            status: remainingDays > 0 ? 'active' : 'expired',
-            remainingDays: remainingDays,
-            isVIP: item.name.includes('VIP')
-          };
-  
-          // اضافه کردن آیکون برای نمایش
-          return {
-            ...productData,
-            icon: productData.isVIP ? <ShoppingCart className="w-6 h-6" /> : <Package className="w-6 h-6" />
-          };
+      try {
+        // ابتدا از API جدید برای دریافت خریدها استفاده می‌کنیم
+        const response = await fetch('https://p30s.com/wp-json/pcs/v1/user-purchases', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          }
         });
-      });
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          if (data.success && Array.isArray(data.purchases) && data.purchases.length > 0) {
+            // تبدیل داده‌های API به فرمت مورد نیاز
+            const products = data.purchases.map(purchase => {
+              // ساخت آبجکت محصول
+              const productData = {
+                id: purchase.id,
+                title: purchase.title,
+                date: new Date(purchase.date),
+                status: purchase.status,
+                remainingDays: purchase.remainingDays,
+                isVIP: purchase.isVIP
+              };
+    
+              // اضافه کردن آیکون برای نمایش
+              return {
+                ...productData,
+                icon: productData.isVIP ? <ShoppingCart className="w-6 h-6" /> : <Package className="w-6 h-6" />
+              };
+            });
+            
+            // ذخیره در localStorage برای استفاده‌های بعدی
+            const productsForCache = products.map(({ icon, ...rest }) => rest);
+            localStorage.setItem('purchasedProducts', JSON.stringify(productsForCache));
+            localStorage.setItem('lastProductCheck', new Date().getTime().toString());
+            
+            // بروزرسانی state
+            setPurchasedProducts(products);
+            setIsLoading(false);
+            return;
+          }
+        }
+        
+        // اگر API جدید پاسخ مناسب نداد، از روش قبلی استفاده می‌کنیم
+        throw new Error('API جدید پاسخ مناسب نداد');
+        
+      } catch (apiError) {
+        console.warn('خطا در استفاده از API جدید، استفاده از روش قبلی...', apiError);
+        
+        // استفاده از روش قبلی برای دریافت سفارشات
+        const auth = btoa('ck_20b3c33ef902d4ccd94fc1230c940a85be290e0a:cs_e8a85df738324996fd3608154ab5bf0ccc6ded99');
+        
+        // دریافت سفارشات از API
+        const response = await fetch(
+          'https://p30s.com/wp-json/wc/v3/orders?status=completed',
+          {
+            headers: {
+              'Authorization': `Basic ${auth}`,
+              'Accept': 'application/json'
+            }
+          }
+        );
+    
+        // بررسی خطای API
+        if (!response.ok) {
+          throw new Error('خطا در دریافت سفارشات');
+        }
+        
+        // تبدیل پاسخ به JSON
+        const orders = await response.json();
+        
+        // فیلتر کردن سفارشات کاربر فعلی
+        const userOrders = orders.filter(order => 
+          order.billing?.email?.toLowerCase() === userInfo.user_email.toLowerCase()
+        );
+    
+        // تبدیل سفارشات به محصولات
+        const products = userOrders.flatMap(order => {
+          const orderDate = new Date(order.date_created_gmt);
+          
+          return order.line_items.map(item => {
+            // پیدا کردن مدت اشتراک از متادیتا
+            let subscriptionMonths = 1; // مقدار پیش‌فرض یک ماه
+            
+            item.meta_data.forEach(meta => {
+              if (typeof meta.value === 'string' && 
+                  (meta.value.includes('ماه') || meta.value.includes('month'))) {
+                const match = meta.value.match(/(\d+)/);
+                if (match) {
+                  subscriptionMonths = parseInt(match[1]);
+                }
+              }
+            });
+    
+            // محاسبه روزهای باقی‌مانده
+            const subscriptionDays = subscriptionMonths * 30;
+            const endDate = new Date(orderDate.getTime() + (subscriptionDays * 24 * 60 * 60 * 1000));
+            const remainingDays = Math.max(0, Math.ceil((endDate - new Date()) / (1000 * 60 * 60 * 24)));
   
-      // ذخیره در کش
-      const productsForCache = products.map(({ icon, ...rest }) => rest);
-      localStorage.setItem('purchasedProducts', JSON.stringify(productsForCache));
-      localStorage.setItem('purchasedProductsTime', now.toString());
-      localStorage.setItem('cachedUserEmail', userInfo.user_email);
-      
-      // بروزرسانی state
-      setPurchasedProducts(products);
+    
+            // ساخت آبجکت محصول
+            const productData = {
+              id: item.id,
+              title: item.name,
+              date: orderDate,
+              status: remainingDays > 0 ? 'active' : 'expired',
+              remainingDays: remainingDays,
+              isVIP: item.name.includes('VIP')
+            };
+    
+            // اضافه کردن آیکون برای نمایش
+            return {
+              ...productData,
+              icon: productData.isVIP ? <ShoppingCart className="w-6 h-6" /> : <Package className="w-6 h-6" />
+            };
+          });
+        });
+    
+        // ذخیره در localStorage
+        const productsForCache = products.map(({ icon, ...rest }) => rest);
+        localStorage.setItem('purchasedProducts', JSON.stringify(productsForCache));
+        localStorage.setItem('lastProductCheck', new Date().getTime().toString());
+        
+        // بروزرسانی state
+        setPurchasedProducts(products);
+      }
   
     } catch (error) {
       console.error('Error loading purchased products:', error);
-      setPurchasedProducts([]); // در صورت خطا، لیست خالی نمایش داده شود
+      
+      // در صورت خطا، بررسی کنیم آیا اطلاعات در localStorage وجود دارد
+      const cachedData = localStorage.getItem('purchasedProducts');
+      if (cachedData) {
+        try {
+          const parsedData = JSON.parse(cachedData);
+          const productsWithIcons = parsedData.map(product => ({
+            ...product,
+            icon: product.isVIP ? <ShoppingCart className="w-6 h-6" /> : <Package className="w-6 h-6" />
+          }));
+          setPurchasedProducts(productsWithIcons);
+        } catch (cacheError) {
+          console.error('Error parsing cached data:', cacheError);
+          setPurchasedProducts([]);
+        }
+      } else {
+        setPurchasedProducts([]);
+      }
+      
+      console.log("محصولات خریداری شده در پروفایل:", purchasedProducts);
+      const productsForCache = purchasedProducts.map(({ icon, ...rest }) => rest);
+      localStorage.setItem('purchasedProducts', JSON.stringify(productsForCache));
+      
     } finally {
       setIsLoading(false);
     }
   };
+
+
+
   return (
     <div className="fixed inset-0 z-50 bg-black/75 overflow-hidden transition-opacity duration-300"
     onClick={(e) => {
@@ -320,7 +382,7 @@ const ProfilePage = ({ isDarkMode, setIsLoggedIn }) => {
            )}
          </div>
          <span className={`text-sm ${product.status === 'active' ? 'text-green-500' : 'text-red-500'}`}>
-           {product.status === 'active' ? 'فعال' : 'با شده'}
+           {product.status === 'active' ? 'فعال' : 'منقضی شده'}
          </span>
        </div>
      </div>

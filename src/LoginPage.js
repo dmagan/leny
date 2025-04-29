@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Store } from 'react-notifications-component';
 import { countries } from './countryList';
 
+
 const validateMobile = (mobile) => {
   // حذف هر کاراکتری به جز اعداد
   const numericMobile = mobile.replace(/\D/g, '');
@@ -61,8 +62,8 @@ const validateRegister = async (userData, selectedCountry) => {
 };
 
 const LoginPage = ({ isDarkMode, setIsLoggedIn, onClose }) => {
-  const [selectedCountry, setSelectedCountry] = useState({ code: '+98', flag: '🇮🇷', name: 'Iran' });
-  const [showCountries, setShowCountries] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState({ code: '+41', flag: '🇨🇭', name: 'سوئیس' });
+    const [showCountries, setShowCountries] = useState(false);
   const [isLandscape, setIsLandscape] = useState(window.innerHeight < window.innerWidth);
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
@@ -174,57 +175,61 @@ const LoginPage = ({ isDarkMode, setIsLoggedIn, onClose }) => {
 
 
 
-  const handleLoginSuccess = async (result) => {
-    setIsLoggedIn(true);
-    try {
-      const auth = btoa('ck_20b3c33ef902d4ccd94fc1230c940a85be290e0a:cs_e8a85df738324996fd3608154ab5bf0ccc6ded99');
-      const response = await fetch(
-        'https://p30s.com/wp-json/wc/v3/orders?status=completed',
-        {
-          headers: {
-            'Authorization': `Basic ${auth}`,
-            'Accept': 'application/json'
-          }
-        }
-      );
-      const orders = await response.json();
-      const userOrders = orders.filter(order => 
-        order.billing?.email?.toLowerCase() === result.user_email.toLowerCase()
-      );
-      const products = userOrders.flatMap(order => {
-        const orderDate = new Date(order.date_created_gmt);
-        return order.line_items.map(item => {
-          let subscriptionMonths = 1;
-          item.meta_data.forEach(meta => {
-            if (typeof meta.value === 'string' && 
-                (meta.value.includes('ماه') || meta.value.includes('month'))) {
-              const match = meta.value.match(/(\d+)/);
-              if (match) {
-                subscriptionMonths = parseInt(match[1]);
-              }
-            }
-          });
-          const subscriptionDays = subscriptionMonths * 30;
-          const endDate = new Date(orderDate.getTime() + (subscriptionDays * 24 * 60 * 60 * 1000));
-          const remainingDays = Math.max(0, Math.ceil((endDate - new Date()) / (1000 * 60 * 60 * 24)));
-          return {
-            id: item.id,
-            title: item.name,
-            date: orderDate,
-            status: remainingDays > 0 ? 'active' : 'expired',
-            remainingDays: remainingDays,
-            isVIP: item.name.includes('VIP')
-          };
-        });
-      });
-      localStorage.setItem('purchasedProducts', JSON.stringify(products));
-      localStorage.setItem('lastProductCheck', new Date().getTime());
-    } catch (error) {
-      //console.error('Error loading products:', error);
-    }
-    navigate('/');
-  };
+  // این کد را در بخش handleLoginSuccess در فایل LoginPage.js جایگزین کنید
 
+const handleLoginSuccess = async (result) => {
+  setIsLoggedIn(true);
+  try {
+    // دریافت خریدهای کاربر از سرور
+    const token = result.token || localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+    
+    if (!token) {
+      console.error('خطا: توکن کاربر یافت نشد');
+      return;
+    }
+    
+    // ذخیره توکن
+    if (saveLogin) {
+      localStorage.setItem('userToken', token);
+      localStorage.setItem('userInfo', JSON.stringify(result));
+    } else {
+      sessionStorage.setItem('userToken', token);
+      sessionStorage.setItem('userInfo', JSON.stringify(result));
+    }
+    
+    // دریافت خریدهای کاربر از API
+    const purchasesResponse = await fetch('https://p30s.com/wp-json/pcs/v1/user-purchases', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json'
+      }
+    });
+    
+    if (!purchasesResponse.ok) {
+      throw new Error('خطا در دریافت خریدهای کاربر');
+    }
+    
+    const purchasesData = await purchasesResponse.json();
+    
+    if (purchasesData.success && Array.isArray(purchasesData.purchases)) {
+      console.log("خریدهای دریافت شده از سرور:", purchasesData.purchases);
+      // ذخیره خریدها در localStorage
+      localStorage.setItem('purchasedProducts', JSON.stringify(purchasesData.purchases));
+      localStorage.setItem('lastProductCheck', new Date().getTime());
+    } else {
+      // در صورت خطا، localStorage را خالی می‌کنیم
+      localStorage.setItem('purchasedProducts', JSON.stringify([]));
+    }
+    
+  } catch (error) {
+    console.error('Error loading products:', error);
+    // در صورت خطا، localStorage را خالی می‌کنیم
+    localStorage.setItem('purchasedProducts', JSON.stringify([]));
+  }
+  
+  // هدایت به صفحه اصلی
+  navigate('/');
+};
 
 
 

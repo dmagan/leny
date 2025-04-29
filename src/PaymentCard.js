@@ -136,18 +136,15 @@ const saveTransaction = async (hash, data) => {
       ? data.trc20TransferInfo?.[0]?.to_address
       : data.toAddress;
     
-    const response = await fetch('https://p30s.com/wp-json/transaction/v1/verify',{
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        hash: hash,
-        amount: data.trc20TransferInfo?.[0]?.amount_str || data.amount,
-        wallet_address: receiverAddress,
-        type: isUSDTContract ? 'USDT' : 'TRX'
-      })
-    });
+      const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+      const response = await fetch('https://p30s.com/wp-json/transaction/v1/verify',{
+     method: 'POST',
+         headers: {
+         'Content-Type': 'application/json',
+           'Authorization': `Bearer ${token}`
+        },
+       body: JSON.stringify({ hash, amount: data.trc20TransferInfo?.[0]?.amount_str || data.amount, wallet_address: receiverAddress, type: isUSDTContract ? 'USDT' : 'TRX' })
+  });
     
     const result = await response.json();
     return result.success;
@@ -157,8 +154,8 @@ const saveTransaction = async (hash, data) => {
   }
 };
 
-const PaymentCard = ({ isDarkMode, onClose, productTitle, price }) => {
-  const [transactionHash, setTransactionHash] = useState('');
+const PaymentCard = ({ isDarkMode, onClose, productTitle, price, months }) => {
+    const [transactionHash, setTransactionHash] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
@@ -325,26 +322,76 @@ const PaymentCard = ({ isDarkMode, onClose, productTitle, price }) => {
     }
   };
 
-  const handleSubmit = async () => {
-    if (!transactionHash) {
-      notify("خطا", "لطفا هش تراکنش را وارد کنید", "danger");
+// این کد را در فایل PaymentCard.js و در تابع handleSubmit قرار دهید
+const handleSubmit = async () => {
+  if (!transactionHash) {
+    notify("خطا", "لطفا هش تراکنش را وارد کنید", "danger");
+    return;
+  }
+
+  const result = await verifyTransaction(transactionHash);
+  if (result.success) {
+    const saved = await saveTransaction(transactionHash, result.data);
+    if (!saved) {
+      notify("خطا", "این تراکنش قبلاً ثبت شده است", "danger");
       return;
     }
-  
-    const result = await verifyTransaction(transactionHash);
-    if (result.success) {
-      const saved = await saveTransaction(transactionHash, result.data);
-      if (!saved) {
-        notify("خطا", "این تراکنش قبلاً ثبت شده است", "danger");
+
+    // --------- ذخیره اشتراک در پایگاه داده وردپرس ---------
+    try {
+      const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+      
+      if (!token) {
+        notify("خطا", "لطفا دوباره وارد حساب کاربری خود شوید", "danger");
         return;
       }
-      notify("موفق", "تراکنش با موفقیت تایید شد", "success", 3000);
-      setTimeout(() => closeCard(), 1000);
-    } else {
-      notify("خطا", result.message || "تراکنش معتبر نیست", "danger");
+      
+      // درخواست به API وردپرس برای ذخیره خرید
+      const response = await fetch('https://p30s.com/wp-json/pcs/v1/save-purchase', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          transaction_hash: transactionHash,
+          product_title: productTitle,
+          price: price,
+          duration_months: months || 1
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.message || 'خطا در ذخیره خرید');
+      }
+    } catch (error) {
+      console.error('Error saving purchase to WordPress:', error);
+      // حتی در صورت خطا در ذخیره در وردپرس، خرید را در localStorage ذخیره می‌کنیم
     }
-  };
-
+    
+    // --------- افزودن اشتراک به localStorage ---------
+    const current = JSON.parse(localStorage.getItem('purchasedProducts') || '[]');
+    const today = new Date();
+    const days = months * 30;
+    const newItem = {
+      id: transactionHash,
+      title: productTitle,
+      date: today,
+      status: 'active',
+      remainingDays: days,
+      isVIP: productTitle.includes('VIP')
+    };
+    localStorage.setItem('purchasedProducts', JSON.stringify([...current, newItem]));
+    // ----------------------------------------------------
+    
+    notify("موفق", "اشتراک VIP شما فعال شد", "success", 3000);
+    setTimeout(() => closeCard(), 1000);
+  } else {
+    notify("خطا", result.message || "تراکنش معتبر نیست", "danger");
+  }
+};
   return (
     <div className="fixed inset-0 z-[9999] bg-black/75 overflow-hidden transition-opacity duration-300"
       onClick={(e) => {

@@ -28,6 +28,11 @@ import SignalStreamChannel from './chanel-signal-stream';
 import PublicChannel from './chanel-public';
 import PostsChannel from './chanel-posts';
 import { Toaster } from 'react-hot-toast';
+import IOSInstallPrompt from './IOSInstallPrompt';
+import { shouldShowInstallPrompt } from './detectIOS';
+import DesktopWarning from './DesktopWarning';
+
+
 
 
 
@@ -472,6 +477,8 @@ function AppRoutes({
 
 const App = () => {
   // All states
+  const [showDesktopWarning, setShowDesktopWarning] = useState(true);
+  const [showIOSPrompt, setShowIOSPrompt] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [products, setProducts] = useState([]);
   const [cryptoPrices, setCryptoPrices] = useState([]);
@@ -480,6 +487,19 @@ const App = () => {
   const [sliders, setSliders] = useState([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   
+
+  useEffect(() => {
+    // فقط یک بار در لود اولیه چک می‌کنیم
+    if (shouldShowInstallPrompt()) {
+      // یک تاخیر کوتاه برای اطمینان از لود شدن صفحه قبل از نمایش راهنما
+      const timer = setTimeout(() => {
+        setShowIOSPrompt(true);
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
 
   useEffect(() => {
     //console.log('Login state changed:', isLoggedIn);
@@ -505,6 +525,46 @@ const App = () => {
     }
   }, []);
   
+  // بررسی دوره‌ای خریدهای کاربر
+useEffect(() => {
+  // فقط زمانی که کاربر لاگین است اجرا شود
+  if (!isLoggedIn) return;
+  
+  // بررسی زمان آخرین چک
+  const lastCheck = localStorage.getItem('lastProductCheck');
+  const now = new Date().getTime();
+  
+  // اگر آخرین چک بیش از یک ساعت پیش بوده یا اصلاً انجام نشده، دوباره چک کنیم
+  if (!lastCheck || (now - parseInt(lastCheck)) > 3600000) { // 3600000 ms = 1 hour
+    const checkPurchases = async () => {
+      try {
+        const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+        if (!token) return;
+        
+        const response = await fetch('https://p30s.com/wp-json/pcs/v1/user-purchases', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          }
+        });
+        
+        if (!response.ok) throw new Error('خطا در دریافت خریدها');
+        
+        const data = await response.json();
+        
+        if (data.success && Array.isArray(data.purchases)) {
+          localStorage.setItem('purchasedProducts', JSON.stringify(data.purchases));
+          localStorage.setItem('lastProductCheck', now.toString());
+          //console.log('خریدها به روز شدند');
+        }
+      } catch (error) {
+        console.error('Error checking purchases:', error);
+      }
+    };
+    
+    checkPurchases();
+  }
+}, [isLoggedIn]);
   
   // دریافت قیمت‌های ارز دیجیتال
   useEffect(() => {
@@ -589,7 +649,7 @@ const App = () => {
     };
 
     fetchPrices();
-    const interval = setInterval(fetchPrices, 60000);
+    const interval = setInterval(fetchPrices, 1800000);
     return () => clearInterval(interval);
   }, []);
 
@@ -671,6 +731,24 @@ const App = () => {
         position="top-center" 
         containerStyle={{ zIndex: 11000 }} 
       />
+
+      
+
+{/* اضافه کردن کامپوننت راهنمای iOS */}
+{showIOSPrompt && (
+        <IOSInstallPrompt 
+          isDarkMode={isDarkMode} 
+          onClose={() => setShowIOSPrompt(false)} 
+        />
+      )}
+
+{/* اضافه کردن هشدار دسکتاپ */}
+{showDesktopWarning && (
+  <DesktopWarning 
+    isDarkMode={isDarkMode} 
+  />
+)}
+
       <BrowserRouter>
         <OrientationLock isDarkMode={isDarkMode}>
           {loading ? (

@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowLeftCircle, Play } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import PaymentCard from './PaymentCard'; // کامپوننت کارت پرداخت را import می‌کنیم
+
 
 const VIPPage = ({ isDarkMode, isOpen, onClose }) => {
   const [showCard, setShowCard] = useState(false);
@@ -45,23 +46,21 @@ const VIPPage = ({ isDarkMode, isOpen, onClose }) => {
     };
   }, [isOpen, addedToHistory, location.pathname]);
 
-  const closeCard = () => {
+  const closeCard = useCallback(() => {
     setIsExiting(true);
     setTimeout(() => {
       setShowCard(false);
       setIsExiting(false);
       
-      // اینجا باید URL را به حالت قبل برگردانیم
-      if (location.pathname !== '/') {
-        // اگر از آدرس مستقیم آمده‌ایم، تاریخچه را جایگزین می‌کنیم
-        onClose(); // این تابع باید navigate('/', { replace: true }) را فراخوانی کند
-      } else {
-        // اگر از داخل برنامه آمده‌ایم، فقط کامپوننت را می‌بندیم
+      if (onClose) {
         onClose();
+      } else if (location.pathname !== '/') {
+        navigate('/', { replace: true });
       }
     }, 300);
-  };
+  }, [onClose, navigate, location.pathname]);
 
+  
   // تابع جدید برای باز کردن کارت پرداخت با اشتراک انتخاب شده
   const handlePurchase = (subscription) => {
     setSelectedSubscription(subscription);
@@ -176,8 +175,8 @@ const VIPPage = ({ isDarkMode, isOpen, onClose }) => {
                 <div className="space-y-4">
                   <div 
                     className="border border-gray-700 rounded-lg p-3 cursor-pointer hover:bg-gray-800 transition-colors"
-                    onClick={() => handlePurchase({ title: "اشتراک شش ماهه", price: "199" })}
-                  >
+                    onClick={() => handlePurchase({ title: "اشتراک شش ماهه", price: "199", months: 6 })}
+                                      >
                     <h4 className="font-bold text-lg">اشتراک شش ماهه</h4>
                     <p className="text-yellow-500 text-lg mt-1">۱۹۹ دلار</p>
                     <p className="text-gray-400 text-sm mt-1">مناسب برای آشنایی با خدمات VIP</p>
@@ -185,8 +184,8 @@ const VIPPage = ({ isDarkMode, isOpen, onClose }) => {
                   
                   <div 
                     className="border border-gray-700 rounded-lg p-3 bg-gray-800 cursor-pointer hover:bg-gray-700 transition-colors"
-                    onClick={() => handlePurchase({ title: "اشتراک یکساله", price: "299" })}
-                  >
+                    onClick={() => handlePurchase({ title: "اشتراک یکساله", price: "299", months: 12 })}
+                                      >
                     <div className="flex justify-between items-center">
                       <h4 className="font-bold text-lg">اشتراک یکساله </h4>
                       <span className="bg-yellow-500 text-gray-900 text-xs rounded-full px-2 py-1">پیشنهاد ویژه</span>
@@ -229,11 +228,12 @@ const VIPPage = ({ isDarkMode, isOpen, onClose }) => {
       {/* Payment Card Component */}
       {showPaymentCard && selectedSubscription && (
         <PaymentCard
-          isDarkMode={isDarkMode}
-          onClose={() => setShowPaymentCard(false)}
-          productTitle={selectedSubscription.title}
-          price={selectedSubscription.price}
-        />
+             isDarkMode={isDarkMode}
+             onClose={() => setShowPaymentCard(false)}
+             productTitle={selectedSubscription.title}
+             price={selectedSubscription.price}
+             months={selectedSubscription.months}
+           />
       )}
     </div>
   );

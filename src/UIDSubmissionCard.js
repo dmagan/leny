@@ -154,7 +154,7 @@ const UIDSubmissionCard = ({ isDarkMode, onClose, productTitle }) => {
         notify("خطا", result.message || "خطا در ثبت UID. لطفا مجددا تلاش کنید", "danger");
       }
     } catch (error) {
-      console.error('Error submitting UID:', error);
+      //console.error('Error submitting UID:', error);
       setSubmissionStatus('error');
       notify("خطا", "خطا در برقراری ارتباط با سرور", "danger");
     } finally {

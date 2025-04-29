@@ -89,50 +89,35 @@ const SignalStreamServicePage = ({ isDarkMode, isOpen, onClose }) => {
 
 // اضافه کردن مدیریت بهینه دکمه برگشت
 useEffect(() => {
-  // فقط یک بار pushState انجام دهیم وقتی کامپوننت ماونت می‌شود
-  if (isOpen) {
-    // چک کنیم که آیا قبلاً state اضافه کرده‌ایم
-    const historyState = window.history.state;
-    if (!historyState || !historyState.signalStreamPage) {
-      window.history.pushState({ signalStreamPage: true }, '');
-    }
-  }
-
   const handleBackButton = () => {
-    // اگر کارت UID باز است، ابتدا آن را ببندیم
     if (showUIDCard) {
       setShowUIDCard(false);
+      return;
     } 
-    // اگر overlay لاگین باز است، آن را ببندیم
-    else if (showLoginOverlay) {
+    if (showLoginOverlay) {
       setShowLoginOverlay(false);
+      return;
     }
-    // در غیر این صورت، صفحه را ببندیم
-    else if (isOpen) {
+    if (isOpen) {
       closeCard();
     }
   };
   
-  // شنونده برای رویداد popstate (فشردن دکمه برگشت)
   window.addEventListener('popstate', handleBackButton);
   
-  // پاکسازی event listener
   return () => {
     window.removeEventListener('popstate', handleBackButton);
   };
 }, [isOpen, showUIDCard, showLoginOverlay]);
 
-// حذف useEffect اضافی برای مدیریت overlay لاگین
-// چون این مدیریت در useEffect بالا انجام می‌شود
-
-  const closeCard = () => {
-    setIsExiting(true);
-    setTimeout(() => {
-      setShowCard(false);
-      setIsExiting(false);
-      onClose();
-    }, 300);
-  };
+const closeCard = () => {
+  setIsExiting(true);
+  setTimeout(() => {
+    setShowCard(false);
+    setIsExiting(false);
+    onClose();
+  }, 300);
+};
 
   const handleSubmitUID = () => {
     const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
