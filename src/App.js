@@ -501,9 +501,50 @@ const App = () => {
   }, []);
 
 
+
   useEffect(() => {
     //console.log('Login state changed:', isLoggedIn);
   }, [isLoggedIn]);
+
+// بررسی و بارگیری مجدد اشتراک‌های کاربر پس از ورود
+useEffect(() => {
+  if (isLoggedIn) {
+    const reloadUserSubscriptions = async () => {
+      try {
+        const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+        if (!token) return;
+        
+        console.log("Reloading user subscriptions...");
+        const response = await fetch('https://p30s.com/wp-json/pcs/v1/user-purchases', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          }
+        });
+        
+        if (!response.ok) throw new Error('خطا در دریافت اشتراک‌ها');
+        
+        const data = await response.json();
+        
+        if (data.success && Array.isArray(data.purchases)) {
+          console.log("Retrieved subscriptions:", data.purchases);
+          localStorage.setItem('purchasedProducts', JSON.stringify(data.purchases));
+          localStorage.setItem('lastProductCheck', new Date().getTime().toString());
+          
+          // همچنین در sessionStorage ذخیره می‌کنیم
+          sessionStorage.setItem('purchasedProducts', JSON.stringify(data.purchases));
+          sessionStorage.setItem('lastProductCheck', new Date().getTime().toString());
+          
+          console.log("Subscriptions saved to localStorage and sessionStorage");
+        }
+      } catch (error) {
+        console.error('Error reloading subscriptions:', error);
+      }
+    };
+    
+    reloadUserSubscriptions();
+  }
+}, [isLoggedIn]);
 
 
   const handleLogout = () => {

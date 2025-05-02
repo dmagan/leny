@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Store } from 'react-notifications-component';
 import { X, Upload, Copy, Check } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
 
 const notify = (title, message, type = 'danger', duration = 7000) => {
   Store.addNotification({
@@ -20,7 +22,7 @@ const notify = (title, message, type = 'danger', duration = 7000) => {
   });
 };
 
-const verifyTransaction = async (hash) => {
+const verifyTransaction = async (hash, expectedPrice) => {
   try {
     const response = await fetch(`https://apilist.tronscan.org/api/transaction-info?hash=${hash}`, {
       headers: {
@@ -37,11 +39,45 @@ const verifyTransaction = async (hash) => {
         ? data.trc20TransferInfo?.[0]?.to_address
         : data.toAddress;
       
+      // بررسی آدرس کیف پول
+      const correctWalletAddress = "TRJ8KcHydFr3UDytiYmXiBPc1d4df5zGf6";
+      if (receiverAddress !== correctWalletAddress) {
+        return { 
+          success: false, 
+          message: 'تراکنش به آدرس کیف پول صحیح ارسال نشده است' 
+        };
+      }
+      
+// بررسی مبلغ پرداختی
+let paidAmount;
+if (data.trc20TransferInfo && data.trc20TransferInfo.length > 0) {
+  // تراکنش‌های USDT معمولاً مقدار را با 6 رقم اعشار ذخیره می‌کنند
+  const rawAmount = data.trc20TransferInfo[0].amount_str;
+  // تقسیم بر 10^6 برای تبدیل به دلار
+  paidAmount = parseFloat(rawAmount) / 1000000;
+  
+  console.log('USDT amount raw:', rawAmount);
+  console.log('USDT amount converted:', paidAmount);
+} else {
+  // برای TRX
+  paidAmount = parseFloat(data.amount);
+}
+
+// بررسی دقیق مبلغ پرداختی با مقدار مورد انتظار
+if (expectedPrice) {
+  if (Math.abs(paidAmount - expectedPrice) > 0.01) {
+    return {
+      success: false,
+      message: `مبلغ پرداختی (${paidAmount.toFixed(2)} دلار) با مبلغ محصول (${expectedPrice.toFixed(2)} دلار) مطابقت ندارد`
+    };
+  }
+}
+      
       console.log('اطلاعات تراکنش:', {
         هش: data.hash,
         وضعیت: data.confirmed ? 'تایید شده' : 'در انتظار تایید',
         'آدرس گیرنده': receiverAddress,
-        'مقدار تراکنش': data.trc20TransferInfo?.[0]?.amount_str || data.amount,
+        'مقدار تراکنش': paidAmount,
         'نوع تراکنش': isUSDTContract ? 'USDT' : 'TRX'
       });
 
@@ -55,8 +91,8 @@ const verifyTransaction = async (hash) => {
   }
 };
 
-const analyzeImage = async (base64Image) => {
-  try {
+const analyzeImage = async (base64Image, expectedPrice) => {
+    try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -102,7 +138,8 @@ const analyzeImage = async (base64Image) => {
         return null;
       }
 
-      const verificationResult = await verifyTransaction(hash);
+      const verificationResult = await verifyTransaction(hash, expectedPrice);
+
       if (!verificationResult.success) {
         notify("خطا", verificationResult.message, "danger");
         return null;
@@ -136,15 +173,29 @@ const saveTransaction = async (hash, data) => {
       ? data.trc20TransferInfo?.[0]?.to_address
       : data.toAddress;
     
-      const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
-      const response = await fetch('https://p30s.com/wp-json/transaction/v1/verify',{
-     method: 'POST',
-         headers: {
-         'Content-Type': 'application/json',
-           'Authorization': `Bearer ${token}`
-        },
-       body: JSON.stringify({ hash, amount: data.trc20TransferInfo?.[0]?.amount_str || data.amount, wallet_address: receiverAddress, type: isUSDTContract ? 'USDT' : 'TRX' })
-  });
+    // اصلاح مقدار برای USDT
+    let amount;
+    if (isUSDTContract && data.trc20TransferInfo && data.trc20TransferInfo.length > 0) {
+      const rawAmount = data.trc20TransferInfo[0].amount_str;
+      amount = (parseFloat(rawAmount) / 1000000).toFixed(2); // تبدیل به دلار با دو رقم اعشار
+    } else {
+      amount = data.amount;
+    }
+    
+    const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+    const response = await fetch('https://p30s.com/wp-json/transaction/v1/verify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ 
+        hash, 
+        amount, 
+        wallet_address: receiverAddress, 
+        type: isUSDTContract ? 'USDT' : 'TRX' 
+      })
+    });
     
     const result = await response.json();
     return result.success;
@@ -155,7 +206,8 @@ const saveTransaction = async (hash, data) => {
 };
 
 const PaymentCard = ({ isDarkMode, onClose, productTitle, price, months }) => {
-    const [transactionHash, setTransactionHash] = useState('');
+  const navigate = useNavigate();
+  const [transactionHash, setTransactionHash] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
@@ -303,7 +355,8 @@ const PaymentCard = ({ isDarkMode, onClose, productTitle, price, months }) => {
       });
 
       setUploadProgress(50);
-      const hash = await analyzeImage(base64);
+      const hash = await analyzeImage(base64, parseFloat(price));
+
       if (hash) {
         setTransactionHash(hash);
       }
@@ -322,6 +375,161 @@ const PaymentCard = ({ isDarkMode, onClose, productTitle, price, months }) => {
     }
   };
 
+
+// تابع بررسی و به‌روزرسانی اشتراک قبلی
+// تابع بررسی و به‌روزرسانی اشتراک قبلی
+const updateSubscription = async (productTitle, months, transactionHash, price) => {
+  try {
+    console.log('شروع فرآیند به‌روزرسانی اشتراک:', { productTitle, months, transactionHash });
+    
+    // ابتدا اشتراک‌های موجود را دریافت می‌کنیم
+    let current = [];
+    try {
+      const storedProducts = localStorage.getItem('purchasedProducts');
+      if (storedProducts) {
+        current = JSON.parse(storedProducts);
+        console.log('اشتراک‌های موجود در localStorage:', current);
+      }
+    } catch (parseError) {
+      console.error('خطا در خواندن اشتراک‌های موجود:', parseError);
+      // در صورت خطا، با آرایه خالی ادامه می‌دهیم
+      current = [];
+    }
+    
+    const today = new Date();
+    
+    // تعیین نوع محصول براساس عنوان
+    const isVIP = productTitle.toLowerCase().includes('vip');
+    const isDex = productTitle.toLowerCase().includes('دکس');
+    const isZeroTo100 = productTitle.toLowerCase().includes('صفر تا صد') || 
+                          productTitle.toLowerCase().includes('0 تا 100');
+    const isSignalStream = productTitle.toLowerCase().includes('سیگنال') || 
+                          productTitle.toLowerCase().includes('signal');
+    
+    console.log('نوع محصول:', { isVIP, isDex, isZeroTo100, isSignalStream });
+    
+    // پیدا کردن اشتراک فعلی با همان نوع (بدون توجه به وضعیت فعال یا منقضی)
+    const existingSubscriptionIndex = current.findIndex(item => {
+      if (isVIP && item.isVIP) return true;
+      if (isDex && item.title && item.title.toLowerCase().includes('دکس')) return true;
+      if (isZeroTo100 && item.title && (
+          item.title.toLowerCase().includes('صفر تا صد') || 
+          item.title.toLowerCase().includes('0 تا 100')
+        )) return true;
+      if (isSignalStream && item.title && (
+          item.title.toLowerCase().includes('سیگنال') || 
+          item.title.toLowerCase().includes('signal')
+        )) return true;
+      return false;
+    });
+    
+    console.log('ایندکس اشتراک موجود:', existingSubscriptionIndex);
+    
+    const days = months * 30;
+    let result = {};
+    
+    // اگر اشتراک مشابه وجود دارد
+    if (existingSubscriptionIndex !== -1) {
+      const existingSubscription = current[existingSubscriptionIndex];
+      console.log('اشتراک موجود یافت شد:', existingSubscription);
+      
+      let updatedDays;
+      // اگر اشتراک کنونی منقضی شده یا دارای روزهای باقیمانده کمتر از 0 است
+      if (existingSubscription.status === 'expired' || 
+          (existingSubscription.remainingDays !== 'unlimited' && parseInt(existingSubscription.remainingDays || 0) <= 0)) {
+        // اشتراک منقضی شده - شروع جدید
+        updatedDays = days;
+      } else {
+        // افزودن به زمان باقیمانده فعلی
+        if (existingSubscription.remainingDays === 'unlimited' || isDex) {
+          updatedDays = 'unlimited';
+        } else {
+          updatedDays = parseInt(existingSubscription.remainingDays || 0) + days;
+        }
+      }
+      
+      console.log('روزهای به‌روز شده:', updatedDays);
+      
+      // به‌روزرسانی اشتراک موجود
+      const updatedSubscription = {
+        ...existingSubscription,
+        status: 'active',
+        remainingDays: updatedDays,
+        lastUpdated: today.toISOString(),
+        lastRenewed: today.toISOString(),
+        transactionHash: transactionHash
+      };
+      
+      // اگر تغییراتی در عنوان نیاز است، اعمال شود
+      if (isVIP) {
+        // اصلاح عنوان VIP برای یکپارچگی
+        let baseTitle = existingSubscription.title || '';
+        baseTitle = baseTitle.replace(/^اشتراک\s*/, '')
+                            .replace(/VIP\s*/g, '')
+                            .trim();
+        updatedSubscription.title = `اشتراک VIP ${baseTitle}`;
+      }
+      
+      // جایگزینی اشتراک قدیمی با نسخه به‌روز شده
+      current[existingSubscriptionIndex] = updatedSubscription;
+      
+      result = { updated: true, subscription: updatedSubscription };
+    } else {
+      // اگر اشتراک قبلی وجود ندارد، ایجاد اشتراک جدید
+      console.log('اشتراک موجود یافت نشد، ایجاد اشتراک جدید');
+      
+      const newSubscription = {
+        id: `sub_${Date.now()}`, // ایجاد ID یکتا
+        transactionId: transactionHash,
+        title: productTitle,
+        date: today.toISOString(),
+        status: 'active',
+        remainingDays: isDex ? 'unlimited' : days,
+        isVIP: isVIP,
+        isDex: isDex,
+        isZeroTo100: isZeroTo100,
+        isSignalStream: isSignalStream,
+        transactionHash: transactionHash,
+        createdAt: today.toISOString(),
+        lastUpdated: today.toISOString()
+      };
+      
+      // افزودن به لیست اشتراک‌ها
+      current.push(newSubscription);
+      
+      result = { updated: false, subscription: newSubscription };
+    }
+    
+    // ذخیره‌سازی تغییرات در localStorage
+    try {
+      localStorage.setItem('purchasedProducts', JSON.stringify(current));
+      localStorage.setItem('lastProductCheck', new Date().getTime().toString());
+      console.log('اشتراک با موفقیت در localStorage ذخیره شد');
+      
+      // همچنین در sessionStorage هم ذخیره می‌کنیم به عنوان پشتیبان
+      sessionStorage.setItem('purchasedProducts', JSON.stringify(current));
+      sessionStorage.setItem('lastProductCheck', new Date().getTime().toString());
+    } catch (storageError) {
+      console.error('خطا در ذخیره‌سازی در localStorage:', storageError);
+      // سعی می‌کنیم در sessionStorage ذخیره کنیم
+      try {
+        sessionStorage.setItem('purchasedProducts', JSON.stringify(current));
+        sessionStorage.setItem('lastProductCheck', new Date().getTime().toString());
+        console.log('اشتراک با موفقیت در sessionStorage ذخیره شد');
+      } catch (sessionStorageError) {
+        console.error('خطا در ذخیره‌سازی در sessionStorage:', sessionStorageError);
+        // هر دو با شکست مواجه شدند
+        return { updated: false, error: true, subscription: null };
+      }
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('خطا در به‌روزرسانی اشتراک:', error);
+    return { updated: false, error: true };
+  }
+};
+
 // این کد را در فایل PaymentCard.js و در تابع handleSubmit قرار دهید
 const handleSubmit = async () => {
   if (!transactionHash) {
@@ -329,67 +537,170 @@ const handleSubmit = async () => {
     return;
   }
 
-  const result = await verifyTransaction(transactionHash);
-  if (result.success) {
-    const saved = await saveTransaction(transactionHash, result.data);
-    if (!saved) {
-      notify("خطا", "این تراکنش قبلاً ثبت شده است", "danger");
+  // نمایش وضعیت در حال بارگذاری
+  setIsUploading(true);
+  setUploadProgress(10);
+
+  try {
+    // بررسی تراکنش
+    setUploadProgress(30);
+    const result = await verifyTransaction(transactionHash, parseFloat(price));
+
+    if (!result.success) {
+      notify("خطا", result.message || "تراکنش معتبر نیست", "danger");
+      setIsUploading(false);
+      setUploadProgress(0);
       return;
     }
+    
+    setUploadProgress(50);
 
-    // --------- ذخیره اشتراک در پایگاه داده وردپرس ---------
-    try {
-      const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
-      
-      if (!token) {
-        notify("خطا", "لطفا دوباره وارد حساب کاربری خود شوید", "danger");
+    // مرحله 1: ذخیره هش تراکنش در wp_transaction
+    const isUSDTContract = result.data.toAddress === 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
+    const receiverAddress = isUSDTContract 
+      ? result.data.trc20TransferInfo?.[0]?.to_address
+      : result.data.toAddress;
+    
+    // اصلاح مقدار برای USDT
+    let amount;
+    if (isUSDTContract && result.data.trc20TransferInfo && result.data.trc20TransferInfo.length > 0) {
+      const rawAmount = result.data.trc20TransferInfo[0].amount_str;
+      amount = (parseFloat(rawAmount) / 1000000).toFixed(2); // تبدیل به دلار با دو رقم اعشار
+    } else {
+      amount = result.data.amount;
+    }
+    
+    // ابتدا هش تراکنش را در جدول wp_transaction ذخیره می‌کنیم
+    const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+    if (!token) {
+      notify("خطا", "لطفا دوباره وارد حساب کاربری خود شوید", "danger");
+      setIsUploading(false);
+      setUploadProgress(0);
+      return;
+    }
+    
+    const transactionResponse = await fetch('https://p30s.com/wp-json/transaction/v1/verify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ 
+        hash: transactionHash, 
+        amount: amount, 
+        wallet_address: receiverAddress, 
+        type: isUSDTContract ? 'USDT' : 'TRX' 
+      })
+    });
+    
+    const transactionData = await transactionResponse.json();
+    
+    if (!transactionData.success) {
+      // اگر هش تراکنش قبلاً ثبت شده باشد، ممکن است این خطا را دریافت کنیم
+      if (transactionData.message && transactionData.message.includes("قبلاً ثبت شده")) {
+        notify("خطا", "این تراکنش قبلاً ثبت شده است", "danger");
+        setIsUploading(false);
+        setUploadProgress(0);
         return;
       }
       
-      // درخواست به API وردپرس برای ذخیره خرید
-      const response = await fetch('https://p30s.com/wp-json/pcs/v1/save-purchase', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          transaction_hash: transactionHash,
-          product_title: productTitle,
-          price: price,
-          duration_months: months || 1
-        })
-      });
-      
-      const data = await response.json();
-      
-      if (!data.success) {
-        throw new Error(data.message || 'خطا در ذخیره خرید');
-      }
-    } catch (error) {
-      console.error('Error saving purchase to WordPress:', error);
-      // حتی در صورت خطا در ذخیره در وردپرس، خرید را در localStorage ذخیره می‌کنیم
+      // سایر خطاها
+      notify("خطا", transactionData.message || "خطا در ثبت تراکنش", "danger");
+      setIsUploading(false);
+      setUploadProgress(0);
+      return;
     }
     
-    // --------- افزودن اشتراک به localStorage ---------
-    const current = JSON.parse(localStorage.getItem('purchasedProducts') || '[]');
-    const today = new Date();
-    const days = months * 30;
-    const newItem = {
-      id: transactionHash,
-      title: productTitle,
-      date: today,
-      status: 'active',
-      remainingDays: days,
-      isVIP: productTitle.includes('VIP')
-    };
-    localStorage.setItem('purchasedProducts', JSON.stringify([...current, newItem]));
-    // ----------------------------------------------------
+    setUploadProgress(70);
     
-    notify("موفق", "اشتراک VIP شما فعال شد", "success", 3000);
-    setTimeout(() => closeCard(), 1000);
-  } else {
-    notify("خطا", result.message || "تراکنش معتبر نیست", "danger");
+    // مرحله 2: ثبت خرید در سیستم
+    const purchaseResponse = await fetch('https://p30s.com/wp-json/pcs/v1/save-purchase', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        transaction_hash: transactionHash,
+        product_title: productTitle,
+        price: price,
+        paid_amount: amount.toString(),
+        duration_months: months || 1
+      })
+    });
+    
+    const purchaseData = await purchaseResponse.json();
+    
+    setUploadProgress(100);
+    
+    if (purchaseData.success) {
+      // هدایت به کانال VIP
+      notify("موفق", "خرید شما با موفقیت ثبت شد", "success");
+      
+      setTimeout(() => {
+        setIsUploading(false);
+        setUploadProgress(0);
+        closeCard();
+        
+        // بارگذاری اطلاعات خرید‌های کاربر از سرور
+        fetch('https://p30s.com/wp-json/pcs/v1/user-purchases', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success && Array.isArray(data.purchases)) {
+            // به‌روزرسانی localStorage
+            localStorage.setItem('purchasedProducts', JSON.stringify(data.purchases));
+            localStorage.setItem('lastProductCheck', new Date().getTime().toString());
+            
+            // به جای بارگذاری مجدد، به صفحه chat هدایت می‌کنیم
+            // اگر این حالت با خطا مواجه شود، می‌توان از navigate استفاده کرد
+            try {
+              navigate('/chat');
+            } catch (error) {
+              console.error('خطا در هدایت با navigate:', error);
+              // اگر navigate با خطا مواجه شد، از این روش استفاده می‌کنیم
+              const base = window.location.protocol + '//' + window.location.host;
+              window.location.replace(base + '/chat');
+            }
+          } else {
+            // خطا در دریافت اطلاعات خرید، هدایت به کانال VIP
+            try {
+              navigate('/chat');
+            } catch (error) {
+              console.error('خطا در هدایت با navigate:', error);
+              const base = window.location.protocol + '//' + window.location.host;
+              window.location.replace(base + '/chat');
+            }
+          }
+        })
+        .catch(error => {
+          console.error('خطا در دریافت اطلاعات خرید:', error);
+          try {
+            navigate('/chat');
+          } catch (navigateError) {
+            console.error('خطا در هدایت با navigate:', navigateError);
+            const base = window.location.protocol + '//' + window.location.host;
+            window.location.replace(base + '/chat');
+          }
+        });
+      }, 2000);
+      
+    } else {
+      // خطا در ثبت خرید
+      notify("خطا", purchaseData.message || "در ثبت خرید مشکلی پیش آمد", "danger");
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
+    
+  } catch (error) {
+    console.error('خطا در تأیید تراکنش:', error);
+    notify("خطا", "در فرآیند تأیید تراکنش مشکلی پیش آمد", "danger");
+    setIsUploading(false);
+    setUploadProgress(0);
   }
 };
   return (

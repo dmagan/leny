@@ -10,6 +10,29 @@ const DexServicesPage = ({ isDarkMode, isOpen, onClose }) => {
   const [addedToHistory, setAddedToHistory] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const [isRenewal, setIsRenewal] = useState(false);
+const [renewingProduct, setRenewingProduct] = useState(null);
+
+
+
+
+useEffect(() => {
+  // بررسی آیا کاربر در حال تمدید اشتراک است یا خیر
+  const renewalInfo = sessionStorage.getItem('renewProduct');
+  if (renewalInfo) {
+    try {
+      const productInfo = JSON.parse(renewalInfo);
+      setRenewingProduct(productInfo);
+      setIsRenewal(true);
+      
+      // پاک کردن اطلاعات بعد از استفاده
+      sessionStorage.removeItem('renewProduct');
+    } catch (e) {
+      console.error('خطا در پردازش اطلاعات تمدید:', e);
+    }
+  }
+}, []);
+
 
   useEffect(() => {
     if (isOpen) {
@@ -213,7 +236,7 @@ const DexServicesPage = ({ isDarkMode, isOpen, onClose }) => {
                 <div className="flex justify-between items-center">
                   <div>
                     <h3 className="text-lg font-bold mb-2 text-yellow-400 text-right">قیمت دوره:</h3>
-                    <p className="text-2xl font-bold text-green-500">۲۹۹ دلار</p>
+                    <p className="text-2xl font-bold text-green-500">۱۹۹ دلار</p>
                   </div>
                   <div className="bg-yellow-500/20 text-yellow-400 rounded-xl p-2 text-sm">
                     <p>دسترسی نامحدود</p>
@@ -229,16 +252,25 @@ const DexServicesPage = ({ isDarkMode, isOpen, onClose }) => {
             height: '90px',
             background: 'linear-gradient(to top, rgba(0,0,0,100), rgba(0,0,0,0))'
           }}></div>
+          
+{isRenewal && (
+  <div className="absolute bottom-20 left-4 right-4 p-4 rounded-xl bg-[#141e35] text-white mt-2 mb-4" dir="rtl">
+    <p className="text-sm">
+      شما در حال تمدید <span className="text-yellow-500 font-bold">{renewingProduct?.title}</span> هستید.
+      این تمدید به مدت زمان باقی‌مانده اشتراک فعلی شما اضافه خواهد شد.
+    </p>
+  </div>
+)}
 
-          {/* Fixed Button at Bottom */}
-          <div className="absolute bottom-6 left-4 right-4 z-10">
-            <button 
-              onClick={handlePurchase} // رویداد کلیک برای باز کردن کارت پرداخت
-              className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-4 rounded-xl transition-colors shadow-lg"
-            >
-              ثبت نام در دوره
-            </button>
-          </div>
+{/* Fixed Button at Bottom */}
+<div className="absolute bottom-6 left-4 right-4 z-10">
+  <button 
+    onClick={() => handlePurchase({ title: "اشتراک VIP شش ماهه", price: "199", months: 6 })}
+    className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-4 rounded-xl transition-colors shadow-lg"
+  >
+    {isRenewal ? 'تمدید اشتراک' : 'خرید اشتراک'}
+  </button>
+</div>
         </div>
       </div>
       
@@ -248,7 +280,7 @@ const DexServicesPage = ({ isDarkMode, isOpen, onClose }) => {
           isDarkMode={isDarkMode}
           onClose={() => setShowPaymentCard(false)}
           productTitle="دوره دکس تریدینگ"
-          price="299"
+          price="199"
         />
       )}
     </div>

@@ -177,60 +177,76 @@ const LoginPage = ({ isDarkMode, setIsLoggedIn, onClose }) => {
 
   // این کد را در بخش handleLoginSuccess در فایل LoginPage.js جایگزین کنید
 
-const handleLoginSuccess = async (result) => {
-  setIsLoggedIn(true);
-  try {
-    // دریافت خریدهای کاربر از سرور
-    const token = result.token || localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
-    
-    if (!token) {
-      console.error('خطا: توکن کاربر یافت نشد');
-      return;
-    }
-    
-    // ذخیره توکن
-    if (saveLogin) {
-      localStorage.setItem('userToken', token);
-      localStorage.setItem('userInfo', JSON.stringify(result));
-    } else {
-      sessionStorage.setItem('userToken', token);
-      sessionStorage.setItem('userInfo', JSON.stringify(result));
-    }
-    
-    // دریافت خریدهای کاربر از API
-    const purchasesResponse = await fetch('https://p30s.com/wp-json/pcs/v1/user-purchases', {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json'
+  const handleLoginSuccess = async (result) => {
+    setIsLoggedIn(true);
+    try {
+      // ذخیره توکن و اطلاعات کاربر
+      const token = result.token || localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+      
+      if (!token) {
+        console.error('خطا: توکن کاربر یافت نشد');
+        return;
       }
-    });
-    
-    if (!purchasesResponse.ok) {
-      throw new Error('خطا در دریافت خریدهای کاربر');
+      
+      // ذخیره توکن و اطلاعات کاربر در localStorage یا sessionStorage
+      if (saveLogin) {
+        localStorage.setItem('userToken', token);
+        localStorage.setItem('userInfo', JSON.stringify(result));
+      } else {
+        sessionStorage.setItem('userToken', token);
+        sessionStorage.setItem('userInfo', JSON.stringify(result));
+      }
+      
+      console.log("Token saved and user is logged in");
+      
+      // دریافت خریدهای کاربر از API
+      try {
+        const purchasesResponse = await fetch('https://p30s.com/wp-json/pcs/v1/user-purchases', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          }
+        });
+        
+        if (!purchasesResponse.ok) {
+          throw new Error('خطا در دریافت خریدهای کاربر');
+        }
+        
+        const purchasesData = await purchasesResponse.json();
+        console.log("User purchases response:", purchasesData);
+        
+        if (purchasesData.success && Array.isArray(purchasesData.purchases)) {
+          // ذخیره خریدها در localStorage و sessionStorage
+          localStorage.setItem('purchasedProducts', JSON.stringify(purchasesData.purchases));
+          localStorage.setItem('lastProductCheck', new Date().getTime().toString());
+          
+          // همچنین در sessionStorage ذخیره می‌کنیم
+          sessionStorage.setItem('purchasedProducts', JSON.stringify(purchasesData.purchases));
+          sessionStorage.setItem('lastProductCheck', new Date().getTime().toString());
+          
+          console.log("Purchases saved to localStorage and sessionStorage");
+        } else {
+          console.warn("No purchases found or invalid response");
+          localStorage.setItem('purchasedProducts', JSON.stringify([]));
+          sessionStorage.setItem('purchasedProducts', JSON.stringify([]));
+        }
+      } catch (error) {
+        console.error('Error loading products:', error);
+        // در صورت خطا، localStorage را خالی می‌کنیم
+        localStorage.setItem('purchasedProducts', JSON.stringify([]));
+        sessionStorage.setItem('purchasedProducts', JSON.stringify([]));
+      }
+      
+      // هدایت به صفحه اصلی
+      navigate('/');
+      
+    } catch (error) {
+      console.error('Error in handleLoginSuccess:', error);
+      
+      // در صورت خطا هم کاربر را به صفحه اصلی هدایت می‌کنیم
+      navigate('/');
     }
-    
-    const purchasesData = await purchasesResponse.json();
-    
-    if (purchasesData.success && Array.isArray(purchasesData.purchases)) {
-      console.log("خریدهای دریافت شده از سرور:", purchasesData.purchases);
-      // ذخیره خریدها در localStorage
-      localStorage.setItem('purchasedProducts', JSON.stringify(purchasesData.purchases));
-      localStorage.setItem('lastProductCheck', new Date().getTime());
-    } else {
-      // در صورت خطا، localStorage را خالی می‌کنیم
-      localStorage.setItem('purchasedProducts', JSON.stringify([]));
-    }
-    
-  } catch (error) {
-    console.error('Error loading products:', error);
-    // در صورت خطا، localStorage را خالی می‌کنیم
-    localStorage.setItem('purchasedProducts', JSON.stringify([]));
-  }
-  
-  // هدایت به صفحه اصلی
-  navigate('/');
-};
-
+  };
 
 
 

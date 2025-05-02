@@ -12,6 +12,27 @@ const VIPPage = ({ isDarkMode, isOpen, onClose }) => {
   const [addedToHistory, setAddedToHistory] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const [isRenewal, setIsRenewal] = useState(false);
+  const [renewingProduct, setRenewingProduct] = useState(null);
+
+
+  useEffect(() => {
+    // بررسی آیا کاربر در حال تمدید اشتراک است یا خیر
+    const renewalInfo = sessionStorage.getItem('renewProduct');
+    if (renewalInfo) {
+      try {
+        const productInfo = JSON.parse(renewalInfo);
+        setRenewingProduct(productInfo);
+        setIsRenewal(true);
+        
+        // پاک کردن اطلاعات بعد از استفاده
+        sessionStorage.removeItem('renewProduct');
+      } catch (e) {
+        console.error('خطا در پردازش اطلاعات تمدید:', e);
+      }
+    }
+  }, []);
+
 
   useEffect(() => {
     if (isOpen) {
@@ -61,11 +82,61 @@ const VIPPage = ({ isDarkMode, isOpen, onClose }) => {
   }, [onClose, navigate, location.pathname]);
 
   
-  // تابع جدید برای باز کردن کارت پرداخت با اشتراک انتخاب شده
-  const handlePurchase = (subscription) => {
-    setSelectedSubscription(subscription);
-    setShowPaymentCard(true);
+// تابع جدید برای بررسی لاگین بودن کاربر و هدایت به خرید
+const handlePurchase = (subscription) => {
+  // بررسی وضعیت لاگین
+  const userToken = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+  
+  if (!userToken) {
+    // اگر کاربر لاگین نیست، به صفحه لاگین هدایت می‌شود
+    navigate('/login');
+    return;
+  }
+  
+  // قبل از نمایش پنل پرداخت، اشتراک‌های کاربر را دوباره چک کنیم
+  const checkSubscriptions = async () => {
+    try {
+      const response = await fetch('https://p30s.com/wp-json/pcs/v1/user-purchases', {
+        headers: {
+          'Authorization': `Bearer ${userToken}`,
+          'Accept': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data.success && Array.isArray(data.purchases)) {
+          // به‌روزرسانی localStorage و sessionStorage
+          localStorage.setItem('purchasedProducts', JSON.stringify(data.purchases));
+          localStorage.setItem('lastProductCheck', new Date().getTime().toString());
+          sessionStorage.setItem('purchasedProducts', JSON.stringify(data.purchases));
+          
+          // بررسی اشتراک VIP
+          const hasVIP = data.purchases.some(p => p.isVIP && p.status === 'active');
+          
+          if (hasVIP) {
+            // کاربر اشتراک VIP دارد، مستقیم به کانال VIP هدایت می‌شود
+            navigate('/chat');
+            return;
+          }
+        }
+      }
+      
+      // اگر اشتراک VIP نداشت یا خطایی رخ داد، پنل پرداخت را نمایش می‌دهیم
+      setSelectedSubscription(subscription);
+      setShowPaymentCard(true);
+      
+    } catch (error) {
+      console.error('خطا در بررسی اشتراک‌ها:', error);
+      // در صورت خطا، پنل پرداخت را نمایش می‌دهیم
+      setSelectedSubscription(subscription);
+      setShowPaymentCard(true);
+    }
   };
+  
+  checkSubscriptions();
+};
 
   if (!isOpen) return null;
 
@@ -175,7 +246,7 @@ const VIPPage = ({ isDarkMode, isOpen, onClose }) => {
                 <div className="space-y-4">
                   <div 
                     className="border border-gray-700 rounded-lg p-3 cursor-pointer hover:bg-gray-800 transition-colors"
-                    onClick={() => handlePurchase({ title: "اشتراک شش ماهه", price: "199", months: 6 })}
+                    onClick={() => handlePurchase({ title: "اشتراک VIP شش ماهه", price: "149", months: 6 })}
                                       >
                     <h4 className="font-bold text-lg">اشتراک شش ماهه</h4>
                     <p className="text-yellow-500 text-lg mt-1">۱۹۹ دلار</p>
@@ -184,7 +255,7 @@ const VIPPage = ({ isDarkMode, isOpen, onClose }) => {
                   
                   <div 
                     className="border border-gray-700 rounded-lg p-3 bg-gray-800 cursor-pointer hover:bg-gray-700 transition-colors"
-                    onClick={() => handlePurchase({ title: "اشتراک یکساله", price: "299", months: 12 })}
+                    onClick={() => handlePurchase({ title: "اشتراک VIP یکساله", price: "299", months: 12 })}
                                       >
                     <div className="flex justify-between items-center">
                       <h4 className="font-bold text-lg">اشتراک یکساله </h4>
@@ -196,7 +267,7 @@ const VIPPage = ({ isDarkMode, isOpen, onClose }) => {
                   
                   <div 
                     className="border border-gray-700 rounded-lg p-3 cursor-pointer hover:bg-gray-800 transition-colors"
-                    onClick={() => handlePurchase({ title: "اشتراک دوساله", price: "399" })}
+                    onClick={() => handlePurchase({ title: "اشتراک VIP دوساله", price: "399" })}
                   >
                     <h4 className="font-bold text-lg">اشتراک دوساله</h4>
                     <p className="text-yellow-500 text-lg mt-1">۳۹۹ دلار</p>
@@ -213,15 +284,15 @@ const VIPPage = ({ isDarkMode, isOpen, onClose }) => {
             background: 'linear-gradient(to top, rgba(0,0,0,100), rgba(0,0,0,0))'
           }}></div>
 
-          {/* Fixed Button at Bottom - اختیاری، می‌توانید نگه دارید یا حذف کنید */}
-          <div className="absolute bottom-6 left-4 right-4 z-10">
-          <button 
-  onClick={() => handlePurchase({ title: "اشتراک شش ماهه", price: "199" })} // تغییر به اشتراک شش ماهه
-  className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-4 rounded-xl transition-colors shadow-lg"
->
-  خرید اشتراک
-</button>
-          </div>
+{/* Fixed Button at Bottom */}
+<div className="absolute bottom-6 left-4 right-4 z-10">
+  <button 
+onClick={() => handlePurchase({ title: "اشتراک VIP شش ماهه", price: "149", months: 6 })}
+className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-4 rounded-xl transition-colors shadow-lg"
+  >
+    خرید اشتراک
+  </button>
+</div>
         </div>
       </div>
       
