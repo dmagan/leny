@@ -65,7 +65,10 @@ if (data.trc20TransferInfo && data.trc20TransferInfo.length > 0) {
 
 // بررسی دقیق مبلغ پرداختی با مقدار مورد انتظار
 if (expectedPrice) {
-  if (Math.abs(paidAmount - expectedPrice) > 0.01) {
+  // مقدار اختلافی که قابل قبول است (5 دلار)
+  const allowedDifference = 7;
+  
+  if (Math.abs(paidAmount - expectedPrice) > allowedDifference) {
     return {
       success: false,
       message: `مبلغ پرداختی (${paidAmount.toFixed(2)} دلار) با مبلغ محصول (${expectedPrice.toFixed(2)} دلار) مطابقت ندارد`
@@ -636,6 +639,17 @@ const handleSubmit = async () => {
     if (purchaseData.success) {
       // هدایت به کانال VIP
       notify("موفق", "خرید شما با موفقیت ثبت شد", "success");
+      
+      // --------- افزودن یا به‌روزرسانی اشتراک به localStorage ---------
+      const subscriptionResult = await updateSubscription(productTitle, months || 1, transactionHash, price);
+    
+      if (subscriptionResult.error) {
+        notify("هشدار", "خرید با موفقیت انجام شد اما در ثبت آن در سیستم مشکلی به وجود آمد. لطفا با پشتیبانی تماس بگیرید.", "warning");
+      } else {
+        const actionType = subscriptionResult.updated ? "تمدید" : "فعال‌سازی";
+        notify("موفق", `اشتراک شما با موفقیت ${actionType} شد`, "success", 3000);
+      }
+      // ----------------------------------------------------
       
       setTimeout(() => {
         setIsUploading(false);

@@ -14,6 +14,7 @@ const VIPPage = ({ isDarkMode, isOpen, onClose }) => {
   const location = useLocation();
   const [isRenewal, setIsRenewal] = useState(false);
   const [renewingProduct, setRenewingProduct] = useState(null);
+  const [hasVIPSubscription, setHasVIPSubscription] = useState(false);
 
 
   useEffect(() => {
@@ -51,6 +52,8 @@ const VIPPage = ({ isDarkMode, isOpen, onClose }) => {
         return;
       }
     };
+
+
   
     // افزودن یک entry به history stack برای بهبود کارکرد دکمه بک اندروید
     if (isOpen && !addedToHistory) {
@@ -66,6 +69,36 @@ const VIPPage = ({ isDarkMode, isOpen, onClose }) => {
       window.removeEventListener('popstate', handleBackButton);
     };
   }, [isOpen, addedToHistory, location.pathname]);
+
+  // بررسی وضعیت اشتراک VIP کاربر
+useEffect(() => {
+  // بررسی وضعیت اشتراک VIP کاربر
+  const checkVIPStatus = () => {
+    // بررسی وجود اطلاعات کاربر در localStorage یا sessionStorage
+    const userToken = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+    
+    if (userToken) {
+      // بررسی محصولات خریداری شده از localStorage
+      const purchasedProductsStr = localStorage.getItem('purchasedProducts');
+      
+      if (purchasedProductsStr) {
+        try {
+          const purchasedProducts = JSON.parse(purchasedProductsStr);
+          // بررسی وجود اشتراک VIP فعال
+          const vipSubscription = purchasedProducts.find(p => 
+            p.isVIP && p.status === 'active'
+          );
+          
+          setHasVIPSubscription(!!vipSubscription);
+        } catch (error) {
+          console.error('خطا در پردازش اطلاعات محصولات:', error);
+        }
+      }
+    }
+  };
+  
+  checkVIPStatus();
+}, []);
 
   const closeCard = useCallback(() => {
     setIsExiting(true);
@@ -241,40 +274,43 @@ const handlePurchase = (subscription) => {
               </div>
               
               {/* Pricing Options */}
-              <div className="p-4 rounded-xl bg-[#141e35] text-white" dir="rtl">
-                <h3 className="text-lg font-bold mb-3 text-yellow-400 text-right">گزینه‌های اشتراک</h3>
-                <div className="space-y-4">
-                  <div 
-                    className="border border-gray-700 rounded-lg p-3 cursor-pointer hover:bg-gray-800 transition-colors"
-                    onClick={() => handlePurchase({ title: "اشتراک VIP شش ماهه", price: "149", months: 6 })}
-                                      >
-                    <h4 className="font-bold text-lg">اشتراک شش ماهه</h4>
-                    <p className="text-yellow-500 text-lg mt-1">۱۹۹ دلار</p>
-                    <p className="text-gray-400 text-sm mt-1">مناسب برای آشنایی با خدمات VIP</p>
-                  </div>
-                  
-                  <div 
-                    className="border border-gray-700 rounded-lg p-3 bg-gray-800 cursor-pointer hover:bg-gray-700 transition-colors"
-                    onClick={() => handlePurchase({ title: "اشتراک VIP یکساله", price: "299", months: 12 })}
-                                      >
-                    <div className="flex justify-between items-center">
-                      <h4 className="font-bold text-lg">اشتراک یکساله </h4>
-                      <span className="bg-yellow-500 text-gray-900 text-xs rounded-full px-2 py-1">پیشنهاد ویژه</span>
-                    </div>
-                    <p className="text-yellow-500 text-lg mt-1">۲۹۹ دلار</p>
-                    <p className="text-gray-400 text-sm mt-1">صرفه‌جویی ۲۵٪ نسبت به خرید ماهانه</p>
-                  </div>
-                  
-                  <div 
-                    className="border border-gray-700 rounded-lg p-3 cursor-pointer hover:bg-gray-800 transition-colors"
-                    onClick={() => handlePurchase({ title: "اشتراک VIP دوساله", price: "399" })}
-                  >
-                    <h4 className="font-bold text-lg">اشتراک دوساله</h4>
-                    <p className="text-yellow-500 text-lg mt-1">۳۹۹ دلار</p>
-                    <p className="text-gray-400 text-sm mt-1">صرفه‌جویی ۵۰٪ نسبت به خرید ماهانه</p>
-                  </div>
-                </div>
-              </div>
+             {/* Pricing Options - فقط اگر اشتراک VIP نداشته باشد نمایش داده می‌شود */}
+{!hasVIPSubscription && (
+  <div className="p-4 rounded-xl bg-[#141e35] text-white" dir="rtl">
+    <h3 className="text-lg font-bold mb-3 text-yellow-400 text-right">گزینه‌های اشتراک</h3>
+    <div className="space-y-4">
+      <div 
+        className="border border-gray-700 rounded-lg p-3 cursor-pointer hover:bg-gray-800 transition-colors"
+        onClick={() => handlePurchase({ title: "اشتراک VIP شش ماهه", price: "149", months: 6 })}
+      >
+        <h4 className="font-bold text-lg">اشتراک شش ماهه</h4>
+        <p className="text-yellow-500 text-lg mt-1">۱۹۹ دلار</p>
+        <p className="text-gray-400 text-sm mt-1">مناسب برای آشنایی با خدمات VIP</p>
+      </div>
+      
+      <div 
+        className="border border-gray-700 rounded-lg p-3 bg-gray-800 cursor-pointer hover:bg-gray-700 transition-colors"
+        onClick={() => handlePurchase({ title: "اشتراک VIP یکساله", price: "299", months: 12 })}
+      >
+        <div className="flex justify-between items-center">
+          <h4 className="font-bold text-lg">اشتراک یکساله </h4>
+          <span className="bg-yellow-500 text-gray-900 text-xs rounded-full px-2 py-1">پیشنهاد ویژه</span>
+        </div>
+        <p className="text-yellow-500 text-lg mt-1">۲۹۹ دلار</p>
+        <p className="text-gray-400 text-sm mt-1">صرفه‌جویی ۲۵٪ نسبت به خرید ماهانه</p>
+      </div>
+      
+      <div 
+        className="border border-gray-700 rounded-lg p-3 cursor-pointer hover:bg-gray-800 transition-colors"
+        onClick={() => handlePurchase({ title: "اشتراک VIP دوساله", price: "399" })}
+      >
+        <h4 className="font-bold text-lg">اشتراک دوساله</h4>
+        <p className="text-yellow-500 text-lg mt-1">۳۹۹ دلار</p>
+        <p className="text-gray-400 text-sm mt-1">صرفه‌جویی ۵۰٪ نسبت به خرید ماهانه</p>
+      </div>
+    </div>
+  </div>
+)}
             </div>
           </div>
           
@@ -287,10 +323,14 @@ const handlePurchase = (subscription) => {
 {/* Fixed Button at Bottom */}
 <div className="absolute bottom-6 left-4 right-4 z-10">
   <button 
-onClick={() => handlePurchase({ title: "اشتراک VIP شش ماهه", price: "149", months: 6 })}
-className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-4 rounded-xl transition-colors shadow-lg"
+    dir="rtl"
+    onClick={hasVIPSubscription 
+      ? () => navigate('/chat') 
+      : () => handlePurchase({ title: "اشتراک VIP شش ماهه", price: "149", months: 6 })
+    }
+    className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-4 rounded-xl transition-colors shadow-lg text-center"
   >
-    خرید اشتراک
+    {hasVIPSubscription ? 'ورود به کانال VIP' : 'خرید اشتراک'}
   </button>
 </div>
         </div>

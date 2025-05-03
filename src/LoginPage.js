@@ -19,7 +19,6 @@ const validateEmail = (email) => {
 
 const validateRegister = async (userData, selectedCountry) => {
   try {
-    const fullPhoneNumber = (selectedCountry.code.replace('+', '00') + userData.mobile).replace(/\s+/g, '');
     const response = await fetch('https://p30s.com/wp-json/wp/v2/register', {
       method: 'POST',
       headers: {
@@ -27,21 +26,48 @@ const validateRegister = async (userData, selectedCountry) => {
         'Accept': 'application/json'
       },
       body: JSON.stringify({
-        username: userData.email.split('@')[0],
+        username: userData.email,
         email: userData.email,
         password: userData.password,
-        phone_number: fullPhoneNumber,
+        phone_number:"",
         name: userData.fullName,
-        phone: fullPhoneNumber
+        phone: ""
       })
     });
 
     const data = await response.json();
     
     if (response.ok) {
+      // بعد از ثبت نام موفق، لاگین کردن کاربر
+      const loginResult = await fetch('https://p30s.com/wp-json/jwt-auth/v1/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          username: userData.email,
+          password: userData.password 
+        })
+      });
+      
+      const loginData = await loginResult.json();
+      
+      if (loginData.token) {
+        return {
+          success: true,
+          message: 'ثبت نام با موفقیت انجام شد',
+          token: loginData.token,
+          user_email: userData.email,
+          user_display_name: userData.fullName,
+          user_registered: new Date().toISOString()
+        };
+      }
+      
+      // اگر لاگین نشد، حداقل ثبت نام موفق بوده
       return {
         success: true,
-        message: 'ثبت نام با موفقیت انجام شد'
+        message: 'ثبت نام با موفقیت انجام شد، لطفا وارد شوید'
       };
     }
 
@@ -52,7 +78,6 @@ const validateRegister = async (userData, selectedCountry) => {
     };
 
   } catch (error) {
-    //console.error('Register error:', error);
     return {
       success: false,
       message: 'خطا در ارتباط با سرور',
@@ -60,7 +85,6 @@ const validateRegister = async (userData, selectedCountry) => {
     };
   }
 };
-
 const LoginPage = ({ isDarkMode, setIsLoggedIn, onClose }) => {
   const [selectedCountry, setSelectedCountry] = useState({ code: '+41', flag: '🇨🇭', name: 'سوئیس' });
     const [showCountries, setShowCountries] = useState(false);
@@ -237,17 +261,14 @@ const LoginPage = ({ isDarkMode, setIsLoggedIn, onClose }) => {
         sessionStorage.setItem('purchasedProducts', JSON.stringify([]));
       }
       
-      // هدایت به صفحه اصلی
+      // مستقیم به صفحه اصلی هدایت می‌کنیم (به جای پروفایل)
       navigate('/');
       
     } catch (error) {
       console.error('Error in handleLoginSuccess:', error);
-      
-      // در صورت خطا هم کاربر را به صفحه اصلی هدایت می‌کنیم
       navigate('/');
     }
   };
-
 
 
   const validateLogin = async (username, password, rememberMe) => {
@@ -339,8 +360,10 @@ const LoginPage = ({ isDarkMode, setIsLoggedIn, onClose }) => {
   const handleSubmit = async () => {
     if (!isLogin) {
       // ثبت‌نام
-      if (!formData.fullName || !formData.email || !formData.password || !formData.mobile) {
-        Store.addNotification({
+     // if (!formData.fullName || !formData.email || !formData.password || !formData.mobile) {
+        if (!formData.fullName || !formData.email || !formData.password) {
+ 
+     Store.addNotification({
           title: "خطا",
           message: "لطفا تمام فیلدها را پر کنید",
           type: "danger",
@@ -363,17 +386,17 @@ const LoginPage = ({ isDarkMode, setIsLoggedIn, onClose }) => {
         return;
       }
   
-      if (!validateMobile(formData.mobile)) {
-        Store.addNotification({
-          title: "خطا",
-          message: "شماره موبایل باید بین 8 تا 13 رقم باشد",
-          type: "danger",
-          insert: "top",
-          container: "center",
-          dismiss: { duration: 3000, showIcon: true, pauseOnHover: true },
-        });
-        return;
-      }
+   //   if (!validateMobile(formData.mobile)) {
+   //     Store.addNotification({
+   //       title: "خطا",
+   //       message: "شماره موبایل باید بین 8 تا 13 رقم باشد",
+   //       type: "danger",
+   //       insert: "top",
+   //       container: "center",
+   //       dismiss: { duration: 3000, showIcon: true, pauseOnHover: true },
+   //     });
+   //     return;
+   //   }
   
       if (formData.password !== formData.confirmPassword) {
         Store.addNotification({
@@ -404,9 +427,30 @@ const LoginPage = ({ isDarkMode, setIsLoggedIn, onClose }) => {
             dismiss: { duration: 2000, showIcon: true, pauseOnHover: true },
             style: { direction: 'rtl', textAlign: 'right' }
           });
-  
-          await handleLoginSuccess(result);
-        } else {
+          
+          if (result.success && !result.token) {
+            // اگر ثبت نام موفق بود اما توکن دریافت نشد، مستقیماً لاگین کنید
+            const loginResult = await validateLogin(formData.email, formData.password, saveLogin);
+            if (loginResult.success) {
+              // استفاده از توکن دریافتی از لاگین
+              result.token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+            }
+          }
+          const token = result.token || localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+          if (saveLogin) {
+            localStorage.setItem('userToken', token);
+            localStorage.setItem('userInfo', JSON.stringify(result));
+          } else {
+            sessionStorage.setItem('userToken', token);
+            sessionStorage.setItem('userInfo', JSON.stringify(result));
+          }
+          
+          // مستقیم به صفحه اصلی هدایت می‌کنیم
+          setTimeout(() => {
+            navigate('/');
+          }, 1000);
+       
+              } else {
           Store.addNotification({
             title: "خطا",
             message: result.message,
@@ -832,14 +876,14 @@ const LoginPage = ({ isDarkMode, setIsLoggedIn, onClose }) => {
                   ) : (
                     <>
                       {renderInput('fullName', 'نام و نام خانوادگی')}
-                      {renderInput('mobile', 'شماره موبایل', 'tel', false, null, {
+                      {/* {renderInput('mobile', 'شماره موبایل', 'tel', false, null, {
                         pattern: '[0-9]*',
                         inputMode: 'numeric',
                         onChange: (e) => {
                           const value = e.target.value.replace(/[^0-9]/g, '');
                           setFormData(prev => ({ ...prev, mobile: value }));
                         }
-                      })}
+                      })} */}
                       {renderInput('email', 'ایمیل خود را وارد کنید', 'email', false, null, {
                         onBlur: handleEmailBlur,
                         autoComplete: "off",

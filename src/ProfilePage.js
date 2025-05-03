@@ -11,7 +11,7 @@ const formatDate = (date) =>
     year:  'numeric'
   });
 
-const ProfilePage = ({ isDarkMode, setIsLoggedIn }) => {
+const ProfilePage = ({ isDarkMode, setIsLoggedIn, onLogout }) => {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const [showCard, setShowCard] = useState(false);
@@ -20,6 +20,7 @@ const ProfilePage = ({ isDarkMode, setIsLoggedIn }) => {
   const isDragging = useRef(false);
   const startY = useRef(0);
   const [isLandscape, setIsLandscape] = useState(window.innerHeight < window.innerWidth);
+  const [purchasedProducts, setPurchasedProducts] = useState([]);
 
   useEffect(() => {
     const storedInfo = localStorage.getItem('userInfo') || sessionStorage.getItem('userInfo');
@@ -37,7 +38,6 @@ const ProfilePage = ({ isDarkMode, setIsLoggedIn }) => {
     }, 100);
   }, []);
   
-  // اضافه کردن یک useEffect جدید
   useEffect(() => {
     if (userInfo?.user_email) {
       loadPurchasedProducts();
@@ -101,6 +101,16 @@ const ProfilePage = ({ isDarkMode, setIsLoggedIn }) => {
     };
   }, [isLandscape]);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (isLoading) {
+        setIsLoading(false);
+      }
+    }, 5000);
+    
+    return () => clearTimeout(timer);
+  }, [isLoading]);
+
   const closeCard = () => {
     setShowCard(false);
     setTimeout(() => {
@@ -117,218 +127,195 @@ const ProfilePage = ({ isDarkMode, setIsLoggedIn }) => {
     // پاک کردن کش محصولات
     localStorage.removeItem('purchasedProducts');
     localStorage.removeItem('purchasedProductsTime');
+    localStorage.removeItem('lastProductCheck');
+    sessionStorage.removeItem('purchasedProducts');
+    sessionStorage.removeItem('lastProductCheck');
     
     setIsLoggedIn(false);
+    onLogout?.();
     navigate('/');
   };
 
-  const [purchasedProducts, setPurchasedProducts] = useState([]);
-
-  // این تابع در ProfilePage.js برای بارگذاری محصولات خریداری شده به‌روزرسانی شده است
-const loadPurchasedProducts = async () => {
-  try {
-    setIsLoading(true);
-    
-    // بررسی وجود اطلاعات کاربر
-    if (!userInfo?.user_email) {
-      setPurchasedProducts([]);
-      setIsLoading(false);
-      return;
-    }
-
-    // دریافت محصولات خریداری شده از API
-    const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
-    if (!token) {
-      setPurchasedProducts([]);
-      setIsLoading(false);
-      return;
-    }
-    
+  // تابع loadPurchasedProducts بهبود یافته
+  const loadPurchasedProducts = async () => {
     try {
-      // استفاده از API برای دریافت خریدها
-      const response = await fetch('https://p30s.com/wp-json/pcs/v1/user-purchases', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
-        }
-      });
+      setIsLoading(true);
       
-      if (response.ok) {
-        const data = await response.json();
-        
-        if (data.success && Array.isArray(data.purchases)) {
-          // گروه‌بندی اشتراک‌ها براساس نوع
-          const groupedSubscriptions = {};
-          
-          // پردازش اولیه و گروه‌بندی
-          data.purchases.forEach(purchase => {
-            // تعیین نوع اشتراک
-            let subscriptionType = 'other';
-            if (purchase.isVIP) subscriptionType = 'vip';
-            else if (purchase.title.includes('دکس')) subscriptionType = 'dex';
-            else if (purchase.title.includes('صفر تا صد') || purchase.title.includes('0 تا 100')) 
-              subscriptionType = 'zero-to-100';
-            else if (purchase.title.includes('سیگنال') || purchase.title.includes('Signal')) 
-              subscriptionType = 'signal';
-              
-            // اشتراک را در گروه خودش قرار می‌دهیم
-            if (!groupedSubscriptions[subscriptionType]) {
-              groupedSubscriptions[subscriptionType] = [];
-            }
-            groupedSubscriptions[subscriptionType].push(purchase);
-          });
-          
-          // استخراج آخرین اشتراک فعال از هر گروه
-          const activeSubscriptions = [];
-          
-          Object.keys(groupedSubscriptions).forEach(type => {
-            const typeSubscriptions = groupedSubscriptions[type];
-            
-            // مرتب‌سازی براساس تاریخ (جدیدترین ابتدا)
-            typeSubscriptions.sort((a, b) => {
-              const dateA = new Date(a.date);
-              const dateB = new Date(b.date);
-              return dateB - dateA;  // نزولی: جدیدترین اول
-            });
-            
-            // اگر اشتراک فعال در این گروه وجود دارد
-            const activeSubscription = typeSubscriptions.find(sub => sub.status === 'active');
-            if (activeSubscription) {
-              activeSubscriptions.push(activeSubscription);
-            } else if (typeSubscriptions.length > 0) {
-              // اگر هیچ اشتراک فعالی نیست، آخرین اشتراک (منقضی) را اضافه می‌کنیم
-              activeSubscriptions.push(typeSubscriptions[0]);
-            }
-          });
-          
-          // تبدیل اشتراک‌ها به فرمت مورد نیاز برای نمایش
-          const products = activeSubscriptions.map(purchase => {
-            // اصلاح عنوان محصول VIP
-            let title = purchase.title;
-            if (purchase.isVIP) {
-              // فرمت‌بندی استاندارد برای عناوین VIP
-              const baseTitle = title
-                .replace(/^اشتراک\s*/, '')
-                .replace(/VIP\s*/g, '')
-                .trim();
-              title = `اشتراک VIP ${baseTitle}`;
-            }
-            
-            // ساخت آبجکت محصول
-            const productData = {
-              id: purchase.id,
-              title: title,
-              date: new Date(purchase.date),
-              status: purchase.status,
-              remainingDays: purchase.remainingDays,
-              isVIP: purchase.isVIP,
-              isDex: title.includes('دکس'),
-              lastUpdated: purchase.lastUpdated
-            };
-  
-            // اضافه کردن آیکون برای نمایش
-            return {
-              ...productData,
-              icon: productData.isVIP ? <ShoppingCart className="w-6 h-6" /> : <Package className="w-6 h-6" />
-            };
-          });
-          
-          // ذخیره در localStorage برای استفاده‌های بعدی
-          const productsForCache = products.map(({ icon, ...rest }) => rest);
-          localStorage.setItem('purchasedProducts', JSON.stringify(productsForCache));
-          localStorage.setItem('lastProductCheck', new Date().getTime().toString());
-          
-          // بروزرسانی state
-          setPurchasedProducts(products);
-          setIsLoading(false);
-          return;
-        }
+      if (!userInfo?.user_email) {
+        setPurchasedProducts([]);
+        setIsLoading(false);
+        return;
+      }
+
+      const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+      if (!token) {
+        setPurchasedProducts([]);
+        setIsLoading(false);
+        return;
       }
       
-      // اگر API پاسخ مناسب نداد، از روش پشتیبان استفاده می‌کنیم
-      throw new Error('API پاسخ مناسب نداد');
-      
-    } catch (apiError) {
-      console.warn('خطا در استفاده از API اصلی، استفاده از داده‌های کش شده...', apiError);
-      
-      // استفاده از داده‌های کش شده در localStorage
-      const cachedData = localStorage.getItem('purchasedProducts');
-      if (cachedData) {
-        try {
-          // خواندن و پردازش داده‌های کش شده
-          const parsedProducts = JSON.parse(cachedData);
+      try {
+        const response = await fetch('https://p30s.com/wp-json/pcs/v1/user-purchases', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
           
-          // گروه‌بندی براساس نوع اشتراک
-          const groupedSubscriptions = {};
-          
-          parsedProducts.forEach(product => {
-            // تعیین نوع اشتراک
-            let subscriptionType = 'other';
-            if (product.isVIP) subscriptionType = 'vip';
-            else if (product.title.includes('دکس')) subscriptionType = 'dex';
-            else if (product.title.includes('صفر تا صد') || product.title.includes('0 تا 100')) 
-              subscriptionType = 'zero-to-100';
-            else if (product.title.includes('سیگنال') || product.title.includes('Signal')) 
-              subscriptionType = 'signal';
-              
-            // اشتراک را در گروه خودش قرار می‌دهیم
-            if (!groupedSubscriptions[subscriptionType]) {
-              groupedSubscriptions[subscriptionType] = [];
-            }
-            groupedSubscriptions[subscriptionType].push(product);
-          });
-          
-          // استخراج آخرین اشتراک فعال از هر گروه
-          const activeSubscriptions = [];
-          
-          Object.keys(groupedSubscriptions).forEach(type => {
-            const typeSubscriptions = groupedSubscriptions[type];
+          if (data.success && Array.isArray(data.purchases)) {
+            // گروه‌بندی اشتراک‌ها براساس نوع 
+            const groupedSubscriptions = {};
             
-            // مرتب‌سازی براساس تاریخ (جدیدترین ابتدا)
-            typeSubscriptions.sort((a, b) => {
-              const dateA = new Date(a.date);
-              const dateB = new Date(b.date);
-              return dateB - dateA;
+            data.purchases.forEach(purchase => {
+              let subscriptionType = 'other';
+              if (purchase.isVIP) subscriptionType = 'vip';
+              else if (purchase.title && purchase.title.includes('دکس')) subscriptionType = 'dex';
+              else if (purchase.title && (purchase.title.includes('صفر تا صد') || purchase.title.includes('0 تا 100'))) 
+                subscriptionType = 'zero-to-100';
+              else if (purchase.title && (purchase.title.includes('سیگنال') || purchase.title.includes('Signal'))) 
+                subscriptionType = 'signal';
+                
+              if (!groupedSubscriptions[subscriptionType]) {
+                groupedSubscriptions[subscriptionType] = [];
+              }
+              groupedSubscriptions[subscriptionType].push(purchase);
             });
             
-            // اضافه کردن آخرین اشتراک فعال یا آخرین اشتراک منقضی
-            const activeSubscription = typeSubscriptions.find(sub => sub.status === 'active');
-            if (activeSubscription) {
-              activeSubscriptions.push(activeSubscription);
-            } else if (typeSubscriptions.length > 0) {
-              activeSubscriptions.push(typeSubscriptions[0]);
-            }
-          });
-          
-          // تبدیل به فرمت نمایشی با آیکون
-          const productsWithIcons = activeSubscriptions.map(product => ({
-            ...product,
-            date: new Date(product.date),
-            icon: product.isVIP ? <ShoppingCart className="w-6 h-6" /> : <Package className="w-6 h-6" />
-          }));
-          
-          setPurchasedProducts(productsWithIcons);
-        } catch (cacheError) {
-          console.error('Error parsing cached data:', cacheError);
+            // استخراج آخرین اشتراک فعال از هر گروه
+            const activeSubscriptions = [];
+            
+            Object.keys(groupedSubscriptions).forEach(type => {
+              const typeSubscriptions = groupedSubscriptions[type];
+              
+              typeSubscriptions.sort((a, b) => {
+                const dateA = new Date(a.date || a.purchase_date || a.lastUpdated || a.createdAt);
+                const dateB = new Date(b.date || b.purchase_date || b.lastUpdated || b.createdAt);
+                return dateB - dateA;  
+              });
+              
+              const activeSubscription = typeSubscriptions.find(sub => sub.status === 'active');
+              if (activeSubscription) {
+                activeSubscriptions.push(activeSubscription);
+              } else if (typeSubscriptions.length > 0) {
+                activeSubscriptions.push(typeSubscriptions[0]);
+              }
+            });
+            
+            // تبدیل به فرمت مورد نیاز برای نمایش
+            const products = activeSubscriptions.map(purchase => {
+              let title = purchase.title;
+              if (purchase.isVIP) {
+                const baseTitle = title
+                  .replace(/^اشتراک\s*/, '')
+                  .replace(/VIP\s*/g, '')
+                  .trim();
+                title = `اشتراک VIP ${baseTitle}`;
+              }
+              
+              const productData = {
+                id: purchase.id,
+                title: title,
+                date: new Date(purchase.date || purchase.purchase_date || purchase.lastUpdated || purchase.createdAt),
+                status: purchase.status,
+                remainingDays: purchase.remainingDays,
+                isVIP: purchase.isVIP,
+                isDex: purchase.title && purchase.title.includes('دکس'),
+                lastUpdated: purchase.lastUpdated,
+                transactionHash: purchase.transactionHash
+              };
+              
+              return {
+                ...productData,
+                icon: productData.isVIP ? <ShoppingCart className="w-6 h-6" /> : <Package className="w-6 h-6" />
+              };
+            });
+            
+            const productsForCache = products.map(({ icon, ...rest }) => rest);
+            localStorage.setItem('purchasedProducts', JSON.stringify(productsForCache));
+            localStorage.setItem('lastProductCheck', new Date().getTime().toString());
+            sessionStorage.setItem('purchasedProducts', JSON.stringify(productsForCache));
+            sessionStorage.setItem('lastProductCheck', new Date().getTime().toString());
+            
+            setPurchasedProducts(products);
+            return;
+          }
+        }
+        
+        throw new Error('API پاسخ مناسب نداد');
+        
+      } catch (apiError) {
+        console.warn('خطا در استفاده از API اصلی، استفاده از داده‌های کش شده...', apiError);
+        
+        const cachedData = localStorage.getItem('purchasedProducts');
+        if (cachedData) {
+          try {
+            const parsedProducts = JSON.parse(cachedData);
+            
+            const groupedSubscriptions = {};
+            
+            parsedProducts.forEach(product => {
+              let subscriptionType = 'other';
+              if (product.isVIP) subscriptionType = 'vip';
+              else if (product.title && product.title.includes('دکس')) subscriptionType = 'dex';
+              else if (product.title && (product.title.includes('صفر تا صد') || product.title.includes('0 تا 100'))) 
+                subscriptionType = 'zero-to-100';
+              else if (product.title && (product.title.includes('سیگنال') || product.title.includes('Signal'))) 
+                subscriptionType = 'signal';
+                
+              if (!groupedSubscriptions[subscriptionType]) {
+                groupedSubscriptions[subscriptionType] = [];
+              }
+              groupedSubscriptions[subscriptionType].push(product);
+            });
+            
+            const activeSubscriptions = [];
+            
+            Object.keys(groupedSubscriptions).forEach(type => {
+              const typeSubscriptions = groupedSubscriptions[type];
+              
+              typeSubscriptions.sort((a, b) => {
+                const dateA = new Date(a.date || a.purchase_date || a.lastUpdated || a.createdAt);
+                const dateB = new Date(b.date || b.purchase_date || b.lastUpdated || b.createdAt);
+                return dateB - dateA;
+              });
+              
+              const activeSubscription = typeSubscriptions.find(sub => sub.status === 'active');
+              if (activeSubscription) {
+                activeSubscriptions.push(activeSubscription);
+              } else if (typeSubscriptions.length > 0) {
+                activeSubscriptions.push(typeSubscriptions[0]);
+              }
+            });
+            
+            const productsWithIcons = activeSubscriptions.map(product => ({
+              ...product,
+              date: new Date(product.date || product.purchase_date || product.lastUpdated || product.createdAt),
+              icon: product.isVIP ? <ShoppingCart className="w-6 h-6" /> : <Package className="w-6 h-6" />
+            }));
+            
+            setPurchasedProducts(productsWithIcons);
+          } catch (cacheError) {
+            console.error('Error parsing cached data:', cacheError);
+            setPurchasedProducts([]);
+          }
+        } else {
           setPurchasedProducts([]);
         }
-      } else {
-        setPurchasedProducts([]);
       }
+    } catch (error) {
+      console.error('Error loading purchased products:', error);
+      setPurchasedProducts([]);
+    } finally {
+      setIsLoading(false);
     }
-  } catch (error) {
-    console.error('Error loading purchased products:', error);
-    setPurchasedProducts([]);
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   const handleRenewal = (product) => {
-    // بستن پروفایل
     setShowCard(false);
     
-    // ذخیره اطلاعات محصول فعلی برای استفاده در صفحه تمدید
     sessionStorage.setItem('renewProduct', JSON.stringify({
       id: product.id,
       title: product.title,
@@ -336,7 +323,6 @@ const loadPurchasedProducts = async () => {
       isDex: product.title.includes('دکس')
     }));
     
-    // هدایت به صفحه مناسب
     setTimeout(() => {
       if (product.isVIP) {
         navigate('/vip-services', { state: { renewal: true } });
@@ -355,7 +341,6 @@ const loadPurchasedProducts = async () => {
   return (
     <div className="fixed inset-0 z-50 bg-black/75 overflow-hidden transition-opacity duration-300"
     onClick={(e) => {
-      // اگر کلیک روی خود overlay بود (نه روی کارت)، کارت رو ببند
       if (e.target === e.currentTarget) {
         closeCard();
       }
@@ -379,7 +364,6 @@ const loadPurchasedProducts = async () => {
         <div className="pt-2 relative">
           <div className="w-24 h-1 bg-gray-300 rounded-full mx-auto" />
           
-          {/* اضافه کردن دکمه بستن (X) */}
           <button 
             onClick={closeCard}
             className="absolute top-4 right-4 z-50 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100"
@@ -406,7 +390,7 @@ const loadPurchasedProducts = async () => {
   
             <div className="space-y-4 text-right" dir="rtl">
               <h2 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-4 `}>
-                محصولات خریداری شده
+                اشتراک‌های شما
               </h2>
               
               {isLoading ? (
@@ -425,7 +409,7 @@ const loadPurchasedProducts = async () => {
                           <div className="flex items-center justify-between mt-1">
                             <div className="flex flex-col">
                               <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                {new Date(product.date).toLocaleDateString('fa-IR')} --- {new Date(product.date).toLocaleDateString('en-US')}
+                                {new Date(product.date).toLocaleDateString('fa-IR')} — {formatDate(new Date(product.date))}
                               </p>
                               {product.status === 'active' && (
   <p className="text-sm text-yellow-500">
@@ -460,7 +444,7 @@ const loadPurchasedProducts = async () => {
                 ))
               ) : (
                 <div className={`text-center p-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  محصولی یافت نشد
+                  هیچ اشتراکی یافت نشد
                 </div>
               )}
   
