@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowLeftCircle, Play } from 'lucide-react';
+import { ArrowLeftCircle, Play, ShoppingCart, DoorOpen } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import PaymentCard from './PaymentCard'; // کامپوننت کارت پرداخت را import می‌کنیم
 
@@ -328,11 +328,21 @@ const handlePurchase = (subscription) => {
       ? () => navigate('/chat') 
       : () => handlePurchase({ title: "اشتراک VIP شش ماهه", price: "149", months: 6 })
     }
-    className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-4 rounded-xl transition-colors shadow-lg text-center"
+    className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-4 rounded-xl transition-colors shadow-lg text-center flex items-center justify-center"
   >
-    {hasVIPSubscription ? 'ورود به کانال VIP' : 'خرید اشتراک'}
+    <span>
+      {hasVIPSubscription ? 'ورود به کانال VIP' : 'خرید اشتراک'}
+    </span>
+    {/* نمایش آیکون متفاوت بر اساس وضعیت اشتراک در سمت چپ */}
+    {hasVIPSubscription 
+      ? <DoorOpen size={24} className="mr-2" /> 
+      : <ShoppingCart size={24} className="mr-2" />
+    }
   </button>
 </div>
+
+
+
         </div>
       </div>
       

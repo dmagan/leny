@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Store } from 'react-notifications-component';
-import { X, Upload, Copy, Check } from 'lucide-react';
+import { X, Upload, Copy, Check, Clipboard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 
@@ -534,6 +534,7 @@ const updateSubscription = async (productTitle, months, transactionHash, price) 
 };
 
 // این کد را در فایل PaymentCard.js و در تابع handleSubmit قرار دهید
+// تابع اصلاح شده handleSubmit
 const handleSubmit = async () => {
   if (!transactionHash) {
     notify("خطا", "لطفا هش تراکنش را وارد کنید", "danger");
@@ -637,7 +638,7 @@ const handleSubmit = async () => {
     setUploadProgress(100);
     
     if (purchaseData.success) {
-      // هدایت به کانال VIP
+      // هدایت به کانال مناسب
       notify("موفق", "خرید شما با موفقیت ثبت شد", "success");
       
       // --------- افزودن یا به‌روزرسانی اشتراک به localStorage ---------
@@ -670,35 +671,73 @@ const handleSubmit = async () => {
             localStorage.setItem('purchasedProducts', JSON.stringify(data.purchases));
             localStorage.setItem('lastProductCheck', new Date().getTime().toString());
             
-            // به جای بارگذاری مجدد، به صفحه chat هدایت می‌کنیم
-            // اگر این حالت با خطا مواجه شود، می‌توان از navigate استفاده کرد
+            // تشخیص نوع محصول و هدایت به صفحه مناسب
+            const lowercaseTitle = productTitle.toLowerCase();
             try {
-              navigate('/chat');
+              if (lowercaseTitle.includes('vip') || lowercaseTitle.includes('اشتراک')) {
+                // محصول VIP
+                navigate('/chat');
+              } 
+              else if (lowercaseTitle.includes('دکس') || lowercaseTitle.includes('dex')) {
+                // محصول دکس
+                navigate('/dex');
+              } 
+              else if (lowercaseTitle.includes('صفر تا صد') || 
+                       lowercaseTitle.includes('0 تا 100') || 
+                       lowercaseTitle.includes('۰ تا ۱۰۰')) {
+                // محصول صفر تا صد
+                navigate('/0to100');
+              }
+              else if (lowercaseTitle.includes('پکیج') || lowercaseTitle.includes('ترکیبی')) {
+                // نمایش صفحه پروفایل برای پکیج‌های ترکیبی
+                navigate('/profile');
+              }
+              else {
+                // اگر هیچ کدام نبود به صفحه اصلی هدایت می‌کنیم
+                navigate('/');
+              }
             } catch (error) {
               console.error('خطا در هدایت با navigate:', error);
-              // اگر navigate با خطا مواجه شد، از این روش استفاده می‌کنیم
+              // اگر navigate با خطا مواجه شد، از window.location استفاده می‌کنیم
               const base = window.location.protocol + '//' + window.location.host;
-              window.location.replace(base + '/chat');
+              
+              if (lowercaseTitle.includes('vip') || lowercaseTitle.includes('اشتراک')) {
+                window.location.replace(base + '/chat');
+              } 
+              else if (lowercaseTitle.includes('دکس') || lowercaseTitle.includes('dex')) {
+                window.location.replace(base + '/dex');
+              } 
+              else if (lowercaseTitle.includes('صفر تا صد') || 
+                       lowercaseTitle.includes('0 تا 100') || 
+                       lowercaseTitle.includes('۰ تا ۱۰۰')) {
+                window.location.replace(base + '/0to100');
+              }
+              else if (lowercaseTitle.includes('پکیج') || lowercaseTitle.includes('ترکیبی')) {
+                window.location.replace(base + '/profile');
+              }
+              else {
+                window.location.replace(base + '/');
+              }
             }
           } else {
-            // خطا در دریافت اطلاعات خرید، هدایت به کانال VIP
+            // خطا در دریافت اطلاعات خرید، به صفحه اصلی هدایت می‌کنیم
             try {
-              navigate('/chat');
+              navigate('/');
             } catch (error) {
               console.error('خطا در هدایت با navigate:', error);
               const base = window.location.protocol + '//' + window.location.host;
-              window.location.replace(base + '/chat');
+              window.location.replace(base + '/');
             }
           }
         })
         .catch(error => {
           console.error('خطا در دریافت اطلاعات خرید:', error);
           try {
-            navigate('/chat');
+            navigate('/');
           } catch (navigateError) {
             console.error('خطا در هدایت با navigate:', navigateError);
             const base = window.location.protocol + '//' + window.location.host;
-            window.location.replace(base + '/chat');
+            window.location.replace(base + '/');
           }
         });
       }, 2000);
@@ -790,19 +829,38 @@ const handleSubmit = async () => {
               
               <div className="space-y-4">
               <div className="relative">
-                <input
-                  type="text"
-                  value={transactionHash}
-                  onChange={(e) => setTransactionHash(e.target.value)}
-                  className={`w-full px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#f7d55d] ${
-                    isDarkMode 
-                      ? 'bg-gray-800 text-white placeholder-gray-500'
-                      : 'bg-gray-100 text-gray-900 placeholder-gray-500'
-                  }`}
-                  placeholder="هش تراکنش را وارد کنید"
-                  dir="rtl"
-                />
-              </div>
+  <div className="flex items-center relative">
+    <input
+      type="text"
+      value={transactionHash}
+      onChange={(e) => setTransactionHash(e.target.value)}
+      className={`w-full pl-10 pr-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#f7d55d] ${
+        isDarkMode 
+          ? 'bg-gray-800 text-white placeholder-gray-500'
+          : 'bg-gray-100 text-gray-900 placeholder-gray-500'
+      }`}
+      placeholder="هش تراکنش را وارد کنید"
+      dir="rtl"
+    />
+    <button
+      onClick={async () => {
+        try {
+          const text = await navigator.clipboard.readText();
+          setTransactionHash(text);
+          notify("موفق", "متن از کلیپ‌بورد چسبانده شد", "success", 2000);
+        } catch (error) {
+          notify("خطا", "دسترسی به کلیپ‌بورد امکان‌پذیر نیست", "danger", 2000);
+        }
+      }}
+      className={`absolute left-2 p-2 rounded-full ${
+        isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200'
+      }`}
+      style={{ zIndex: 10 }}
+    >
+      <Clipboard size={20} />
+    </button>
+  </div>
+</div>
               <div className="relative flex items-center justify-center my-4">
                 <div className={`px-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                   یا

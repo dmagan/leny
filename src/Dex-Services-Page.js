@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeftCircle, Play } from 'lucide-react';
+import { ArrowLeftCircle, Play, ShoppingCart, DoorOpen } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import PaymentCard from './PaymentCard'; // کامپوننت کارت پرداخت را import می‌کنیم
 
@@ -12,6 +12,9 @@ const DexServicesPage = ({ isDarkMode, isOpen, onClose }) => {
   const location = useLocation();
   const [isRenewal, setIsRenewal] = useState(false);
 const [renewingProduct, setRenewingProduct] = useState(null);
+const [hasDexSubscription, setHasDexSubscription] = useState(false);
+
+
 
 
 
@@ -67,6 +70,33 @@ useEffect(() => {
     };
   }, [isOpen, addedToHistory, location.pathname]);
 
+
+  // این useEffect را اضافه کنید
+useEffect(() => {
+  const checkDexStatus = () => {
+    const userToken = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+    
+    if (userToken) {
+      const purchasedProductsStr = localStorage.getItem('purchasedProducts');
+      
+      if (purchasedProductsStr) {
+        try {
+          const purchasedProducts = JSON.parse(purchasedProductsStr);
+          const dexSubscription = purchasedProducts.find(p => 
+            p.title && p.title.includes('دکس') && p.status === 'active'
+          );
+          
+          setHasDexSubscription(!!dexSubscription);
+        } catch (error) {
+          console.error('خطا در پردازش اطلاعات محصولات:', error);
+        }
+      }
+    }
+  };
+  
+  checkDexStatus();
+}, []);
+
   const closeCard = () => {
     setIsExiting(true);
     setTimeout(() => {
@@ -79,9 +109,18 @@ useEffect(() => {
 
   // تابع جدید برای باز کردن کارت پرداخت
   const handlePurchase = () => {
+    // بررسی وضعیت لاگین کاربر
+    const userToken = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+    
+    if (!userToken) {
+      // اگر کاربر لاگین نیست، به صفحه لاگین هدایت می‌شود
+      navigate('/login');
+      return;
+    }
+    
+    // اگر کاربر لاگین است، کارت پرداخت را نمایش می‌دهیم
     setShowPaymentCard(true);
   };
-
   if (!isOpen) return null;
 
   return (
@@ -152,13 +191,7 @@ useEffect(() => {
           {/* Scrollable Content Area */}
           <div className="flex-1 overflow-y-auto pb-24 scrollable-content">
           <div className="px-4 space-y-4">
-              {/* Introduction Section */}
-              <div className="p-4 rounded-xl bg-[#141e35] text-white" dir="rtl">
-                <h3 className="text-lg font-bold mb-3 text-yellow-500 text-right">محتوای دوره دکس تریدینگ</h3>
-                <div className="text-sm text-right mb-4">
-                  <h3 className="text-white-400 font-bold mb-2">مهم: جهت جلوگیری از هرگونه کپی ناقص نام سرفصل ها و استراتژی های مهم در سرفصل ها ذکر نمیشود. محتوا های اصلی را داخل دوره مشاهده میکنید.</h3>
-                </div>
-              </div>
+
               
               {/* Chapter 1 */}
               <div className="p-4 rounded-xl bg-[#141e35] text-white" dir="rtl">
@@ -231,19 +264,21 @@ useEffect(() => {
                 <p className="text-gray-300 text-right italic">و مفاهیم و استراتژی های اختصاصی که برای جلوگیری از افشای ناقص آن محرمانه می‌باشد</p>
               </div>
               
-              {/* Course Price */}
-              <div className="p-4 rounded-xl bg-[#141e35] text-white" dir="rtl">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h3 className="text-lg font-bold mb-2 text-yellow-400 text-right">قیمت دوره:</h3>
-                    <p className="text-2xl font-bold text-green-500">۱۹۹ دلار</p>
-                  </div>
-                  <div className="bg-yellow-500/20 text-yellow-400 rounded-xl p-2 text-sm">
-                    <p>دسترسی نامحدود</p>
-                    <p>آپدیت دائمی</p>
-                  </div>
-                </div>
-              </div>
+              {/* Course Price - فقط اگر اشتراک Dex نداشته باشد نمایش داده می‌شود */}
+{!hasDexSubscription && (
+  <div className="p-4 rounded-xl bg-[#141e35] text-white" dir="rtl">
+    <div className="flex justify-between items-center">
+      <div>
+        <h3 className="text-lg font-bold mb-2 text-yellow-400 text-right">قیمت دوره:</h3>
+        <p className="text-2xl font-bold text-green-500">۱۹۹ دلار</p>
+      </div>
+      <div className="bg-yellow-500/20 text-yellow-400 rounded-xl p-2 text-sm">
+        <p>دسترسی نامحدود</p>
+        <p>آپدیت دائمی</p>
+      </div>
+    </div>
+  </div>
+)}
             </div>
           </div>
           
@@ -265,12 +300,25 @@ useEffect(() => {
 {/* Fixed Button at Bottom */}
 <div className="absolute bottom-6 left-4 right-4 z-10">
   <button 
-    onClick={() => handlePurchase({ title: "اشتراک VIP شش ماهه", price: "199", months: 6 })}
-    className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-4 rounded-xl transition-colors shadow-lg"
+    onClick={hasDexSubscription 
+      ? () => navigate('/dex')
+      : () => handlePurchase({ title: "دوره دکس تریدینگ", price: "199", months: 6 })
+    }
+    className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-4 rounded-xl transition-colors shadow-lg flex items-center justify-center"
+    dir="rtl"
   >
-    {isRenewal ? 'تمدید اشتراک' : 'خرید اشتراک'}
+    <span>
+      {hasDexSubscription ? 'ورود به دکس تریدینگ' : (isRenewal ? 'تمدید اشتراک' : 'خرید دوره دکس تریدینگ')}
+    </span>
+    {/* نمایش آیکون متفاوت بر اساس وضعیت اشتراک */}
+    {hasDexSubscription 
+      ? <DoorOpen size={24} className="mr-2" /> 
+      : <ShoppingCart size={24} className="mr-2" />
+    }
   </button>
 </div>
+
+
         </div>
       </div>
       

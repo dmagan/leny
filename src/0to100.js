@@ -1,4 +1,3 @@
-// src/dex.js
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeftCircle } from 'lucide-react';
@@ -22,124 +21,71 @@ const PlayButton = ({ isActive }) => (
 const episodes = [
   { 
     id: 0,
-    title: "مقدمه", 
-    duration: "10 دقیقه",
-    videoUrl: "https://iamvakilet.ir/dex/intro.mp4"
+    title: "مقدمه فصل اول",
+    duration: "15 دقیقه",
+    videoUrl: "https://iamvakilet.ir/0to100/Introduction1_Chapter1.mp4"
   },
   { 
     id: 1, 
-    title: "قسمت اول: مقدمه و آشنایی با مفاهیم DEX", 
-    duration: "37 دقیقه",
-    videoUrl: "https://iamvakilet.ir/01.mp4"
+    title: "روش های کلاه برداری فصل اول",
+    duration: "30 دقیقه",
+    videoUrl: "https://iamvakilet.ir/0to100/Methods_of_Fraud_Chapter1.mp4"
   },
   { 
     id: 2, 
-    title: "قسمت دوم: نحوه ثبت نام در DEX و انتقال ارز", 
-    duration: "29 دقیقه",
-    videoUrl: "https://iamvakilet.ir/dex/02.mp4"  },
+    title: "بلاک و بیتکوین و کوین و توکن فصل اول",
+    duration: "35 دقیقه",
+    videoUrl: "https://iamvakilet.ir/0to100/Blockchain_Bitcoin_Coins_and_Tokens_Chapter1.mp4"
+  },
   { 
     id: 3, 
-    title: "قسمت سوم: آشنایی با کیف پول‌های DEX", 
-    duration: "19 دقیقه",
-    videoUrl: "https://iamvakilet.ir/dex/03.mp4"  },
+    title: "روش های درامد زایی فصل اول",
+    duration: "40 دقیقه",
+    videoUrl: "https://iamvakilet.ir/0to100/Methods_of_Income_Generation_Chapter1.mp4"
+  },
   { 
     id: 4, 
-    title: "قسمت چهارم: نحوه خرید و فروش در DEX", 
-    duration: "31 دقیقه",
-    videoUrl: "https://iamvakilet.ir/dex/04.mp4"  },
+    title: "آموزش سایت کوین گکو فصل 2",
+    duration: "40 دقیقه",
+    videoUrl: "https://iamvakilet.ir/0to100/CoinGecko_Site_Tutorial_Chapter2.mp4"
+  },
   { 
     id: 5, 
-    title: "قسمت پنجم: مدیریت ریسک در معاملات DEX", 
-    duration: "34 دقیقه",
-    videoUrl: "https://iamvakilet.ir/dex/05.mp4"  },
+    title: "آموزش سایت تریدینگ ویو",
+    duration: "40 دقیقه",
+    videoUrl: "https://iamvakilet.ir/0to100/TradingView_Site_Tutorial.mp4"
+  },
   { 
     id: 6, 
-    title: "قسمت ششم: استراتژی‌های معاملاتی در DEX", 
-    duration: "22 دقیقه",
-    videoUrl: "https://iamvakilet.ir/dex/06.mp4"  },
-  { 
-    id: 7, 
-    title: "قسمت هفتم: تحلیل تکنیکال در DEX", 
-    duration: "24 دقیقه",
-    videoUrl: "https://iamvakilet.ir/dex/07.mp4"  },
-  { 
-    id: 8, 
-    title: "قسمت هشتم: تحلیل فاندامنتال در DEX", 
-    duration: "02 دقیقه",
-    videoUrl: "https://iamvakilet.ir/dex/08.mp4"  },
-  { 
-    id: 9, 
-    title: "قسمت نهم: مدیریت سرمایه در DEX", 
-    duration: "15 دقیقه",
-    videoUrl: "https://iamvakilet.ir/dex/09.mp4"  },
-  { 
-    id: 10, 
-    title: "قسمت دهم: شناسایی فرصت‌های معاملاتی", 
-    duration: "09 دقیقه",
-    videoUrl: "https://iamvakilet.ir/dex/10.mp4"  },
-  { 
-    id: 11, 
-    title: "قسمت یازدهم: اتوماسیون معاملات در DEX", 
-    duration: "22 دقیقه",
-    videoUrl: "https://iamvakilet.ir/dex/11.mp4"  },
-  { 
-    id: 12, 
-    title: "قسمت دوازدهم: مدیریت پورتفولیو در DEX", 
-    duration: "34 دقیقه",
-    videoUrl: "https://iamvakilet.ir/dex/12.mp4"  },
-  { 
-    id: 13, 
-    title: "قسمت سیزدهم: استراتژی‌های پیشرفته معاملاتی", 
-    duration: "47 دقیقه",
-    videoUrl: "https://iamvakilet.ir/dex/13.mp4"  },
-  { 
-    id: 14, 
-    title: "قسمت آخر: توضیح مسیر از زمان روشن کردن کامپیوتر تا انتها به علاوه یک سوپرایز واچ لیست میم کوین\n\nکاربرانی که vip هستند نیازی به واچ لیست ندارند و مستقیم به آنها اعلام خواهد شد", 
-    duration: "30 دقیقه",
-    videoUrl: "https://iamvakilet.ir/dex/14.mp4"  }
+    title: "مقدمه فصل دوم",
+    duration: "40 دقیقه",
+    videoUrl: "https://iamvakilet.ir/0to100/Introduction2_Chapter1.mp4"
+  },
+  // Add more episodes here
 ];
 
-const DexPage = ({ isDarkMode, isOpen, onClose }) => {
+const ZeroTo100ServicePage = ({ isDarkMode, isOpen, onClose }) => {
   const navigate = useNavigate();
   const [activeEpisode, setActiveEpisode] = useState(null);
   const [showVideo, setShowVideo] = useState(false);
-  
-  // انیمیشن
-  const [showDexPage, setShowDexPage] = useState(false);
-  const [dexPageExiting, setDexPageExiting] = useState(false);
 
-  // مدیریت دکمه بازگشت و انیمیشن
+  const [showZeroTo100Page, setShowZeroTo100Page] = useState(false);
+  const [zeroTo100PageExiting, setZeroTo100PageExiting] = useState(false);
+
   useEffect(() => {
-    const handleBackButton = (event) => {
-      event.preventDefault();
-      closeDexPage();
-    };
-
-    // اگر صفحه باز است، یک state به تاریخچه اضافه کنیم
     if (isOpen) {
-      window.history.pushState({ dexPage: true }, '');
-      
-      // انیمیشن ورود
+      window.history.pushState({ zeroTo100Page: true }, '');
       setTimeout(() => {
-        setShowDexPage(true);
+        setShowZeroTo100Page(true);
       }, 100);
     }
-    
-    // شنونده برای رویداد popstate (فشردن دکمه برگشت)
-    window.addEventListener('popstate', handleBackButton);
-    
-    // پاکسازی event listener
-    return () => {
-      window.removeEventListener('popstate', handleBackButton);
-    };
   }, [isOpen]);
 
-  // بستن صفحه
-  const closeDexPage = useCallback(() => {
-    setDexPageExiting(true);
+  const closeZeroTo100Page = useCallback(() => {
+    setZeroTo100PageExiting(true);
     setTimeout(() => {
-      setShowDexPage(false);
-      setDexPageExiting(false);
+      setShowZeroTo100Page(false);
+      setZeroTo100PageExiting(false);
       onClose ? onClose() : navigate(-1);
     }, 300);
   }, [onClose, navigate]);
@@ -158,17 +104,17 @@ const DexPage = ({ isDarkMode, isOpen, onClose }) => {
     <div 
       className="fixed inset-0 z-50 bg-black/40 overflow-hidden transition-opacity duration-300"
       style={{ 
-        opacity: dexPageExiting ? 0 : (showDexPage ? 1 : 0),
-        pointerEvents: showDexPage ? 'auto' : 'none',
+        opacity: zeroTo100PageExiting ? 0 : (showZeroTo100Page ? 1 : 0),
+        pointerEvents: showZeroTo100Page ? 'auto' : 'none',
         transition: 'opacity 0.3s ease-out'
       }}
     >
       <div 
         className={`fixed inset-0 w-full ${isDarkMode ? 'bg-gray-900' : 'bg-gray-100'} shadow-lg transition-transform duration-300 ease-out`}
         style={{ 
-          transform: dexPageExiting 
+          transform: zeroTo100PageExiting 
             ? 'translateX(100%)' 
-            : `translateX(${showDexPage ? '0' : '100%'})`,
+            : `translateX(${showZeroTo100Page ? '0' : '100%'})`,
           transition: 'transform 0.3s cubic-bezier(0.17, 0.67, 0.24, 0.99), opacity 0.3s ease-out'
         }}
         dir="rtl"
@@ -178,13 +124,13 @@ const DexPage = ({ isDarkMode, isOpen, onClose }) => {
             {!showVideo && (
               <>
                 <button 
-                  onClick={closeDexPage}
+                  onClick={closeZeroTo100Page}
                   className={`absolute left-4 ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}
                 >
                   <ArrowLeftCircle className="w-8 h-8" />
                 </button>
                 <h1 className={`w-full text-center text-lg font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
-                  آموزش دکس تریدینگ
+                  دوره صفر تا صد کریپتو
                 </h1>
               </>
             )}
@@ -240,4 +186,4 @@ const DexPage = ({ isDarkMode, isOpen, onClose }) => {
   );
 };
 
-export default DexPage;
+export default ZeroTo100ServicePage;

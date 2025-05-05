@@ -7,9 +7,11 @@ import CustomLoading from './CustomLoading';
 import VIPPage from './VIP-Service-Page';
 import DexServicesPage from './Dex-Services-Page';
 import ZeroTo100ServicePage from './0to100-Service-Page';
+import ZeroTo100 from './0to100'; 
 import SignalStreamServicePage from './SignalStream-Service-Page';
+import PaymentCard from './PaymentCard';
 
-
+const SLIDER_TIMING = 3000;
 const CoinIcon = ({ symbol }) => {
   // SVG icons for cryptocurrencies...
   const icons = {
@@ -166,6 +168,13 @@ const CourseApp = ({  // این قسمت رو جایگزین کنید
   const [showSignalStreamPage, setShowSignalStreamPage] = useState(false);
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
   const [isUIDLoading, setIsUIDLoading] = useState(false);
+const [showActualZeroTo100Page, setShowActualZeroTo100Page] = useState(false);
+
+  const [showPaymentCard, setShowPaymentCard] = useState({
+    show: false,
+    productTitle: '',
+    price: ''
+  });
 
 
 
@@ -180,7 +189,7 @@ const CourseApp = ({  // این قسمت رو جایگزین کنید
     },
     {
       id: 2,
-      name: "دکس ترید",
+      name: "دکس تریدینگ",
       imageSrc: "/Services/dex.jpg",
     },
     {
@@ -188,8 +197,15 @@ const CourseApp = ({  // این قسمت رو جایگزین کنید
       name: "آموزش صفر تا صد ",
       imageSrc: "/Services/0to100.jpg",
     },
-    /*{
+
+    {
       id: 4,
+      name: "دوره دکس تریدینگ +‌ 0 تا 100",
+      imageSrc: "/Services/0to100+dex.jpg",
+    }
+
+    /*{
+      id: ,
        name: "سیگنال استریم",
       imageSrc: "/Services/Signal-Stream.jpg",
     
@@ -204,8 +220,79 @@ const CourseApp = ({  // این قسمت رو جایگزین کنید
       setShowDexPage(true);
     } else if (service.id === 3) { // آموزش صفر تا صد
       setShowZeroTo100Page(true);
-    } else if (service.id === 4) { // سیگنال استریم
-      setShowSignalStreamPage(true);
+    } else if (service.id === 4) { // پکیج
+      // بررسی وضعیت ورود کاربر
+      const userToken = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+      
+      if (!userToken) {
+        // اگر کاربر لاگین نیست، به صفحه لاگین هدایت می‌شود
+        navigate('/login');
+        return;
+      }
+      
+      // بررسی خریدهای کاربر
+      const purchasedProductsStr = localStorage.getItem('purchasedProducts');
+      
+      if (purchasedProductsStr) {
+        try {
+          const products = JSON.parse(purchasedProductsStr);
+          console.log("خریدهای کاربر:", products);
+          
+          // بررسی آیا پکیج ترکیبی خریداری شده است
+          const hasPackage = products.some(p => 
+            p.title && 
+            p.title.toLowerCase().includes('پکیج') && 
+            p.title.toLowerCase().includes('دکس') && 
+            p.title.toLowerCase().includes('صفر') && 
+            p.status === 'active'
+          );
+          
+          // بررسی آیا هر دو دوره جداگانه خریداری شده‌اند
+          const hasDex = products.some(p => 
+            p.title && 
+            p.title.toLowerCase().includes('دکس') && 
+            p.status === 'active'
+          );
+          
+          const hasZeroTo100 = products.some(p => 
+            p.title && 
+            (p.title.toLowerCase().includes('صفر تا صد') || p.title.toLowerCase().includes('0 تا 100')) && 
+            p.status === 'active'
+          );
+          
+          // اگر کاربر پکیج یا هر دو دوره را خریداری کرده باشد
+          if (hasPackage || (hasDex && hasZeroTo100)) {
+            Store.addNotification({
+              title: (
+                <div dir="rtl" style={{ textAlign: 'right', paddingRight: '15px' }}>
+                  اطلاعیه
+                </div>
+              ),
+              message: (
+                <div dir="rtl" style={{ textAlign: 'right' }}>
+                  شما قبلاً این دوره‌ها را خریداری کرده‌اید. می‌توانید از طریق منوی مربوطه به محتوای دوره‌ها دسترسی داشته باشید.
+                </div>
+              ),
+              type: "info",
+              insert: "top",
+              container: "center",
+              animationIn: ["animate__animated", "animate__flipInX"],
+              animationOut: ["animate__animated", "animate__flipOutX"],
+              dismiss: { duration: 7500, showIcon: true, pauseOnHover: true }
+            });
+            return;
+          }
+        } catch (error) {
+          console.error('خطا در بررسی خریدهای کاربر:', error);
+        }
+      }
+      
+      // اگر خریدی نداشته باشد، کارت پرداخت را نمایش می‌دهیم
+      setShowPaymentCard({
+        show: true,
+        productTitle: 'پکیج آموزشی دکس + صفر تا صد',
+        price: '85'
+      });
     }
   };
 
@@ -443,6 +530,153 @@ const CourseApp = ({  // این قسمت رو جایگزین کنید
     navigate('/dex');
   };
 
+  const handleSliderWithPaymentClick = (productName, productPrice) => {
+  // بررسی وضعیت ورود کاربر
+  const userToken = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+  
+  if (!userToken) {
+    // مستقیماً به صفحه لاگین هدایت می‌شود بدون نمایش پیام
+    navigate('/login');
+    return;
+  }
+  
+  // بررسی خریدهای کاربر
+  const purchasedProductsStr = localStorage.getItem('purchasedProducts');
+  
+  if (purchasedProductsStr) {
+    try {
+      const products = JSON.parse(purchasedProductsStr);
+      console.log("خریدهای کاربر:", products);
+      
+      // بررسی آیا محصول مشابه قبلاً خریداری شده است
+      const hasSimilarProduct = products.some(p => 
+        p.title && 
+        p.title.toLowerCase().includes(productName.toLowerCase()) && 
+        p.status === 'active'
+      );
+      
+      // اگر محصول دکس یا صفر تا صد است، بررسی اضافی انجام می‌دهیم
+      let hasDexAndZeroTo100 = false;
+      
+      if (productName.toLowerCase().includes('دکس') && productName.toLowerCase().includes('صفر تا صد')) {
+        const hasDex = products.some(p => 
+          p.title && 
+          p.title.toLowerCase().includes('دکس') && 
+          p.status === 'active'
+        );
+        
+        const hasZeroTo100 = products.some(p => 
+          p.title && 
+          (p.title.toLowerCase().includes('صفر تا صد') || p.title.toLowerCase().includes('0 تا 100')) && 
+          p.status === 'active'
+        );
+        
+        hasDexAndZeroTo100 = hasDex && hasZeroTo100;
+      }
+      
+      // اگر کاربر محصول مشابه یا هر دو دوره را خریداری کرده باشد
+      if (hasSimilarProduct || hasDexAndZeroTo100) {
+        Store.addNotification({
+          title: (
+            <div dir="rtl" style={{ textAlign: 'right', paddingRight: '15px' }}>
+              اطلاعیه
+            </div>
+          ),
+          message: (
+            <div dir="rtl" style={{ textAlign: 'right' }}>
+              شما قبلاً این دوره را خریداری کرده‌اید. می‌توانید از طریق منوی مربوطه به محتوای دوره دسترسی داشته باشید.
+            </div>
+          ),
+          type: "info",
+          insert: "top",
+          container: "center",
+          animationIn: ["animate__animated", "animate__flipInX"],
+          animationOut: ["animate__animated", "animate__flipOutX"],
+          dismiss: { duration: 7500, showIcon: true, pauseOnHover: true }
+        });
+        return;
+      }
+    } catch (error) {
+      console.error('خطا در بررسی خریدهای کاربر:', error);
+    }
+  }
+  
+  // اگر خریدی نداشته باشد یا خطایی رخ داده باشد، کارت پرداخت را نمایش می‌دهیم
+  setShowPaymentCard({
+    show: true,
+    productTitle: productName,
+    price: productPrice
+  });
+};
+const handleZeroTo100Click = () => {
+  const userInfo = localStorage.getItem('userInfo') || sessionStorage.getItem('userInfo');
+  if (!userInfo) {
+    navigate('/login');
+    return;
+  }
+
+  const purchasedProducts = localStorage.getItem('purchasedProducts');
+  if (!purchasedProducts) {
+    // نمایش پیام مناسب و هدایت به صفحه صفر تا صد
+    Store.addNotification({
+      title: (
+        <div dir="rtl" style={{ textAlign: 'right', paddingRight: '15px' }}>
+          اطلاعیه
+        </div>
+      ),
+      message: (
+        <div dir="rtl" style={{ textAlign: 'right' }}>
+          شما هنوز دوره صفر تا صد را خریداری نکرده‌اید
+        </div>
+      ),
+      type: "danger",
+      insert: "top",
+      container: "center",
+      animationIn: ["animate__animated", "animate__flipInX"],
+      animationOut: ["animate__animated", "animate__flipOutX"],
+      dismiss: { duration: 3000, showIcon: true, pauseOnHover: true }
+    });
+    setTimeout(() => {
+      setShowZeroTo100Page(true);
+    }, 2000);
+    return;
+  }
+
+  const products = JSON.parse(purchasedProducts);
+  // بررسی اینکه آیا محصول صفر تا صد خریداری شده است
+  const zeroTo100Product = products.find(p => 
+    p.title && 
+    (p.title.includes('صفر تا صد') || p.title.includes('0 تا 100') || p.title.includes('۰ تا ۱۰۰')) && 
+    p.status === 'active'
+  );
+
+  if (!zeroTo100Product) {
+    Store.addNotification({
+      title: (
+        <div dir="rtl" style={{ textAlign: 'right', paddingRight: '15px' }}>اطلاعیه </div>
+      ),
+      message: (
+        <div dir="rtl" style={{ textAlign: 'right' }}>
+          شما هنوز دوره صفر تا صد را خریداری نکرده‌اید. به صورت خودکار به صفحه مورد نظر هدایت می شوید
+        </div>
+      ),
+      type: "danger",
+      insert: "top",
+      container: "center",
+      animationIn: ["animate__animated", "animate__flipInX"],
+      animationOut: ["animate__animated", "animate__flipOutX"],
+      dismiss: { duration: 5000, showIcon: true, pauseOnHover: true },
+    });
+
+    setTimeout(() => {
+      setShowZeroTo100Page(true);
+    }, 2000);
+    return;
+  }
+
+  // اگر محصول خریداری شده باشد، به صفحه صفر تا صد هدایت می‌شود
+  setShowActualZeroTo100Page(true);
+};
   // ارسال وضعیت تم به اپ نیتیو در بارگذاری اولیه
 useEffect(() => {
   try {
@@ -588,7 +822,7 @@ useEffect(() => {
         behavior: 'smooth'
       });
     }
-  }, 4000);  // هر 4 ثانیه
+  }, 1000);  // هر 4 ثانیه
   
   return () => clearInterval(interval);
 }, [currentSlide, sliders.length, autoplayEnabled]);
@@ -610,7 +844,7 @@ const disableAutoplay = () => {
     setTimeout(() => {
       setAutoplayEnabled(true);
       //console.log('اتوپلی اسلایدر دوباره فعال شد');
-    }, 7000); // 10 ثانیه بعد
+    }, 3000); // 10 ثانیه بعد
   }
 };
 
@@ -932,49 +1166,57 @@ const handleSignalStreamClick = async () => {
 
 
     {/* Sliders Section */}
+{/* Sliders Section */}
 <div className="px-4">
   <div className="relative">
     <div 
       ref={slidersRef}
       className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
     >
-      {sliders.map((slider, index) => (
-        <div 
-          key={slider.id}
-          className="flex-none w-full snap-center cursor-pointer"
-          style={{
-            width: '100%',
-            minWidth: '100%'
-          }}
-          onClick={() => {
-            // استخراج لینک از متادیتای اسلایدر
-            const link = slider.meta?.slider_link || '';
-            
-            // بررسی آیا لینک داخلی است
-            if (link && link.startsWith('/')) {
-              // هدایت به مسیر داخلی با استفاده از React Router
-              navigate(link);
-            } else if (link && !link.startsWith('http')) {
-              // اگر لینک با http شروع نشود، فرض می‌کنیم مسیر داخلی بدون اسلش ابتدایی است
-              navigate('/' + link);
-            } else if (link) {
-              // لینک خارجی - ممکن است بخواهید به شکل متفاوتی مدیریت کنید
-              window.open(link, '_blank');
-            }
-          }}
-        >
-          {slider._embedded && 
-           slider._embedded['wp:featuredmedia'] && 
-           slider._embedded['wp:featuredmedia'][0] && (
-            <img
-              src={slider._embedded['wp:featuredmedia'][0].source_url}
-              alt={slider.title.rendered}
-              className="w-full h-18 object-cover rounded-xl"
-              loading="eager"
-            />
-          )}
-        </div>
-      ))}
+     {sliders.map((slider, index) => (
+      <div 
+        key={slider.id}
+        className="flex-none w-full snap-center cursor-pointer"
+        style={{
+          width: '100%',
+          minWidth: '100%'
+        }}
+        onClick={() => {
+          // استخراج لینک و اطلاعات محصول از متادیتای اسلایدر
+          const link = slider.meta?.slider_link || '';
+          const productName = slider.meta?.slider_product_name || '';
+          const productPrice = slider.meta?.slider_product_price || '';
+          
+          // بررسی آیا باید صفحه پرداخت باز شود
+          if (link === 'PAYMENT' && productName && productPrice) {
+            // اینجا تابع بررسی وضعیت ورود کاربر را فراخوانی می‌کنیم
+            handleSliderWithPaymentClick(productName, productPrice);
+          }
+          // بررسی آیا لینک داخلی است
+          else if (link && link.startsWith('/')) {
+            // هدایت به مسیر داخلی با استفاده از React Router
+            navigate(link);
+          } else if (link && !link.startsWith('http')) {
+            // اگر لینک با http شروع نشود، فرض می‌کنیم مسیر داخلی بدون اسلش ابتدایی است
+            navigate('/' + link);
+          } else if (link) {
+            // لینک خارجی
+            window.open(link, '_blank');
+          }
+        }}
+      >
+        {slider._embedded && 
+         slider._embedded['wp:featuredmedia'] && 
+         slider._embedded['wp:featuredmedia'][0] && (
+          <img
+            src={slider._embedded['wp:featuredmedia'][0].source_url}
+            alt={slider.title.rendered}
+            className="w-full h-18 object-cover rounded-xl"
+            loading="eager"
+          />
+        )}
+      </div>
+     ))}
     </div>
     {/* Navigation & Control */}
    
@@ -1092,8 +1334,8 @@ const handleSignalStreamClick = async () => {
       </div>
     </div>
 
-    <div  onClick={() => navigate('')} className={`p-4 rounded-2xl flex items-center gap-3 border-2 ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900' }`}>
-      <div className="">
+    <div  onClick={handleZeroTo100Click} className={`p-4 rounded-2xl flex items-center gap-3 border-2 ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900' }`}>
+    <div className="">
         <div className="w-16 h-16 text-yellow-500">
         <img src="/Services/0To100.jpg" alt="Signal Stream" className="w-full h-full object-cover rounded-lg" />
 
@@ -1220,6 +1462,16 @@ const handleSignalStreamClick = async () => {
     onClose={() => setShowZeroTo100Page(false)}
   />
 )}
+
+
+{/* ZeroTo100  */}
+{showActualZeroTo100Page && (
+  <ZeroTo100
+    isDarkMode={isDarkMode}
+    isOpen={showActualZeroTo100Page}
+    onClose={() => setShowActualZeroTo100Page(false)}
+  />
+)}
       
       {/* اضافه کردن DexServicesPage */}
 {showDexPage && (
@@ -1239,6 +1491,16 @@ const handleSignalStreamClick = async () => {
     onClose={() => setShowSignalStreamPage(false)}
   />
 )}
+{/* PaymentCard */}
+{showPaymentCard.show && (
+        <PaymentCard
+          isDarkMode={isDarkMode}
+          onClose={() => setShowPaymentCard({ show: false, productTitle: '', price: '' })}
+          productTitle={showPaymentCard.productTitle}
+          price={showPaymentCard.price}
+          months={1} // تعداد ماه رو می‌تونی بر اساس نیازت تغییر بدی
+        />
+      )}
     </div>
   );
 };
@@ -1292,5 +1554,7 @@ const NavItem = ({ icon, label, active, isDarkMode, isProfile, onLogout, isLogge
       </span>
     </button>
   );
+
 };
+
 export default CourseApp;

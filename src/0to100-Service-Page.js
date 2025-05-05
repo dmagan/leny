@@ -1,12 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeftCircle, Play } from 'lucide-react';
+import { ArrowLeftCircle, Play, ShoppingCart, DoorOpen } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import PaymentCard from './PaymentCard'; // کامپوننت کارت پرداخت را import می‌کنیم
+import { Store } from 'react-notifications-component';
+import ZeroTo100 from './0to100';
 
 const ZeroTo100ServicePage = ({ isDarkMode, isOpen, onClose }) => {
+  // تمام state ها را داخل کامپوننت تعریف می‌کنیم
   const [showCard, setShowCard] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
-  const [showPaymentCard, setShowPaymentCard] = useState(false); // state جدید برای نمایش کارت پرداخت
+  const [showPaymentCard, setShowPaymentCard] = useState(false);
+  const [has0to100Course, setHas0to100Course] = useState(false);
+  const [addedToHistory, setAddedToHistory] = useState(false);
+  const [selectedSubscription, setSelectedSubscription] = useState(null);
+  const [has0to100Subscription, setHas0to100Subscription] = useState(false);
+  const [isCheckingSubscription, setIsCheckingSubscription] = useState(true);
+  const [showActualZeroTo100Page, setShowActualZeroTo100Page] = useState(false); // این خط باید اینجا باشد
+
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -54,6 +64,104 @@ const ZeroTo100ServicePage = ({ isDarkMode, isOpen, onClose }) => {
     };
   }, [isOpen, onClose, showPaymentCard]);
 
+  // بررسی وضعیت خرید دوره صفر تا صد کاربر - بهبود یافته
+  useEffect(() => {
+    // بررسی سریع وضعیت دوره با اولویت دادن به localStorage
+    const checkCourseStatus = () => {
+      setIsCheckingSubscription(true);
+
+      // بررسی وجود اطلاعات کاربر
+      const userToken = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+      if (!userToken) {
+        setHas0to100Course(false);
+        setHas0to100Subscription(false);
+        setIsCheckingSubscription(false);
+        return;
+      }
+      
+      // بررسی سریع از localStorage - اولویت اول
+      const purchasedProductsStr = localStorage.getItem('purchasedProducts');
+      if (purchasedProductsStr) {
+        try {
+          const purchasedProducts = JSON.parse(purchasedProductsStr);
+          
+          // بررسی سریع برای هر سه فرمت نوشتن عنوان دوره
+          const zeroTo100Course = purchasedProducts.find(p => 
+            p.title && 
+            typeof p.title === 'string' && 
+            (
+              p.title.includes('صفر تا صد') || 
+              p.title.includes('0 تا 100') || 
+              p.title.includes('۰ تا ۱۰۰')
+            ) && 
+            p.status === 'active'
+          );
+          
+          const hasActiveSubscription = !!zeroTo100Course;
+          
+          setHas0to100Course(hasActiveSubscription);
+          setHas0to100Subscription(hasActiveSubscription);
+          setIsCheckingSubscription(false);
+          
+          // اگر اشتراک در localStorage پیدا شد، نیازی به API call نیست
+          if (hasActiveSubscription) {
+            return;
+          }
+        } catch (parseError) {
+          console.error('خطا در خواندن اشتراک‌های موجود از localStorage:', parseError);
+        }
+      }
+      
+      // اگر در localStorage پیدا نشد یا مشکلی وجود داشت، به صورت async از API بررسی کنیم
+      // بدون منتظر ماندن، UI را فعال می‌کنیم
+      setIsCheckingSubscription(false);
+      
+      // بررسی API به صورت async - اولویت دوم
+      fetch('https://p30s.com/wp-json/pcs/v1/user-purchases', {
+        headers: {
+          'Authorization': `Bearer ${userToken}`,
+          'Accept': 'application/json'
+        }
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("خطا در دریافت اطلاعات از API");
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.success && Array.isArray(data.purchases)) {
+          // ذخیره اطلاعات جدید
+          localStorage.setItem('purchasedProducts', JSON.stringify(data.purchases));
+          localStorage.setItem('lastProductCheck', new Date().getTime().toString());
+          sessionStorage.setItem('purchasedProducts', JSON.stringify(data.purchases));
+          
+          // بررسی وضعیت دوره صفر تا صد
+          const zeroTo100Course = data.purchases.find(p => 
+            p.title && 
+            typeof p.title === 'string' && 
+            (
+              p.title.includes('صفر تا صد') || 
+              p.title.includes('0 تا 100') || 
+              p.title.includes('۰ تا ۱۰۰')
+            ) && 
+            p.status === 'active'
+          );
+          
+          const hasActiveSubscription = !!zeroTo100Course;
+          
+          setHas0to100Course(hasActiveSubscription);
+          setHas0to100Subscription(hasActiveSubscription);
+        }
+      })
+      .catch(error => {
+        console.error("خطا در بررسی API:", error);
+      });
+    };
+    
+    checkCourseStatus();
+  }, []);
+
   const closeCard = () => {
     setIsExiting(true);
     setTimeout(() => {
@@ -70,11 +178,50 @@ const ZeroTo100ServicePage = ({ isDarkMode, isOpen, onClose }) => {
     }, 300);
   };
 
-  // تابع جدید برای باز کردن کارت پرداخت
-  const handlePurchase = () => {
-    setShowPaymentCard(true);
-  };
-
+  // تابع بهبود یافته برای بررسی لاگین بودن کاربر و هدایت به خرید یا صفحه دوره
+// تابع بهبود یافته برای بررسی لاگین بودن کاربر و هدایت به خرید یا صفحه دوره
+const handlePurchase = () => {
+  
+  // بررسی وضعیت لاگین
+  const userToken = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+  
+  if (!userToken) {
+    // اگر کاربر لاگین نیست، به صفحه لاگین هدایت می‌شود
+    navigate('/login');
+    return;
+  }
+  
+  // اگر در حال بررسی هستیم، صبر کنیم
+  if (isCheckingSubscription) {
+    Store.addNotification({
+      title: <div dir="rtl">در حال بررسی</div>,
+      message: <div dir="rtl">لطفاً صبر کنید، در حال بررسی وضعیت اشتراک...</div>,
+      type: "info",
+      insert: "top",
+      container: "center",
+      animationIn: ["animate__animated", "animate__flipInX"],
+      animationOut: ["animate__animated", "animate__flipOutX"],
+      dismiss: { duration: 3000 }
+    });
+    return;
+  }
+  
+  // اگر کاربر دوره را خریداری کرده، مستقیماً به صفحه دوره هدایت شود
+  if (has0to100Course) {
+    
+    // به جای استفاده از navigate، مستقیماً کامپوننت اصلی دوره را نمایش دهیم
+    setShowActualZeroTo100Page(true);
+    return;
+  }
+  
+  // نمایش پنل پرداخت بدون بررسی مجدد از API
+  setSelectedSubscription({
+    title: "دوره آموزش ۰ تا ۱۰۰ کریپتو",
+    price: "199"
+  });
+  setShowPaymentCard(true);
+}
+  
   if (!isOpen) return null;
 
   return (
@@ -222,7 +369,7 @@ const ZeroTo100ServicePage = ({ isDarkMode, isOpen, onClose }) => {
                 <div className="flex justify-between items-center">
                   <div>
                     <h3 className="text-lg font-bold mb-2 text-yellow-400 text-right">قیمت دوره:</h3>
-                    <p className="text-2xl font-bold text-green-500">۸۹ دلار</p>
+                    <p className="text-2xl font-bold text-green-500">۱۹۹ دلار</p>
                   </div>
                   <div className="bg-yellow-500/20 text-yellow-400 rounded-xl p-2 text-sm">
                     <p>دسترسی نامحدود</p>
@@ -241,23 +388,51 @@ const ZeroTo100ServicePage = ({ isDarkMode, isOpen, onClose }) => {
 
           {/* Fixed Button at Bottom */}
           <div className="absolute bottom-6 left-4 right-4 z-10">
-            <button 
-              onClick={handlePurchase} // رویداد کلیک برای باز کردن کارت پرداخت
-              className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-4 rounded-xl transition-colors shadow-lg"
-            >
-              ثبت نام در دوره
-            </button>
+            {isCheckingSubscription ? (
+              <button 
+                className="w-full bg-gray-500 text-white font-bold py-4 rounded-xl transition-colors shadow-lg flex items-center justify-center"
+                dir="rtl"
+                disabled
+              >
+                <span>در حال بررسی...</span>
+              </button>
+            ) : (
+              <button 
+                onClick={handlePurchase}
+                className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-4 rounded-xl transition-colors shadow-lg flex items-center justify-center"
+                dir="rtl"
+              >
+                <span>
+                  {has0to100Course ? 'ورود به دوره ۰ تا ۱۰۰' : 'ثبت نام در دوره'}
+                </span>
+                {/* نمایش آیکون متفاوت بر اساس وضعیت اشتراک */}
+                {has0to100Course 
+                  ? <DoorOpen size={24} className="mr-2" /> 
+                  : <ShoppingCart size={24} className="mr-2" />
+                }
+              </button>
+            )}
           </div>
         </div>
       </div>
       
       {/* Payment Card Component */}
-      {showPaymentCard && (
+      {showPaymentCard && selectedSubscription && (
         <PaymentCard
           isDarkMode={isDarkMode}
           onClose={() => setShowPaymentCard(false)}
-          productTitle="دوره آموزش ۰ تا ۱۰۰ کریپتو"
-          price="89"
+          productTitle={selectedSubscription.title}
+          price={selectedSubscription.price}
+          months={selectedSubscription.months}
+        />
+      )}
+      
+      {/* ZeroTo100 Component - اضافه کردن این بخش */}
+      {showActualZeroTo100Page && (
+        <ZeroTo100
+          isDarkMode={isDarkMode}
+          isOpen={showActualZeroTo100Page}
+          onClose={() => setShowActualZeroTo100Page(false)}
         />
       )}
     </div>
