@@ -197,20 +197,22 @@ const [showActualZeroTo100Page, setShowActualZeroTo100Page] = useState(false);
       name: "آموزش صفر تا صد ",
       imageSrc: "/Services/0to100.jpg",
     },
-
     {
       id: 4,
       name: "دوره دکس تریدینگ +‌ 0 تا 100",
       imageSrc: "/Services/0to100+dex.jpg",
+    },
+    {
+      id: 5,
+      name: "ترید حرفه‌ای",
+      imageSrc: "/Services/TradePro.jpg",
     }
-
     /*{
       id: ,
        name: "سیگنال استریم",
       imageSrc: "/Services/Signal-Stream.jpg",
     
     },*/
-
   ];
 
   const handleServiceClick = (service) => {
