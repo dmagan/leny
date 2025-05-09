@@ -11,6 +11,9 @@ import ZeroTo100 from './0to100';
 import SignalStreamServicePage from './SignalStream-Service-Page';
 import PaymentCard from './PaymentCard';
 import { PRODUCT_PRICES } from './config';
+import supportNotificationService from './SupportNotificationService';
+
+
 
 const SLIDER_TIMING = 3000;
 const CoinIcon = ({ symbol }) => {
@@ -153,7 +156,8 @@ const CourseApp = ({  // این قسمت رو جایگزین کنید
   loading,
   sliders,
   isLoggedIn,
-  onLogout
+  onLogout,
+  unreadSupportMessages
 }) => {
 
   const navigate = useNavigate();
@@ -1488,26 +1492,32 @@ const handleSignalStreamClick = async () => {
      
 
      
-      {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0">
-        <div className="mx-4 mb-4">
-        <div className={`flex items-center justify-between rounded-full px-6 py-2 shadow-lg
-  ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
-<NavItem icon={<Home size={24} />} label="خانه" active={true} isDarkMode={isDarkMode}/>
-<NavItem icon={<MonitorPlay size={24} />} label="پست ها" active={false} isDarkMode={isDarkMode}/>
-    <NavItem icon={<Megaphone size={24} />} label="کانال عمومی" active={false} isDarkMode={isDarkMode} onLogout={onLogout} />
-    <NavItem icon={isLoggedIn ? <UserCheck size={24} /> : <UserX size={24} />}  
-                                                                                        active={false} label="پروفایل" isDarkMode={isDarkMode} isProfile={true}  isLoggedIn={isLoggedIn} onLogout={onLogout}/>     
-    <NavItem 
-      icon={<Headphones size={24} />} 
-      label="پشتیبانی" 
-      active={false} 
-      isDarkMode={isDarkMode} 
-      isLoggedIn={isLoggedIn}  // این مهمه
-    />
+  {/* Bottom Navigation */}
+<div className="fixed bottom-0 left-0 right-0">
+  <div className="mx-4 mb-4">
+    <div className={`flex items-center justify-between rounded-full px-6 py-2 shadow-lg
+      ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+      <NavItem icon={<Home size={24} />} label="خانه" active={true} isDarkMode={isDarkMode}/>
+      <NavItem icon={<MonitorPlay size={24} />} label="پست ها" active={false} isDarkMode={isDarkMode}/>
+      <NavItem icon={<Megaphone size={24} />} label="کانال عمومی" active={false} isDarkMode={isDarkMode} onLogout={onLogout} />
+      <NavItem icon={isLoggedIn ? <UserCheck size={24} /> : <UserX size={24} />}  
+                                                                active={false} label="پروفایل" isDarkMode={isDarkMode} isProfile={true}  isLoggedIn={isLoggedIn} onLogout={onLogout}/>     
+      {/* برای تست موقت، badgeCount را به طور مستقیم 5 قرار دهید */}
+      <NavItem 
+  icon={<Headphones size={24} />} 
+  label="پشتیبانی" 
+  active={false} 
+  isDarkMode={isDarkMode} 
+  isLoggedIn={isLoggedIn} 
+  badgeCount={unreadSupportMessages} // استفاده از مقدار واقعی به جای 5
+/>
+    </div>
+  </div>
 </div>
-        </div>
-      </div>
+{/* زیر هدر یا هر جای دیگری که مناسب است */}
+<div className="fixed bottom-32 right-4 z-50">
+ 
+</div>
 
       {isUIDLoading && (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -1581,7 +1591,7 @@ const handleSignalStreamClick = async () => {
   );
 };
 
-const NavItem = ({ icon, label, active, isDarkMode, isProfile, onLogout, isLoggedIn }) => {
+const NavItem = ({ icon, label, active, isDarkMode, isProfile, onLogout, isLoggedIn, badgeCount }) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
@@ -1593,12 +1603,9 @@ const NavItem = ({ icon, label, active, isDarkMode, isProfile, onLogout, isLogge
       }
     } else if (label === "کانال عمومی") {
       navigate('/chanel-public');
-    } 
-    else if (label === "پست ها") {
+    } else if (label === "پست ها") {
       navigate('/chanel-posts');
-    }
-    
-    else if (label === "محصولات") {
+    } else if (label === "محصولات") {
       navigate('/products');
     } else if (label === "سفارش‌ها") {
       if (isLoggedIn) {
@@ -1615,22 +1622,25 @@ const NavItem = ({ icon, label, active, isDarkMode, isProfile, onLogout, isLogge
     }
   };
   
-  
-  
   return (
     <button 
       onClick={handleClick} 
-      className="flex flex-col items-center p-2"
+      className="flex flex-col items-center p-2 relative"
     >
       <div className={active ? "text-yellow-500" : isDarkMode ? "text-gray-400" : "text-gray-500"}>
-        {icon}
-      </div>
+  {icon}
+  {badgeCount > 0 && (
+  <div className="absolute -top-0.5 -right-0.5 w-6 h-6 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full animate__animated animate__heartBeat animate__infinite">
+    {badgeCount > 9 ? '9+' : badgeCount}
+  </div>
+)}
+</div>
+
       <span className={`text-xs mt-1 ${active ? "text-yellow-500" : isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
         {label}
       </span>
     </button>
   );
-
 };
 
 export default CourseApp;

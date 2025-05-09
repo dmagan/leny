@@ -32,8 +32,87 @@ import IOSInstallPrompt from './IOSInstallPrompt';
 import { shouldShowInstallPrompt } from './detectIOS';
 import DesktopWarning from './DesktopWarning';
 import ZeroTo100 from './0to100';
+import supportNotificationService from './SupportNotificationService';
 
 
+
+// بازنویسی کامل متد چک کردن پیام‌های جدید
+supportNotificationService.checkForNewMessages = async function() {
+  try {
+    const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+    if (!token) return;
+    
+    // استفاده از API صحیح wpas-api به جای awesome-support
+    const ticketsResponse = await fetch('https://p30s.com/wp-json/wpas-api/v1/tickets', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!ticketsResponse.ok) {
+      // اگر API اصلی کار نکرد، ادامه نده
+      console.log('Tickets API failed with status:', ticketsResponse.status);
+      return;
+    }
+    
+    const tickets = await ticketsResponse.json();
+    
+    // بررسی تیکت‌ها برای پیام‌های ادمین
+    let adminMessages = [];
+    
+    // چک کردن هر تیکت و پاسخ‌های آن
+    for (const ticket of tickets) {
+      try {
+        // دریافت پاسخ‌های هر تیکت
+        const repliesResponse = await fetch(`https://p30s.com/wp-json/wpas-api/v1/tickets/${ticket.id}/replies`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (repliesResponse.ok) {
+          const replies = await repliesResponse.json();
+          // فیلتر کردن پاسخ‌های ادمین
+          const agentReplies = replies.filter(reply => 
+            reply.author === 1 || 
+            reply.author_name === 'admin' || 
+            reply.author_name === 'support'
+          );
+          
+          adminMessages = [...adminMessages, ...agentReplies];
+        }
+      } catch (err) {
+        // خطای یک تیکت را نادیده بگیر و به بقیه ادامه بده
+        continue;
+      }
+    }
+    
+    if (adminMessages.length === 0) return;
+    
+    // مرتب‌سازی بر اساس تاریخ
+    adminMessages.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    // آخرین پیام ادمین
+    const latestAdminMessage = adminMessages[0];
+    
+    // بررسی آیا پیام‌های خوانده نشده داریم
+    if (!this.lastReadMessageId || parseInt(this.lastReadMessageId) < parseInt(latestAdminMessage.id)) {
+      // محاسبه تعداد پیام‌های خوانده نشده
+      const unreadMessages = adminMessages.filter(msg => 
+        !this.lastReadMessageId || parseInt(msg.id) > parseInt(this.lastReadMessageId)
+      );
+      
+      this.unreadCount = unreadMessages.length;
+      
+      // اطلاع‌رسانی به listeners
+      this.notifyListeners();
+    }
+  } catch (error) {
+    console.error('Error checking for new support messages:', error);
+  }
+};
 
 // تعریف تابع درخواست با توکن
 window.authenticatedFetch = async (url, options = {}) => {
@@ -118,7 +197,8 @@ function AppRoutes({
   sliders,
   isLoggedIn,
   handleLogout,
-  setIsLoggedIn
+  setIsLoggedIn,
+  unreadSupportMessages
 }) {
   const navigate = useNavigate();
 
@@ -135,6 +215,7 @@ function AppRoutes({
           sliders={sliders}
           isLoggedIn={isLoggedIn}
           onLogout={handleLogout}
+          unreadSupportMessages={unreadSupportMessages}
         />
       } />
       
@@ -579,19 +660,20 @@ const App = () => {
   const [loading, setLoading] = useState(true);
   const [sliders, setSliders] = useState([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [unreadSupportMessages, setUnreadSupportMessages] = useState(0);
   
 
-  useEffect(() => {
-    // فقط یک بار در لود اولیه چک می‌کنیم
-    if (shouldShowInstallPrompt()) {
-      // یک تاخیر کوتاه برای اطمینان از لود شدن صفحه قبل از نمایش راهنما
-      const timer = setTimeout(() => {
-        setShowIOSPrompt(true);
-      }, 2000);
-      
-      return () => clearTimeout(timer);
-    }
-  }, []);
+useEffect(() => {
+  // فقط یک بار در لود اولیه چک می‌کنیم
+  if (shouldShowInstallPrompt()) {
+    // یک تاخیر کوتاه برای اطمینان از لود شدن صفحه قبل از نمایش راهنما
+    const timer = setTimeout(() => {
+      setShowIOSPrompt(true);
+    }, 2000);
+    
+    return () => clearTimeout(timer);
+  }
+}, []);
 
 
 // این کد را در داخل useEffect اول فایل App.js قرار دهید
@@ -664,6 +746,22 @@ useEffect(() => {
   
   checkTokenValidity();
 }, []);
+
+useEffect(() => {
+  if (isLoggedIn) {
+    supportNotificationService.start();
+    supportNotificationService.addListener(count => {
+      setUnreadSupportMessages(count);
+    });
+    
+    return () => {
+      supportNotificationService.removeListener(setUnreadSupportMessages);
+      supportNotificationService.stop();
+    };
+  } else {
+    setUnreadSupportMessages(0); // پاک کردن تعداد پیام‌های ناخوانده در صورت خروج کاربر
+  }
+}, [isLoggedIn]);
 
 
   useEffect(() => {
@@ -970,6 +1068,7 @@ useEffect(() => {
               isLoggedIn={isLoggedIn}
               handleLogout={handleLogout}
               setIsLoggedIn={setIsLoggedIn}
+              unreadSupportMessages={unreadSupportMessages}
             />
           )}
         </OrientationLock>

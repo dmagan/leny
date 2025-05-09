@@ -214,6 +214,16 @@ class MessageService {
     }
   }
 
+
+  async createTicket(title = 'پیام جدید') {
+    try {
+      const ticketId = await this._createNewTicket(title);
+      return { id: ticketId, success: true };
+    } catch (error) {
+      console.error('Error creating ticket:', error);
+      return { success: false, error: error.message };
+    }
+  }
   // توابع خصوصی (private)
   // --------------------------------------
 
@@ -431,6 +441,7 @@ async _syncTicketMessages(ticketId) {
     // console.error(`Error syncing messages for ticket ${ticketId}:`, error);
   }
 }
+
 
   // یافتن یا ایجاد تیکت فعال
   async _getActiveTicket() {

@@ -5,6 +5,7 @@ import { Store } from 'react-notifications-component';
 import MessageSkeleton from './MessageSkeleton';
 import messageService from './MessageService';
 import FaqPage from './faq';
+import supportNotificationService from './SupportNotificationService';
 
 
 // کامپوننت نمایش هر پیام
@@ -116,6 +117,7 @@ const SupportPage = ({ isDarkMode }) => {
   const pendingMessagesRef = useRef(new Map());
   const [supportExiting, setSupportExiting] = useState(false);
   const [faqExiting, setFaqExiting] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(true); // فرض می‌کنیم کاربر لاگین است
 
   // استایل‌های سراسری برای متن‌های دوزبانه
   const globalBidiCss = `
@@ -163,13 +165,33 @@ const SupportPage = ({ isDarkMode }) => {
   };
 
   // همگام‌سازی دستی پیام‌ها
+
   const handleManualSync = async () => {
     if (isSyncing) return;
     
     try {
       setIsSyncing(true);
+      
+      // همگام‌سازی پیام‌ها
       await messageService.syncMessages();
       
+      // بجای تغییر وضعیت loading، فقط به‌روزرسانی می‌کنیم
+      // بدون نمایش اسکلتون‌ها
+      
+      // دریافت مستقیم پیام‌های جدید
+      const currentMessages = messageService.getMessages();
+      const currentTicketId = messageService.getActiveTicketId();
+      
+      // به‌روزرسانی state‌ها بدون نیاز به loading
+      setMessages(currentMessages);
+      setActiveTicketId(currentTicketId);
+      
+      // اسکرول به انتهای پیام‌ها
+      setTimeout(() => {
+        scrollToBottom(false);
+      }, 300);
+      
+      // اعلان موفقیت
       Store.addNotification({
         title: "بروزرسانی",
         message: "پیام‌ها با موفقیت بروزرسانی شدند",
@@ -179,7 +201,8 @@ const SupportPage = ({ isDarkMode }) => {
         dismiss: { duration: 2000 }
       });
     } catch (error) {
-     // console.error('Error manual syncing:', error);
+      console.error('Error manual syncing:', error);
+      
       Store.addNotification({
         title: "خطا",
         message: "خطا در بروزرسانی پیام‌ها",
@@ -192,7 +215,6 @@ const SupportPage = ({ isDarkMode }) => {
       setIsSyncing(false);
     }
   };
-
   // ارسال پیام جدید
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -256,66 +278,68 @@ const SupportPage = ({ isDarkMode }) => {
     }, 100);
   }, []);
 
-  // راه‌اندازی اولیه سرویس پیام‌ها
-  useEffect(() => {
-    isInitializedRef.current = false;
-    
-    const initializeService = async () => {
-      try {
-        setLoading(true);
-        const success = await messageService.start();
-        if (!success) {
-          Store.addNotification({
-            title: "خطا",
-            message: "مشکلی در بارگذاری پیام‌ها پیش آمد. لطفاً از ورود به حساب کاربری خود اطمینان حاصل کنید.",
-            type: "danger",
-            insert: "top",
-            container: "center",
-            dismiss: { duration: 3000 }
-          });
-          navigate('/login');
-          return;
-        }
-        
-        isInitializedRef.current = true;
-        
-        if (firstLoadRef.current && messages.length > 0) {
-          setTimeout(() => {
-            setLoading(false);
-            firstLoadRef.current = false;
-          }, 300);
-        } else {
-          setTimeout(() => {
-            setLoading(false);
-            firstLoadRef.current = false;
-          }, messages.length > 0 ? 500 : 800);
-        }
-      } catch (error) {
-        //console.error('Error initializing message service:', error);
-        setLoading(false);
-        firstLoadRef.current = false;
+
+
+ // راه‌اندازی اولیه سرویس پیام‌ها
+useEffect(() => {
+  // ریست کامل وضعیت
+isInitializedRef.current = false;
+firstLoadRef.current = true;
+// همیشه با loading=true شروع کنیم تا اسکلتون نمایش داده شود
+setLoading(true); 
+// پاک کردن پیام‌های کش شده از قبل
+setMessages([]);
+  
+  const initializeService = async () => {
+    try {
+      // شروع سرویس
+      const success = await messageService.start();
+      if (!success) {
+        Store.addNotification({
+          title: "خطا",
+          message: "مشکلی در بارگذاری پیام‌ها پیش آمد. لطفاً از ورود به حساب کاربری خود اطمینان حاصل کنید.",
+          type: "danger",
+          insert: "top",
+          container: "center",
+          dismiss: { duration: 3000 }
+        });
+        navigate('/login');
+        return;
       }
-    };
+      
+      // سرویس راه‌اندازی شد
+      isInitializedRef.current = true;
+      
+      // درخواست همگام‌سازی با تأخیر کوتاه
+      setTimeout(() => {
+        messageService.syncMessages();
+      }, 300);
+    } catch (error) {
+      console.error('Error initializing message service:', error);
+      setLoading(false);
+      firstLoadRef.current = false;
+    }
+  };
 
-    initializeService();
+  initializeService();
 
-    return () => {
-      messageService.stop();
-    };
-  }, [navigate, messages.length]);
+  return () => {
+    messageService.stop();
+  };
+}, [navigate]); // برداشتن وابستگی به messages.length
 
   // گوش دادن به به‌روزرسانی‌های سرویس پیام‌ها
   useEffect(() => {
     const handleServiceUpdate = (data) => {
-      // پیام‌های سروری (تأییدشده یا حتی ادمین)
+      // کپی کردن پیام‌های سروری
       const serverMessages = [...data.messages];
-
+      
       // یک کپی از پیام‌های پندینگ فعلی می‌گیریم
       const stillPending = new Map(pendingMessagesRef.current);
-
+      
       // آرایه‌ای برای ساختن لیست نهایی
       const newLocalMessages = [];
-
+      
       // 1. پیمایش پیام‌های سروری و حذف پندینگ‌های منطبق
       for (let srv of serverMessages) {
         // پیدا کردن پیام پندینگ منطبق
@@ -341,35 +365,67 @@ const SupportPage = ({ isDarkMode }) => {
           isPending: srv.isPending || false
         });
       }
-
+      
       // 2. حالا هر پیام پندینگی که هنوز باقی مانده، یعنی سرور آن را برنگردانده است
       for (let [tempId, pMsg] of stillPending.entries()) {
         newLocalMessages.push(pMsg);
       }
-
+      
       // 3. مرتب‌سازی پیام‌ها بر اساس تاریخ
       newLocalMessages.sort((a, b) => new Date(a.date) - new Date(b.date));
-
+      
       // 4. استیت را به‌روزرسانی می‌کنیم
       setMessages(newLocalMessages);
       setActiveTicketId(data.activeTicketId);
       setIsSyncing(data.isSyncing);
       setLastSyncTime(data.lastSyncTime);
-
+      
       // 5. رفرنس pendingMessagesRef را با stillPending آپدیت می‌کنیم
       pendingMessagesRef.current = stillPending;
-
-      if (newLocalMessages.length > 0 && firstLoadRef.current && !data.isSyncing) {
+      
+    // تنها زمانی که پیام‌ها دریافت شده‌اند و همگام‌سازی تمام شده، وضعیت لودینگ را به‌روز کنیم
+    if (!data.isSyncing && serverMessages.length > 0 && (firstLoadRef.current || loading)) {
+      // به‌جای تنظیم فوری، یک تأخیر واقعی (حداقل 1 ثانیه) ایجاد می‌کنیم
+      // تا اطمینان حاصل کنیم که اسکلتون‌ها همیشه نمایش داده می‌شوند
+      setTimeout(() => {
         setLoading(false);
         firstLoadRef.current = false;
-      }
+        
+        // اسکرول به انتهای پیام‌ها پس از لود اولیه
+        scrollToBottom(false);
+      }, 5000); // تأخیر طولانی‌تر برای تضمین نمایش اسکلتون‌ها
+    }
     };
-
+    
     messageService.addListener(handleServiceUpdate);
+
+    let autoRefreshInterval;
+  
+  if (isLoggedIn && activeTicketId) {
+    autoRefreshInterval = setInterval(() => {
+      if (!isSyncing) {
+        messageService.syncMessages().then(() => {
+          // به‌روزرسانی بصری روان‌تر بدون نیاز به اسکلتون
+          const chatContainer = document.querySelector('.absolute.top-16.bottom-20.left-0.right-0.overflow-y-auto');
+          if (chatContainer) {
+            const isAtBottom = chatContainer.scrollHeight - chatContainer.scrollTop <= chatContainer.clientHeight + 100;
+            if (isAtBottom) {
+              scrollToBottom(true);
+            }
+          }
+        }).catch(error => {
+          console.error('Auto-refresh error:', error);
+        });
+      }
+    }, 20000); // هر 20 ثانیه
+  }
+    
     return () => {
       messageService.removeListener(handleServiceUpdate);
+      clearInterval(autoRefreshInterval);
     };
-  }, []);
+  }, [isSyncing, activeTicketId, isLoggedIn]);
+
 
   // متد جدید برای بستن صفحه
   const closeCard = () => {
@@ -397,6 +453,22 @@ const SupportPage = ({ isDarkMode }) => {
     }
   }, [messages, loading]);
   
+
+  // بررسی وضعیت ورود کاربر هنگام بارگذاری صفحه
+useEffect(() => {
+  const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+  setIsLoggedIn(!!token);
+}, []);
+
+// پس از اینکه پیام‌ها را دریافت کردیم، شمارشگر پیام‌های ناخوانده را ریست کنیم
+useEffect(() => {
+  // فقط وقتی که پیام‌ها لود شد، شمارشگر را ریست کنیم
+  if (!loading && messages.length > 0) {
+    // ریست کردن شمارشگر پیام‌های ناخوانده
+    const latestMessageId = messages[messages.length - 1].id;
+    supportNotificationService.markAllAsRead(latestMessageId);
+  }
+}, [loading, messages]);
   return (
     <div 
   className="fixed inset-0 z-50 bg-black/40 overflow-hidden transition-opacity duration-300"
