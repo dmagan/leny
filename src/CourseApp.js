@@ -10,6 +10,7 @@ import ZeroTo100ServicePage from './0to100-Service-Page';
 import ZeroTo100 from './0to100'; 
 import SignalStreamServicePage from './SignalStream-Service-Page';
 import PaymentCard from './PaymentCard';
+import { PRODUCT_PRICES } from './config';
 
 const SLIDER_TIMING = 3000;
 const CoinIcon = ({ symbol }) => {
@@ -293,7 +294,7 @@ const [showActualZeroTo100Page, setShowActualZeroTo100Page] = useState(false);
       setShowPaymentCard({
         show: true,
         productTitle: 'پکیج آموزشی دکس + صفر تا صد',
-        price: '85'
+        price: PRODUCT_PRICES.DEX_ZERO_TO_100_PACKAGE
       });
     }
   };
@@ -694,6 +695,79 @@ useEffect(() => {
  // همیشه اتوپلی را فعال نگه دار
 localStorage.removeItem('sliderAutoplayEnabled');
 setAutoplayEnabled(true);
+}, []);
+
+// این کد را در بخش useEffect های فایل CourseApp.js اضافه کنید
+useEffect(() => {
+  const verifyAndRefreshToken = async () => {
+    const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+    if (!token) return;
+    
+    // بررسی زمان آخرین تمدید توکن
+    const lastTokenRefresh = localStorage.getItem('lastTokenRefresh') || sessionStorage.getItem('lastTokenRefresh');
+    const now = new Date().getTime();
+    
+    // اگر بیش از 23 ساعت از آخرین تمدید گذشته، توکن را تمدید کنیم
+    if (!lastTokenRefresh || (now - parseInt(lastTokenRefresh)) > 23 * 60 * 60 * 1000) {
+      try {
+        const response = await fetch('https://p30s.com/wp-json/jwt-auth/v1/token/validate', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (!response.ok) {
+          // اگر توکن نامعتبر است، کاربر را لاگین مجدد کنیم
+          const userInfo = JSON.parse(localStorage.getItem('userInfo') || sessionStorage.getItem('userInfo') || '{}');
+          if (userInfo.user_email && localStorage.getItem('userPassword')) {
+            // اگر رمز عبور ذخیره شده وجود دارد، لاگین مجدد انجام دهیم
+            const loginResponse = await fetch('https://p30s.com/wp-json/jwt-auth/v1/token', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                username: userInfo.user_email,
+                password: localStorage.getItem('userPassword')
+              })
+            });
+            
+            if (loginResponse.ok) {
+              const data = await loginResponse.json();
+              if (data.token) {
+                // ذخیره توکن جدید
+                if (localStorage.getItem('userToken')) {
+                  localStorage.setItem('userToken', data.token);
+                  localStorage.setItem('userInfo', JSON.stringify(data));
+                  localStorage.setItem('lastTokenRefresh', now.toString());
+                } else {
+                  sessionStorage.setItem('userToken', data.token);
+                  sessionStorage.setItem('userInfo', JSON.stringify(data));
+                  sessionStorage.setItem('lastTokenRefresh', now.toString());
+                }
+              }
+            }
+          }
+        } else {
+          // توکن معتبر است، زمان آخرین بررسی را به‌روز کنیم
+          if (localStorage.getItem('userToken')) {
+            localStorage.setItem('lastTokenRefresh', now.toString());
+          } else {
+            sessionStorage.setItem('lastTokenRefresh', now.toString());
+          }
+        }
+      } catch (error) {
+        console.error('خطا در بررسی اعتبار توکن:', error);
+      }
+    }
+  };
+
+  // اجرای تابع بررسی توکن با فاصله منظم
+  verifyAndRefreshToken();
+  const tokenCheckInterval = setInterval(verifyAndRefreshToken, 30 * 60 * 1000); // هر 30 دقیقه
+  
+  return () => clearInterval(tokenCheckInterval);
 }, []);
 
   // دریافت قیمت‌های ارز دیجیتال

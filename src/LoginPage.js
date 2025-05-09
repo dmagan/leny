@@ -213,12 +213,19 @@ const LoginPage = ({ isDarkMode, setIsLoggedIn, onClose }) => {
       }
       
       // ذخیره توکن و اطلاعات کاربر در localStorage یا sessionStorage
+      const now = new Date().getTime();
       if (saveLogin) {
         localStorage.setItem('userToken', token);
         localStorage.setItem('userInfo', JSON.stringify(result));
+        // ذخیره رمز عبور برای تمدید خودکار توکن در آینده
+        localStorage.setItem('userPassword', formData.password);
+        // ذخیره زمان تمدید و انقضای توکن
+        localStorage.setItem('lastTokenRefresh', now.toString());
+        localStorage.setItem('tokenExpiration', new Date(now + 30 * 24 * 60 * 60 * 1000).getTime().toString()); // 30 روز
       } else {
         sessionStorage.setItem('userToken', token);
         sessionStorage.setItem('userInfo', JSON.stringify(result));
+        sessionStorage.setItem('lastTokenRefresh', now.toString());
       }
       
       console.log("Token saved and user is logged in");
@@ -242,11 +249,11 @@ const LoginPage = ({ isDarkMode, setIsLoggedIn, onClose }) => {
         if (purchasesData.success && Array.isArray(purchasesData.purchases)) {
           // ذخیره خریدها در localStorage و sessionStorage
           localStorage.setItem('purchasedProducts', JSON.stringify(purchasesData.purchases));
-          localStorage.setItem('lastProductCheck', new Date().getTime().toString());
+          localStorage.setItem('lastProductCheck', now.toString());
           
           // همچنین در sessionStorage ذخیره می‌کنیم
           sessionStorage.setItem('purchasedProducts', JSON.stringify(purchasesData.purchases));
-          sessionStorage.setItem('lastProductCheck', new Date().getTime().toString());
+          sessionStorage.setItem('lastProductCheck', now.toString());
           
           console.log("Purchases saved to localStorage and sessionStorage");
         } else {
@@ -261,6 +268,9 @@ const LoginPage = ({ isDarkMode, setIsLoggedIn, onClose }) => {
         sessionStorage.setItem('purchasedProducts', JSON.stringify([]));
       }
       
+      // اضافه کردن یک پینگ به سرور برای حفظ توکن فعال
+      setupTokenRefresh(token, saveLogin);
+      
       // مستقیم به صفحه اصلی هدایت می‌کنیم (به جای پروفایل)
       navigate('/');
       
@@ -268,6 +278,80 @@ const LoginPage = ({ isDarkMode, setIsLoggedIn, onClose }) => {
       console.error('Error in handleLoginSuccess:', error);
       navigate('/');
     }
+  };
+  
+  // تابع کمکی برای تنظیم تمدید خودکار توکن
+  const setupTokenRefresh = (token, isPersistent) => {
+    if (!isPersistent) return; // فقط برای حالت "مرا به خاطر بسپار"
+    
+    // ارسال پینگ هر ۶ ساعت برای نگه داشتن توکن
+    const pingInterval = 6 * 60 * 60 * 1000; // 6 ساعت
+    
+    // تابع پینگ به سرور برای حفظ فعال بودن توکن
+    const pingServer = async () => {
+      try {
+        const response = await fetch('https://p30s.com/wp-json/jwt-auth/v1/token/validate', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (!response.ok) {
+          // اگر توکن نامعتبر شده، تلاش برای تمدید خودکار
+          const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+          const userPassword = localStorage.getItem('userPassword');
+          
+          if (userInfo.user_email && userPassword) {
+            // تلاش مجدد لاگین با اطلاعات ذخیره شده
+            const refreshResponse = await fetch('https://p30s.com/wp-json/jwt-auth/v1/token', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                username: userInfo.user_email,
+                password: userPassword
+              })
+            });
+            
+            if (refreshResponse.ok) {
+              const refreshData = await refreshResponse.json();
+              if (refreshData.token) {
+                // به‌روزرسانی توکن در localStorage
+                localStorage.setItem('userToken', refreshData.token);
+                localStorage.setItem('userInfo', JSON.stringify(refreshData));
+                localStorage.setItem('lastTokenRefresh', new Date().getTime().toString());
+                localStorage.setItem('tokenExpiration', new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).getTime().toString());
+                console.log('توکن با موفقیت تمدید شد');
+              }
+            }
+          }
+        } else {
+          console.log('توکن همچنان معتبر است');
+          localStorage.setItem('lastTokenRefresh', new Date().getTime().toString());
+        }
+      } catch (error) {
+        console.error('خطا در بررسی یا تمدید توکن:', error);
+      }
+    };
+    
+    // اجرای اولیه تابع پینگ
+    pingServer();
+    
+    // تنظیم پینگ دوره‌ای
+    const intervalId = setInterval(pingServer, pingInterval);
+    
+    // ذخیره شناسه اینتروال برای پاک کردن در زمان خروج کاربر
+    localStorage.setItem('tokenRefreshIntervalId', intervalId.toString());
+    
+    // اضافه کردن یک event listener برای بررسی توکن در زمان بازیابی صفحه
+    window.addEventListener('focus', pingServer);
+    
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('focus', pingServer);
+    };
   };
 
 
@@ -360,10 +444,8 @@ const LoginPage = ({ isDarkMode, setIsLoggedIn, onClose }) => {
   const handleSubmit = async () => {
     if (!isLogin) {
       // ثبت‌نام
-     // if (!formData.fullName || !formData.email || !formData.password || !formData.mobile) {
-        if (!formData.fullName || !formData.email || !formData.password) {
- 
-     Store.addNotification({
+      if (!formData.fullName || !formData.email || !formData.password) {
+        Store.addNotification({
           title: "خطا",
           message: "لطفا تمام فیلدها را پر کنید",
           type: "danger",
@@ -385,18 +467,6 @@ const LoginPage = ({ isDarkMode, setIsLoggedIn, onClose }) => {
         });
         return;
       }
-  
-   //   if (!validateMobile(formData.mobile)) {
-   //     Store.addNotification({
-   //       title: "خطا",
-   //       message: "شماره موبایل باید بین 8 تا 13 رقم باشد",
-   //       type: "danger",
-   //       insert: "top",
-   //       container: "center",
-   //       dismiss: { duration: 3000, showIcon: true, pauseOnHover: true },
-   //     });
-   //     return;
-   //   }
   
       if (formData.password !== formData.confirmPassword) {
         Store.addNotification({
@@ -437,20 +507,25 @@ const LoginPage = ({ isDarkMode, setIsLoggedIn, onClose }) => {
             }
           }
           const token = result.token || localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+          
+          // ذخیره اطلاعات کاربر و تنظیم زمان آخرین به‌روزرسانی توکن
           if (saveLogin) {
             localStorage.setItem('userToken', token);
             localStorage.setItem('userInfo', JSON.stringify(result));
+            localStorage.setItem('userPassword', formData.password); // ذخیره رمز عبور برای تمدید خودکار
+            localStorage.setItem('lastTokenRefresh', new Date().getTime().toString());
+            localStorage.setItem('tokenExpiration', new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).getTime().toString()); // تنظیم انقضای توکن به ۳۰ روز آینده
           } else {
             sessionStorage.setItem('userToken', token);
             sessionStorage.setItem('userInfo', JSON.stringify(result));
+            sessionStorage.setItem('lastTokenRefresh', new Date().getTime().toString());
           }
           
           // مستقیم به صفحه اصلی هدایت می‌کنیم
           setTimeout(() => {
             navigate('/');
           }, 1000);
-       
-              } else {
+        } else {
           Store.addNotification({
             title: "خطا",
             message: result.message,
@@ -501,6 +576,38 @@ const LoginPage = ({ isDarkMode, setIsLoggedIn, onClose }) => {
   
         if (result.success) {
           setIsLoggedIn(true);
+          
+          // ذخیره اطلاعات ورود برای "مرا به خاطر بسپار"
+          if (saveLogin) {
+            // ذخیره رمز عبور برای تمدید خودکار توکن
+            localStorage.setItem('userPassword', formData.password);
+            localStorage.setItem('lastTokenRefresh', new Date().getTime().toString());
+            localStorage.setItem('tokenExpiration', new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).getTime().toString()); // تنظیم انقضای توکن به ۳۰ روز آینده
+            
+            // فراخوانی API برای دریافت خریدهای کاربر
+            const token = localStorage.getItem('userToken');
+            if (token) {
+              try {
+                const purchasesResponse = await fetch('https://p30s.com/wp-json/pcs/v1/user-purchases', {
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                  }
+                });
+                
+                if (purchasesResponse.ok) {
+                  const purchasesData = await purchasesResponse.json();
+                  if (purchasesData.success && Array.isArray(purchasesData.purchases)) {
+                    localStorage.setItem('purchasedProducts', JSON.stringify(purchasesData.purchases));
+                    localStorage.setItem('lastProductCheck', new Date().getTime().toString());
+                  }
+                }
+              } catch (error) {
+                console.error('خطا در دریافت خریدهای کاربر:', error);
+              }
+            }
+          }
+          
           Store.addNotification({
             title: "موفق",
             message: result.message,
@@ -673,30 +780,21 @@ const LoginPage = ({ isDarkMode, setIsLoggedIn, onClose }) => {
             autoCorrect="off"
           />
 
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-            {isPassword && (
-              <button
-                onClick={() => setShowPassword(prev => !prev)}
-                className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}
-              >
-                {showCurrentPassword ? <Eye size={16} /> : <EyeOff size={16} />}
-              </button>
-            )}
-
-            {isConfirmPassword && formData.confirmPassword && (
-              <div className={`transition-colors ${passwordsMatch ? 'text-green-500' : 'text-red-500'}`}>
-                {passwordsMatch ? (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M20 6L9 17l-5-5" />
-                  </svg>
-                ) : (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M18 6L6 18M6 6l12 12" />
-                  </svg>
-                )}
-              </div>
-            )}
-          </div>
+<div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+  {isConfirmPassword && formData.confirmPassword && (
+    <div className={`transition-colors ${passwordsMatch ? 'text-green-500' : 'text-red-500'}`}>
+      {passwordsMatch ? (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M20 6L9 17l-5-5" />
+        </svg>
+      ) : (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M18 6L6 18M6 6l12 12" />
+        </svg>
+      )}
+    </div>
+  )}
+</div>
         </div>
 
         {isMobile && showCountries && (

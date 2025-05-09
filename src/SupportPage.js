@@ -196,7 +196,7 @@ const SupportPage = ({ isDarkMode }) => {
   // ارسال پیام جدید
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!message.trim() || !activeTicketId || loading) return;
+    if (!message.trim() || loading) return;  // حذف بررسی activeTicketId
     
     const messageText = message;
     setMessage('');
@@ -204,13 +204,13 @@ const SupportPage = ({ isDarkMode }) => {
     // ایجاد پیام موقت جهت نمایش فوری
     const tempId = Date.now();
     const tempMessage = {
-      id: tempId, // شناسه موقتی
+      id: tempId,
       content: messageText,
       date: new Date().toISOString(),
       isAdmin: false,
       isPending: true
     };
-
+  
     // ثبت در pendingMessagesRef
     pendingMessagesRef.current.set(tempId, tempMessage);
     
@@ -221,16 +221,16 @@ const SupportPage = ({ isDarkMode }) => {
     });
     
     scrollToBottom(false);
-
+  
     try {
+      // اگر تیکت فعال نداریم، هنگام ارسال پیام اولیه، سرویس به صورت خودکار تیکت ایجاد می‌کند
       await messageService.sendMessage(messageText);
       
-      // به‌روزرسانی پیام پس از تایید از سرور (حذف حالت pending)
+      // به‌روزرسانی پیام پس از تایید از سرور
       setMessages(prev => prev.map(msg => 
         msg.id === tempId ? { ...msg, isPending: false } : msg
       ));
     } catch (error) {
-     // console.error('Error sending message:', error);
       // حذف پیام در صورت بروز خطا
       setMessages(prev => prev.filter(msg => msg.id !== tempId));
       pendingMessagesRef.current.delete(tempId);
@@ -249,7 +249,6 @@ const SupportPage = ({ isDarkMode }) => {
       }
     }
   };
-
   // انیمیشن ورود صفحه
   useEffect(() => {
     setTimeout(() => {

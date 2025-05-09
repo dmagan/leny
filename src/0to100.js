@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeftCircle } from 'lucide-react';
 import VideoPlayer from './components/VideoPlayer';
 
+
 const PlayButton = ({ isActive }) => (
   <svg 
     width="32" height="32" viewBox="0 0 32 32" 
@@ -61,6 +62,37 @@ const episodes = [
     duration: "40 دقیقه",
     videoUrl: "https://iamvakilet.ir/0to100/Introduction2_Chapter1.mp4"
   },
+  { 
+    id: 7, 
+    title: "ولت فانتوم و تونکیپر",
+    duration: "40 دقیقه",
+    videoUrl: "https://iamvakilet.ir/0to100/Phantom_and_Tonkeeper_Wallet.mp4"
+  },
+  { 
+    id: 8, 
+    title: "آموزش سایت دیبانک",
+    duration: "40 دقیقه",
+    videoUrl: "https://iamvakilet.ir/0to100/Dibank_Site_Tutorial.mp4"
+  },
+  { 
+    id: 9, 
+    title: "آموزش ولت متامسک",
+    duration: "40 دقیقه",
+    videoUrl: "https://iamvakilet.ir/0to100/Metamask_Wallet_Tutorial.mp4"
+  },
+  { 
+    id: 10, 
+    title: "آموزش سایت های مانیتورینگ",
+    duration: "40 دقیقه",
+    videoUrl: "https://iamvakilet.ir/0to100/Monitoring_Sites_Tutorial.mp4"
+  },
+  { 
+    id: 11, 
+    title: "آموزش صرافی البانک",
+    duration: "40 دقیقه",
+    videoUrl: "https://iamvakilet.ir/0to100/Albank_Exchange_Tutorial.mp4"
+  },
+
   // Add more episodes here
 ];
 

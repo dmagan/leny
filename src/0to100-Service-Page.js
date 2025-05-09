@@ -4,6 +4,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import PaymentCard from './PaymentCard'; // کامپوننت کارت پرداخت را import می‌کنیم
 import { Store } from 'react-notifications-component';
 import ZeroTo100 from './0to100';
+import { PRODUCT_PRICES } from './config';
+
 
 const ZeroTo100ServicePage = ({ isDarkMode, isOpen, onClose }) => {
   // تمام state ها را داخل کامپوننت تعریف می‌کنیم
@@ -216,9 +218,9 @@ const handlePurchase = () => {
   
   // نمایش پنل پرداخت بدون بررسی مجدد از API
   setSelectedSubscription({
-    title: "دوره آموزش ۰ تا ۱۰۰ کریپتو",
-    price: "199"
-  });
+  title: "دوره آموزش ۰ تا ۱۰۰ کریپتو",
+  price: PRODUCT_PRICES.ZERO_TO_100
+});
   setShowPaymentCard(true);
 }
   
@@ -366,17 +368,21 @@ const handlePurchase = () => {
               
               {/* Course Price */}
               <div className="p-4 rounded-xl bg-[#141e35] text-white" dir="rtl">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h3 className="text-lg font-bold mb-2 text-yellow-400 text-right">قیمت دوره:</h3>
-                    <p className="text-2xl font-bold text-green-500">۱۹۹ دلار</p>
-                  </div>
-                  <div className="bg-yellow-500/20 text-yellow-400 rounded-xl p-2 text-sm">
-                    <p>دسترسی نامحدود</p>
-                    <p>آپدیت دائمی</p>
-                  </div>
-                </div>
-              </div>
+              <div className="p-4 rounded-xl bg-[#141e35] text-white" dir="rtl">
+              <div className="p-4 rounded-xl bg-[#141e35] text-white" dir="rtl">
+  <div className="flex justify-between items-center">
+    <div>
+      <h3 className="text-lg font-bold mb-2 text-yellow-400 text-right">قیمت دوره:</h3>
+      <p className="text-2xl font-bold text-green-500">{PRODUCT_PRICES.ZERO_TO_100} دلار</p>
+    </div>
+    <div className="bg-yellow-500/20 text-yellow-400 rounded-xl p-2 text-sm">
+      <p>دسترسی نامحدود</p>
+      <p>آپدیت دائمی</p>
+    </div>
+  </div>
+</div>
+</div>
+</div>
             </div>
           </div>
           

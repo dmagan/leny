@@ -413,7 +413,11 @@ const ProfilePage = ({ isDarkMode, setIsLoggedIn, onLogout }) => {
                               </p>
                               {product.status === 'active' && (
   <p className="text-sm text-yellow-500">
-    {product.title.includes('دکس تریدینگ') || product.remainingDays === 'unlimited' ? 
+    {product.title.includes('دکس تریدینگ') || 
+     product.title.includes('صفر تا صد') || 
+     product.title.includes('0 تا 100') || 
+     product.title.includes('۰ تا ۱۰۰') || 
+     product.remainingDays === 'unlimited' ? 
       'دسترسی نامحدود' : 
       `روزهای باقیمانده: ${product.remainingDays}`
     }

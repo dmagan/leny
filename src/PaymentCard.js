@@ -444,7 +444,7 @@ const updateSubscription = async (productTitle, months, transactionHash, price) 
         updatedDays = days;
       } else {
         // افزودن به زمان باقیمانده فعلی
-        if (existingSubscription.remainingDays === 'unlimited' || isDex) {
+        if (existingSubscription.remainingDays === 'unlimited' || isDex || isZeroTo100) {
           updatedDays = 'unlimited';
         } else {
           updatedDays = parseInt(existingSubscription.remainingDays || 0) + days;
@@ -487,7 +487,7 @@ const updateSubscription = async (productTitle, months, transactionHash, price) 
         title: productTitle,
         date: today.toISOString(),
         status: 'active',
-        remainingDays: isDex ? 'unlimited' : days,
+        remainingDays: isDex || isZeroTo100 ? 'unlimited' : days,
         isVIP: isVIP,
         isDex: isDex,
         isZeroTo100: isZeroTo100,

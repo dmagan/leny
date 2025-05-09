@@ -31,10 +31,81 @@ import { Toaster } from 'react-hot-toast';
 import IOSInstallPrompt from './IOSInstallPrompt';
 import { shouldShowInstallPrompt } from './detectIOS';
 import DesktopWarning from './DesktopWarning';
+import ZeroTo100 from './0to100';
 
 
 
-
+// تعریف تابع درخواست با توکن
+window.authenticatedFetch = async (url, options = {}) => {
+  const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+  
+  if (!token) {
+    // اگر توکن وجود نداشت، به صفحه لاگین هدایت کنیم
+    window.location.href = '/login';
+    return null;
+  }
+  
+  const headers = {
+    ...options.headers,
+    'Authorization': `Bearer ${token}`
+  };
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers
+    });
+    
+    if (response.status === 401) {
+      // اگر توکن منقضی شده باشد، تلاش برای تمدید خودکار
+      if (localStorage.getItem('userPassword')) {
+        const userInfo = JSON.parse(localStorage.getItem('userInfo') || sessionStorage.getItem('userInfo') || '{}');
+        const loginResponse = await fetch('https://p30s.com/wp-json/jwt-auth/v1/token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            username: userInfo.user_email,
+            password: localStorage.getItem('userPassword')
+          })
+        });
+        
+        if (loginResponse.ok) {
+          const data = await loginResponse.json();
+          if (data.token) {
+            // ذخیره توکن جدید
+            if (localStorage.getItem('userToken')) {
+              localStorage.setItem('userToken', data.token);
+              localStorage.setItem('userInfo', JSON.stringify(data));
+            } else {
+              sessionStorage.setItem('userToken', data.token);
+              sessionStorage.setItem('userInfo', JSON.stringify(data));
+            }
+            
+            // تلاش مجدد درخواست با توکن جدید
+            return fetch(url, {
+              ...options,
+              headers: {
+                ...options.headers,
+                'Authorization': `Bearer ${data.token}`
+              }
+            });
+          }
+        }
+      }
+      
+      // اگر تمدید توکن موفق نبود، کاربر را به صفحه لاگین هدایت کنیم
+      window.location.href = '/login';
+      return null;
+    }
+    
+    return response;
+  } catch (error) {
+    console.error('خطا در ارسال درخواست:', error);
+    throw error;
+  }
+};
 
 // این کامپوننت برای استفاده از useNavigate ایجاد شده است
 function AppRoutes({
@@ -426,6 +497,27 @@ function AppRoutes({
           />
         </>
       } />
+
+<Route path="/0to100" element={
+  <>
+    <CourseApp 
+      isDarkMode={isDarkMode} 
+      setIsDarkMode={setIsDarkMode} 
+      products={products} 
+      cryptoPrices={cryptoPrices} 
+      stories={stories} 
+      loading={loading} 
+      sliders={sliders}
+      isLoggedIn={isLoggedIn}
+      onLogout={handleLogout}
+    />
+    <ZeroTo100
+      isDarkMode={isDarkMode}
+      isOpen={true}
+      onClose={() => navigate('/')}
+    />
+  </>
+} />
       
 
 <Route path="/vip-services" element={
@@ -501,6 +593,77 @@ const App = () => {
     }
   }, []);
 
+
+// این کد را در داخل useEffect اول فایل App.js قرار دهید
+useEffect(() => {
+  const checkTokenValidity = async () => {
+    const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+    if (!token) {
+      setIsLoggedIn(false);
+      return;
+    }
+    
+    try {
+      const response = await fetch('https://p30s.com/wp-json/jwt-auth/v1/token/validate', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        setIsLoggedIn(true);
+      } else {
+        // توکن نامعتبر است، تلاش برای تمدید خودکار
+        const userInfo = JSON.parse(localStorage.getItem('userInfo') || sessionStorage.getItem('userInfo') || '{}');
+        const userPassword = localStorage.getItem('userPassword');
+        
+        if (userInfo.user_email && userPassword) {
+          // تلاش برای لاگین مجدد با اطلاعات ذخیره شده
+          const loginResponse = await fetch('https://p30s.com/wp-json/jwt-auth/v1/token', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              username: userInfo.user_email,
+              password: userPassword
+            })
+          });
+          
+          if (loginResponse.ok) {
+            const data = await loginResponse.json();
+            if (data.token) {
+              // ذخیره توکن جدید
+              if (localStorage.getItem('userToken')) {
+                localStorage.setItem('userToken', data.token);
+                localStorage.setItem('userInfo', JSON.stringify(data));
+                localStorage.setItem('lastTokenRefresh', new Date().getTime().toString());
+              } else {
+                sessionStorage.setItem('userToken', data.token);
+                sessionStorage.setItem('userInfo', JSON.stringify(data));
+                sessionStorage.setItem('lastTokenRefresh', new Date().getTime().toString());
+              }
+              setIsLoggedIn(true);
+              return;
+            }
+          }
+        }
+        
+        // اگر تمدید توکن موفق نبود، کاربر را خارج کنیم
+        localStorage.removeItem('userToken');
+        localStorage.removeItem('userInfo');
+        sessionStorage.removeItem('userToken');
+        sessionStorage.removeItem('userInfo');
+        setIsLoggedIn(false);
+      }
+    } catch (error) {
+      console.error('خطا در بررسی اعتبار توکن:', error);
+    }
+  };
+  
+  checkTokenValidity();
+}, []);
 
 
   useEffect(() => {

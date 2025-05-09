@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowLeftCircle, Play, ShoppingCart, DoorOpen } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import PaymentCard from './PaymentCard'; // کامپوننت کارت پرداخت را import می‌کنیم
+import PaymentCard from './PaymentCard'; 
+import { PRODUCT_PRICES } from './config'; // 
 
 
 const VIPPage = ({ isDarkMode, isOpen, onClose }) => {
@@ -275,37 +276,49 @@ const handlePurchase = (subscription) => {
               
               {/* Pricing Options */}
              {/* Pricing Options - فقط اگر اشتراک VIP نداشته باشد نمایش داده می‌شود */}
-{!hasVIPSubscription && (
+             {!hasVIPSubscription && (
   <div className="p-4 rounded-xl bg-[#141e35] text-white" dir="rtl">
     <h3 className="text-lg font-bold mb-3 text-yellow-400 text-right">گزینه‌های اشتراک</h3>
     <div className="space-y-4">
       <div 
         className="border border-gray-700 rounded-lg p-3 cursor-pointer hover:bg-gray-800 transition-colors"
-        onClick={() => handlePurchase({ title: "اشتراک VIP شش ماهه", price: "149", months: 6 })}
+        onClick={() => handlePurchase({ 
+          title: "اشتراک VIP شش ماهه", 
+          price: PRODUCT_PRICES.VIP.SIX_MONTHS, 
+          months: 6 
+        })}
       >
         <h4 className="font-bold text-lg">اشتراک شش ماهه</h4>
-        <p className="text-yellow-500 text-lg mt-1">۱۹۹ دلار</p>
+        <p className="text-yellow-500 text-lg mt-1">{PRODUCT_PRICES.VIP.SIX_MONTHS} دلار</p>
         <p className="text-gray-400 text-sm mt-1">مناسب برای آشنایی با خدمات VIP</p>
       </div>
       
       <div 
         className="border border-gray-700 rounded-lg p-3 bg-gray-800 cursor-pointer hover:bg-gray-700 transition-colors"
-        onClick={() => handlePurchase({ title: "اشتراک VIP یکساله", price: "299", months: 12 })}
+        onClick={() => handlePurchase({ 
+          title: "اشتراک VIP یکساله", 
+          price: PRODUCT_PRICES.VIP.YEARLY, 
+          months: 12 
+        })}
       >
         <div className="flex justify-between items-center">
           <h4 className="font-bold text-lg">اشتراک یکساله </h4>
           <span className="bg-yellow-500 text-gray-900 text-xs rounded-full px-2 py-1">پیشنهاد ویژه</span>
         </div>
-        <p className="text-yellow-500 text-lg mt-1">۲۹۹ دلار</p>
+        <p className="text-yellow-500 text-lg mt-1">{PRODUCT_PRICES.VIP.YEARLY} دلار</p>
         <p className="text-gray-400 text-sm mt-1">صرفه‌جویی ۲۵٪ نسبت به خرید ماهانه</p>
       </div>
       
       <div 
         className="border border-gray-700 rounded-lg p-3 cursor-pointer hover:bg-gray-800 transition-colors"
-        onClick={() => handlePurchase({ title: "اشتراک VIP دوساله", price: "399" })}
+        onClick={() => handlePurchase({ 
+          title: "اشتراک VIP دوساله", 
+          price: PRODUCT_PRICES.VIP.TWO_YEARS, 
+          months: 24 
+        })}
       >
         <h4 className="font-bold text-lg">اشتراک دوساله</h4>
-        <p className="text-yellow-500 text-lg mt-1">۳۹۹ دلار</p>
+        <p className="text-yellow-500 text-lg mt-1">{PRODUCT_PRICES.VIP.TWO_YEARS} دلار</p>
         <p className="text-gray-400 text-sm mt-1">صرفه‌جویی ۵۰٪ نسبت به خرید ماهانه</p>
       </div>
     </div>

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeftCircle, Play, ShoppingCart, DoorOpen } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import PaymentCard from './PaymentCard'; // کامپوننت کارت پرداخت را import می‌کنیم
+import PaymentCard from './PaymentCard'; 
+import { PRODUCT_PRICES } from './config';
 
 const DexServicesPage = ({ isDarkMode, isOpen, onClose }) => {
   const [showCard, setShowCard] = useState(false);
@@ -270,7 +271,7 @@ useEffect(() => {
     <div className="flex justify-between items-center">
       <div>
         <h3 className="text-lg font-bold mb-2 text-yellow-400 text-right">قیمت دوره:</h3>
-        <p className="text-2xl font-bold text-green-500">۱۹۹ دلار</p>
+        <p className="text-2xl font-bold text-green-500">{PRODUCT_PRICES.DEX} دلار</p>
       </div>
       <div className="bg-yellow-500/20 text-yellow-400 rounded-xl p-2 text-sm">
         <p>دسترسی نامحدود</p>
@@ -302,7 +303,11 @@ useEffect(() => {
   <button 
     onClick={hasDexSubscription 
       ? () => navigate('/dex')
-      : () => handlePurchase({ title: "دوره دکس تریدینگ", price: "199", months: 6 })
+      : () => handlePurchase({ 
+          title: "دوره دکس تریدینگ", 
+          price: PRODUCT_PRICES.DEX, 
+          months: 6 
+        })
     }
     className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-4 rounded-xl transition-colors shadow-lg flex items-center justify-center"
     dir="rtl"
@@ -324,13 +329,13 @@ useEffect(() => {
       
       {/* Payment Card Component */}
       {showPaymentCard && (
-        <PaymentCard
-          isDarkMode={isDarkMode}
-          onClose={() => setShowPaymentCard(false)}
-          productTitle="دوره دکس تریدینگ"
-          price="199"
-        />
-      )}
+  <PaymentCard
+    isDarkMode={isDarkMode}
+    onClose={() => setShowPaymentCard(false)}
+    productTitle="دوره دکس تریدینگ"
+    price={PRODUCT_PRICES.DEX}
+  />
+)}
     </div>
   );
 };
