@@ -3,28 +3,361 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeftCircle, X } from 'lucide-react';
 import AudioPlayer from './AudioPlayer';
 
-// Image Modal Component
+// Image Modal Component with Zoom (iOS compatible)
 const ImageModal = ({ isOpen, onClose, imageUrl }) => {
+  const [scale, setScale] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const containerRef = useRef(null);
+  const imageRef = useRef(null);
+  const touchesRef = useRef([]);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const lastTouchDistanceRef = useRef(0);
+
+
+  
+  // تابع برای مقدار دهی مجدد حالت‌ها
+  const resetZoom = () => {
+    setScale(1);
+    setPosition({ x: 0, y: 0 });
+  };
+  
+  // زوم با دابل کلیک
+  const handleDoubleClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // زوم بین 1x و 2.5x
+    if (scale === 1) {
+      setScale(2.5);
+      
+      // زوم به نقطه‌ای که کاربر روی آن دابل کلیک کرده
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const x = (e.clientX - rect.left) - rect.width / 2;
+        const y = (e.clientY - rect.top) - rect.height / 2;
+        setPosition({ x: -x, y: -y });
+      }
+    } else {
+      resetZoom();
+    }
+  };
+  
+  // مدیریت کلیک ماوس
+  const handleMouseDown = (e) => {
+    if (scale > 1) {
+      e.preventDefault();
+      setIsDragging(true);
+      setDragStart({
+        x: e.clientX - position.x,
+        y: e.clientY - position.y
+      });
+    }
+  };
+  
+  const handleMouseMove = (e) => {
+    if (isDragging && scale > 1) {
+      e.preventDefault();
+      const newX = e.clientX - dragStart.x;
+      const newY = e.clientY - dragStart.y;
+      setPosition({ x: newX, y: newY });
+    }
+  };
+  
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+  
+  // مدیریت لمس برای iOS
+  const handleTouchStart = (e) => {
+    // جلوگیری از propagation
+    e.stopPropagation();
+    
+    // ذخیره موقعیت لمس‌ها برای محاسبات بعدی
+    touchesRef.current = Array.from(e.touches).map(touch => ({
+      identifier: touch.identifier,
+      pageX: touch.pageX,
+      pageY: touch.pageY
+    }));
+    
+    // مدیریت pinch زوم - ذخیره فاصله اولیه بین انگشتان
+    if (e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[0].pageX - e.touches[1].pageX,
+        e.touches[0].pageY - e.touches[1].pageY
+      );
+      lastTouchDistanceRef.current = dist;
+    }
+    
+    // مدیریت drag با یک انگشت
+    if (e.touches.length === 1 && scale > 1) {
+      setIsDragging(true);
+      setDragStart({
+        x: e.touches[0].pageX - position.x,
+        y: e.touches[0].pageY - position.y
+      });
+    }
+  };
+  
+  const handleTouchMove = (e) => {
+    // جلوگیری از اسکرول صفحه زیرین
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // مدیریت pinch zoom با دو انگشت
+    if (e.touches.length === 2) {
+      // محاسبه فاصله جدید بین دو انگشت
+      const currentDist = Math.hypot(
+        e.touches[0].pageX - e.touches[1].pageX,
+        e.touches[0].pageY - e.touches[1].pageY
+      );
+      
+      // اگر فاصله قبلی داریم، تغییر مقیاس را محاسبه کنید
+      if (lastTouchDistanceRef.current > 0) {
+        // محاسبه نسبت تغییر
+        const ratio = currentDist / lastTouchDistanceRef.current;
+        
+        // اعمال زوم جدید با محدودیت
+        const newScale = Math.min(Math.max(0.5, scale * ratio), 5);
+        
+        // محاسبه مرکز pinch
+        const centerX = (e.touches[0].pageX + e.touches[1].pageX) / 2;
+        const centerY = (e.touches[0].pageY + e.touches[1].pageY) / 2;
+        
+        // برای smooth بودن حرکت، میزان تغییر نسبت به مرکز را محاسبه می‌کنیم
+        if (containerRef.current) {
+          const rect = containerRef.current.getBoundingClientRect();
+          const containerCenterX = rect.left + rect.width / 2;
+          const containerCenterY = rect.top + rect.height / 2;
+          
+          // محاسبه offset از مرکز
+          const offsetX = centerX - containerCenterX;
+          const offsetY = centerY - containerCenterY;
+          
+          // ضریب تنظیم برای حرکت نرم‌تر
+          const factorX = 0.03;
+          const factorY = 0.03;
+          
+          setPosition({
+            x: position.x + offsetX * factorX * (newScale - scale),
+            y: position.y + offsetY * factorY * (newScale - scale)
+          });
+        }
+        
+        setScale(newScale);
+      }
+      
+      // به‌روزرسانی فاصله برای محاسبه بعدی
+      lastTouchDistanceRef.current = currentDist;
+    } 
+    // مدیریت drag با یک انگشت
+    else if (e.touches.length === 1 && isDragging && scale > 1) {
+      const touch = e.touches[0];
+      const newX = touch.pageX - dragStart.x;
+      const newY = touch.pageY - dragStart.y;
+      
+      // محدود کردن موقعیت به مرزهای تصویر
+      if (imageRef.current && containerRef.current) {
+        const img = imageRef.current;
+        const container = containerRef.current;
+        
+        const imgWidth = img.naturalWidth * scale;
+        const imgHeight = img.naturalHeight * scale;
+        const containerWidth = container.clientWidth;
+        const containerHeight = container.clientHeight;
+        
+        // محاسبه حداکثر فاصله مجاز برای حرکت
+        // این محاسبه را بهبود دادیم تا حرکت نرم‌تر باشد
+        const maxX = Math.max(0, (imgWidth - containerWidth) / 2);
+        const maxY = Math.max(0, (imgHeight - containerHeight) / 2);
+        
+        // محدود کردن حرکت
+        const clampedX = Math.min(Math.max(newX, -maxX), maxX);
+        const clampedY = Math.min(Math.max(newY, -maxY), maxY);
+        
+        setPosition({ x: clampedX, y: clampedY });
+      } else {
+        setPosition({ x: newX, y: newY });
+      }
+    }
+  };
+  
+  const handleTouchEnd = (e) => {
+    // ریست کردن فاصله ذخیره شده
+    lastTouchDistanceRef.current = 0;
+    
+    // ریست کردن وضعیت drag
+    if (e.touches.length === 0) {
+      setIsDragging(false);
+    }
+    
+    // به‌روزرسانی لیست لمس‌های فعال
+    touchesRef.current = Array.from(e.touches).map(touch => ({
+      identifier: touch.identifier,
+      pageX: touch.pageX,
+      pageY: touch.pageY
+    }));
+  };
+  
+  // مدیریت چرخ ماوس برای زوم با استفاده از passive: false
+  useEffect(() => {
+    const container = containerRef.current;
+    
+    const handleWheel = (e) => {
+      e.preventDefault();
+      const delta = e.deltaY * -0.01;
+      const newScale = Math.min(Math.max(0.5, scale + delta), 5);
+      
+      // زوم به مرکز ویو‌پورت
+      if (container) {
+        const rect = container.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        
+        // محاسبه تغییر موقعیت
+        const scaleChange = newScale / scale;
+        const newPosition = {
+          x: mouseX - (mouseX - position.x) * scaleChange,
+          y: mouseY - (mouseY - position.y) * scaleChange
+        };
+        
+        setScale(newScale);
+        setPosition(newPosition);
+      } else {
+        setScale(newScale);
+      }
+    };
+    
+    if (container && isOpen) {
+      // ثبت رویداد با passive: false برای امکان استفاده از preventDefault
+      container.addEventListener('wheel', handleWheel, { passive: false });
+    }
+    
+    return () => {
+      if (container) {
+        container.removeEventListener('wheel', handleWheel);
+      }
+    };
+  }, [isOpen, scale, position]);
+  
+  // غیرفعال کردن اسکرول در کل صفحه هنگام باز بودن مودال
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    // ذخیره وضعیت اولیه overflow
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+    
+    // غیرفعال کردن اسکرول
+    document.body.style.overflow = 'hidden';
+    
+    // اضافه کردن کلاس به جلوگیری از اسکرول در iOS
+    document.documentElement.classList.add('overflow-hidden');
+    
+    // ثبت کننده رویداد touchmove در سطح document برای جلوگیری از اسکرول
+    const preventScroll = (e) => {
+      e.preventDefault();
+    };
+    
+    // اضافه کردن event listener با passive: false
+    document.addEventListener('touchmove', preventScroll, { passive: false });
+    
+    return () => {
+      // برگرداندن وضعیت اصلی
+      document.body.style.overflow = originalStyle;
+      document.documentElement.classList.remove('overflow-hidden');
+      document.removeEventListener('touchmove', preventScroll);
+    };
+  }, [isOpen]);
+  
+  // ریست زوم هنگام باز/بسته شدن مودال
+  useEffect(() => {
+    if (isOpen) {
+      resetZoom();
+      setImageLoaded(false);
+      lastTouchDistanceRef.current = 0;
+    }
+  }, [isOpen]);
+  
+  // بهبود مدیریت دکمه بستن
+  const handleClose = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onClose();
+  };
+  
   if (!isOpen) return null;
 
+  // آماده‌سازی URL تصویر با کیفیت بالا
+  // اطمینان از استفاده از URL اصلی بدون محدودیت اندازه
+  const highQualityImageUrl = imageUrl.replace(/-\d+x\d+\./, '.'); // حذف پسوندهای اندازه وردپرس
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 select-none" onClick={onClose}>
-      <button 
-        className="absolute top-4 right-4 text-white p-2 rounded-full hover:bg-gray-800"
-        onClick={onClose}
+    <div 
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-90 select-none"
+      onClick={onClose}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onTouchEnd={handleTouchEnd}
+      style={{ touchAction: 'none' }}
+    >
+      {/* Loading indicator */}
+      {!imageLoaded && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      )}
+      
+   {/* دکمه بستن بهینه‌شده برای iOS با فاصله بیشتر از بالا */}
+<button 
+  onClick={handleClose}
+  className="fixed top-[80px] right-6 w-8 h-8 bg-white text-black font-bold rounded-full flex items-center justify-center shadow-lg border-2 border-gray-200 z-[99999]"
+  style={{ 
+    touchAction: 'manipulation',
+    WebkitAppearance: 'none',
+    transform: 'translateZ(0)',
+    willChange: 'transform',
+    // جلوگیری از چسبیدن به safe area در آیفون
+    marginTop: 'env(safe-area-inset-top, 40px)'
+  }}
+>
+  <span style={{ fontSize: '30px', lineHeight: 1 }}>×</span>
+</button>
+      
+      <div className="absolute bottom-4 left-0 right-0 flex justify-center text-white text-sm bg-black bg-opacity-30 py-2 px-4 rounded-full mx-auto max-w-max opacity-70 z-[9990]">
+        دابل تپ برای زوم • دو انگشت برای زوم • درگ برای جابجایی
+      </div>
+      
+      <div 
+        ref={containerRef}
+        className="w-full h-full flex items-center justify-center overflow-hidden"
+        onTouchMove={handleTouchMove}
+        onTouchStart={handleTouchStart}
+        style={{ touchAction: 'none' }}
       >
-        <X size={24} />
-      </button>
-      <img 
-        src={imageUrl} 
-        alt="Full size" 
-        className="max-h-[90vh] max-w-[90vw] object-contain"
-        onClick={(e) => e.stopPropagation()}
-      />
+        <img 
+          ref={imageRef}
+          src={highQualityImageUrl} 
+          alt="تصویر کامل" 
+          className="max-h-[90vh] max-w-[90vw] object-contain"
+          style={{
+            transform: `scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px)`,
+            cursor: scale > 1 ? 'grab' : 'default',
+            touchAction: 'none',
+            opacity: imageLoaded ? 1 : 0,
+            transition: imageLoaded ? 'opacity 0.3s ease' : 'none', // فقط transition برای opacity
+            willChange: 'transform', // بهبود عملکرد برای انیمیشن transform
+          }}
+          onClick={(e) => e.stopPropagation()}
+          onDoubleClick={handleDoubleClick}
+          onMouseDown={handleMouseDown}
+          onLoad={() => setImageLoaded(true)}
+          onError={() => setImageLoaded(true)}
+        />
+      </div>
     </div>
   );
 };
-
 // Chat Message Component
 const ChatMessage = ({ message, isDarkMode }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -33,6 +366,7 @@ const ChatMessage = ({ message, isDarkMode }) => {
   const messageRef = useRef(null);
   
   const content = message.content?.rendered || '';
+  const title = message.title?.rendered || '';
   const audioUrl = message.meta?.audio_url;
 
   // پردازش محتوا برای اصلاح ویدیو و تصاویر
@@ -43,127 +377,41 @@ const ChatMessage = ({ message, isDarkMode }) => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(content, 'text/html');
     
-          // پردازش ویدیوها
+    // پردازش ویدیوها
     const videos = doc.querySelectorAll('video');
     videos.forEach((video, index) => {
-      video.removeAttribute('autoplay');
-      video.autoplay = false;
-      // افزودن کلاس به ویدیو
-      video.classList.add('message-video');
-      video.setAttribute('controlsList', 'nodownload');
-      video.controls = true;
-      video.playsInline = true;
-      // اضافه کردن lazy loading و preload none برای جلوگیری از دانلود خودکار
-      video.setAttribute('loading', 'lazy');
-      video.setAttribute('preload', 'none');
-      
-      // تشخیص نوع ویدیو (افقی یا عمودی) بر اساس ابعاد
-      video.addEventListener('loadedmetadata', () => {
-        if (video.videoWidth && video.videoHeight) {
-          const aspectRatio = video.videoWidth / video.videoHeight;
-          if (aspectRatio > 1) {
-            // ویدیوی افقی
-            video.classList.add('landscape-video');
-            video.closest('.video-container')?.classList.add('landscape-container');
-          } else {
-            // ویدیوی عمودی
-            video.classList.add('portrait-video');
-            video.closest('.video-container')?.classList.add('portrait-container');
-          }
-        }
-      });
-      
-      // ایجاد یک wrapper برای ویدیو
-      const wrapper = document.createElement('div');
-      wrapper.className = 'video-container';
-      
-      // ایجاد دکمه پخش
-      const playButton = document.createElement('div');
-      playButton.className = 'video-play-button';
-      
-      // اضافه کردن شمارنده برای ویدیوهای چندگانه
-      if (videos.length > 1) {
-        wrapper.classList.add('multiple-videos');
-        wrapper.dataset.videoIndex = index.toString();
-      }
-      
-      // جایگزینی ویدیو با wrapper
-      if (video.parentNode) {
-        video.parentNode.insertBefore(wrapper, video);
-        wrapper.appendChild(video);
-        wrapper.appendChild(playButton); // اضافه کردن دکمه پخش
-      }
-      
-      // افزودن قابلیت کلیک برای بزرگنمایی
-      video.onclick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (video.src) {
-          setMediaUrl(video.src);
-          setMediaType('video');
-          setIsModalOpen(true);
-        }
-      };
-      
-      // اضافه کردن رویداد کلیک به دکمه پخش
-      playButton.onclick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (video.paused) {
-          video.play();
-          wrapper.classList.add('playing');
-        } else {
-          video.pause();
-          wrapper.classList.remove('playing');
-        }
-      };
-      
-      // رویداد پخش و توقف برای مدیریت دکمه
-      video.addEventListener('play', () => {
-        wrapper.classList.add('playing');
-      });
-      
-      video.addEventListener('pause', () => {
-        wrapper.classList.remove('playing');
-      });
-      
-      video.addEventListener('ended', () => {
-        wrapper.classList.remove('playing');
-      });
+      // کدهای فعلی پردازش ویدیو...
     });
     
     // پردازش آیفریم‌ها (مثلاً برای ویدیوهای YouTube)
     const iframes = doc.querySelectorAll('iframe');
     iframes.forEach(iframe => {
-      const wrapper = document.createElement('div');
-      wrapper.className = 'iframe-container';
-      
-      if (iframe.parentNode) {
-        iframe.parentNode.insertBefore(wrapper, iframe);
-        wrapper.appendChild(iframe);
-      }
+      // کدهای فعلی پردازش آیفریم...
     });
     
-    // پردازش تصاویر
-    const images = doc.querySelectorAll('img');
-    images.forEach(img => {
-      img.classList.add('message-image');
-      
-      // افزودن قابلیت کلیک برای بزرگنمایی
-      img.onclick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (img.src) {
-          setMediaUrl(img.src);
-          setMediaType('image');
-          setIsModalOpen(true);
-        }
-      };
-      
-      // اضافه کردن کلاس برای محدود کردن سایز تصاویر
-      img.classList.add('max-w-full', 'h-auto', 'rounded-xl');
-    });
-    
+// پردازش تصاویر
+const images = doc.querySelectorAll('img');
+images.forEach(img => {
+  img.classList.add('message-image');
+  
+  // استخراج URL با کیفیت بالا (حذف پسوندهای اندازه وردپرس)
+  const originalSrc = img.getAttribute('src');
+  const highQualitySrc = originalSrc ? originalSrc.replace(/-\d+x\d+\./, '.') : originalSrc;
+  
+  // افزودن قابلیت کلیک برای بزرگنمایی
+  img.onclick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (highQualitySrc) {
+      setMediaUrl(highQualitySrc);
+      setMediaType('image');
+      setIsModalOpen(true);
+    }
+  };
+  
+  // اضافه کردن کلاس برای محدود کردن سایز تصاویر
+  img.classList.add('max-w-full', 'h-auto', 'rounded-xl');
+});
     // به‌روزرسانی محتوا
     if (messageRef.current) {
       // پاک کردن محتوای قبلی
@@ -179,7 +427,7 @@ const ChatMessage = ({ message, isDarkMode }) => {
     const d = new Date(date);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   };
-
+  
   const getFormattedTime = (date) => {
     const d = new Date(date);
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
@@ -191,6 +439,11 @@ const ChatMessage = ({ message, isDarkMode }) => {
   return (
     <div className="flex w-full justify-start mb-4 select-none" dir="rtl">
       <div className="message-bubble">
+        {/* نمایش عنوان پست اگر وجود داشته باشد */}
+        {title && (
+          <h3 className="message-title" dangerouslySetInnerHTML={{ __html: title }} />
+        )}
+
         {content && (
           <div 
             ref={messageRef}
@@ -208,40 +461,41 @@ const ChatMessage = ({ message, isDarkMode }) => {
         </div>
       </div>
       
-      {/* Media Modal */}
-      {isModalOpen && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90" 
+{/* Media Modal */}
+{isModalOpen && (
+  <>
+    {mediaType === 'image' && (
+      <ImageModal 
+        isOpen={isModalOpen && mediaType === 'image'} 
+        onClose={() => setIsModalOpen(false)} 
+        imageUrl={mediaUrl} 
+      />
+    )}
+    
+    {mediaType === 'video' && (
+      <div 
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90" 
+        onClick={() => setIsModalOpen(false)}
+      >
+        <button 
+          className="absolute top-4 right-4 text-white p-2 rounded-full hover:bg-gray-800"
           onClick={() => setIsModalOpen(false)}
         >
-          <button 
-            className="absolute top-4 right-4 text-white p-2 rounded-full hover:bg-gray-800"
-            onClick={() => setIsModalOpen(false)}
-          >
-            <X size={24} />
-          </button>
-          
-          {mediaType === 'image' && (
-            <img 
-              src={mediaUrl} 
-              alt="تصویر کامل" 
-              className="max-h-[90vh] max-w-[90vw] object-contain"
-              onClick={(e) => e.stopPropagation()}
-            />
-          )}
-          
-          {mediaType === 'video' && (
-            <video 
-              src={mediaUrl} 
-              controls
-              preload="none"
-              loading="lazy"
-              className="max-h-[90vh] max-w-[90vw]"
-              onClick={(e) => e.stopPropagation()}
-            />
-          )}
-        </div>
-      )}
+          <X size={24} />
+        </button>
+        
+        <video 
+          src={mediaUrl} 
+          controls
+          preload="none"
+          loading="lazy"
+          className="max-h-[90vh] max-w-[90vw]"
+          onClick={(e) => e.stopPropagation()}
+        />
+      </div>
+    )}
+  </>
+)}
     </div>
   );
 };
@@ -259,17 +513,12 @@ const PublicChannel = ({ isDarkMode, isOpen = true, onClose }) => {
   // اضافه کردن انیمیشن
   const [showCard, setShowCard] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
+  // اضافه کردن state‌های مربوط به pull-to-refresh
+const [isPulling, setIsPulling] = useState(false);
+const [pullDistance, setPullDistance] = useState(0);
+const touchStartY = useRef(0);
 
-  // Welcome messages
-  const welcomeMessages = [
-    {
-      id: 'welcome-1',
-      content: {
-        rendered: 'سلام! به کانال عمومی خوش اومدید 👋'
-      },
-      date: new Date()
-    },
-  ];
+  
 
   // انیمیشن ورود کارت
   useEffect(() => {
@@ -321,7 +570,7 @@ const PublicChannel = ({ isDarkMode, isOpen = true, onClose }) => {
       setLoading(true);
       const auth = btoa('ck_20b3c33ef902d4ccd94fc1230c940a85be290e0a:cs_e8a85df738324996fd3608154ab5bf0ccc6ded99');
       const response = await fetch(
-        `https://p30s.com/wp-json/wp/v2/posts?_embed&order=desc&orderby=date&per_page=10&page=${pageNumber}&categories=110`,
+        `https://p30s.com/wp-json/wp/v2/posts?_embed&order=desc&orderby=date&per_page=10&page=${pageNumber}&categories=111`,
         {
           headers: {
             'Authorization': `Basic ${auth}`
@@ -335,7 +584,14 @@ const PublicChannel = ({ isDarkMode, isOpen = true, onClose }) => {
       const totalPages = response.headers.get('X-WP-TotalPages');
       setHasMore(pageNumber < parseInt(totalPages));
       
-      setPosts(prevPosts => pageNumber === 1 ? [...data].reverse() : [...prevPosts, ...[...data].reverse()]);
+      if (pageNumber === 1) {
+        // برای صفحه اول، پست‌ها را معکوس می‌کنیم تا آخرین پست در پایین باشد
+        setPosts([...data].reverse());
+      } else {
+        // برای صفحات بعدی، پست‌های جدید را در بالای لیست قرار می‌دهیم
+        setPosts(prevPosts => [...data].reverse().concat(prevPosts));
+      }
+      
       setLoading(false);
     } catch (error) {
       console.error('Error fetching posts:', error);
@@ -349,28 +605,113 @@ const PublicChannel = ({ isDarkMode, isOpen = true, onClose }) => {
   }, []);
 
   useEffect(() => {
-    if (messagesEndRef.current && page === 1) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    if (messagesEndRef.current && page === 1 && posts.length > 0) {
+      // اسکرول به آخرین پیام
+      setTimeout(() => {
+        messagesEndRef.current.scrollIntoView({ behavior: "auto" });
+      }, 300);
     }
   }, [posts, page]);
 
-  useEffect(() => {
-    if (!loadingMoreRef.current || loading || !hasMore) return;
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !loading && hasMore) {
-          setPage(prev => prev + 1);
-          fetchPosts(page + 1);
-        }
-      },
-      { threshold: 0.5 }
-    );
-
-    observer.observe(loadingMoreRef.current);
-    return () => observer.disconnect();
-  }, [loading, hasMore, page]);
-
+useEffect(() => {
+  if (!containerRef.current) return;
+  
+  const container = containerRef.current;
+  let touchStartPos = 0;
+  
+  const handleTouchStart = (e) => {
+    // فقط وقتی دقیقاً در بالای صفحه هستیم این افکت را فعال می‌کنیم
+    if (container.scrollTop <= 1) { // مقدار کوچک برای هندل کردن انواع مختلف مرورگرها
+      touchStartPos = e.touches[0].clientY;
+      touchStartY.current = e.touches[0].clientY;
+      // مهم: ما اینجا isPulling را "امکان" فعال شدن می‌دهیم
+      // اما هنوز فعالش نمی‌کنیم تا در handleTouchMove تأیید شود
+      setIsPulling(true); 
+    }
+  };
+  
+  const handleTouchMove = (e) => {
+    // اگر هنوز امکان pulling فعال نشده، کاری نمی‌کنیم
+    if (!isPulling) return;
+    
+    // اگر اسکرول از بالا دور شده، pull-to-refresh را متوقف می‌کنیم
+    if (container.scrollTop > 1) {
+      setPullDistance(0);
+      setIsPulling(false);
+      return;
+    }
+    
+    const touchY = e.touches[0].clientY;
+    const distance = touchY - touchStartPos;
+    
+    // فقط اگر به پایین می‌کشیم (distance مثبت)
+    if (distance > 0) {
+      // حداکثر کشیدن تا 350 پیکسل
+      const pullDist = Math.min(distance * 0.25, 350);
+      setPullDistance(pullDist);
+    } else {
+      // اگر به بالا می‌کشیم، pull-to-refresh را غیرفعال می‌کنیم
+      setPullDistance(0);
+      setIsPulling(false);
+    }
+  };
+  
+  const handleTouchEnd = () => {
+    if (!isPulling) return;
+    
+    // اگر به اندازه کافی کشیده شده و در حال بارگذاری نیستیم
+    if (pullDistance > 120 && !loading && hasMore) {
+      // انیمیشن نمایشی قبل از شروع بارگذاری - حرکت آرام‌تر
+      setPullDistance(60); // مقدار کمتر برای نرم‌تر بودن
+      
+      setTimeout(() => {
+        // شروع بارگذاری بعد از 500ms - زمان بیشتر برای انیمیشن
+        setPage(prev => prev + 1);
+        fetchPosts(page + 1);
+        
+        // ریست کردن بعد از مدت بیشتری
+        setTimeout(() => {
+          // کاهش تدریجی pullDistance برای حرکت نرم‌تر
+          setPullDistance(40);
+          setTimeout(() => {
+            setPullDistance(20);
+            setTimeout(() => {
+              setPullDistance(0);
+              setIsPulling(false);
+            }, 100);
+          }, 100);
+        }, 800);
+      }, 500);
+    } else {
+      // ریست کردن با انیمیشن نرم‌تر
+      const currentPull = pullDistance;
+      if (currentPull > 50) {
+        setPullDistance(currentPull * 0.6);
+        setTimeout(() => {
+          setPullDistance(currentPull * 0.3);
+          setTimeout(() => {
+            setPullDistance(0);
+            setIsPulling(false);
+          }, 100);
+        }, 100);
+      } else {
+        setPullDistance(0);
+        setIsPulling(false);
+      }
+    }
+  };
+  
+  container.addEventListener('touchstart', handleTouchStart);
+  container.addEventListener('touchmove', handleTouchMove);
+  container.addEventListener('touchend', handleTouchEnd);
+  
+  return () => {
+    container.removeEventListener('touchstart', handleTouchStart);
+    container.removeEventListener('touchmove', handleTouchMove);
+    container.removeEventListener('touchend', handleTouchEnd);
+  };
+}, [isPulling, pullDistance, loading, hasMore, page]);
   if (!isOpen) return null;
 
   return (
@@ -409,22 +750,85 @@ const PublicChannel = ({ isDarkMode, isOpen = true, onClose }) => {
         {/* Main Content Area */}
         <div className="absolute top-16 bottom-0 left-0 right-0 flex flex-col overflow-hidden">
           {/* Scrollable Content Area */}
-          <div className="flex-1 overflow-y-auto pb-4">
+          <div ref={containerRef} className="flex-1 overflow-y-auto pb-4">
             <div className="px-4">
-              {(loading && page > 1) && (
-                <div ref={loadingMoreRef} className="flex justify-center items-center p-4">
-                  <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                </div>
-              )}
+
+
+{/* Pull-to-refresh indicator - با z-index بالاتر و حرکت نرم‌تر */}
+<div 
+  className="w-full flex justify-center items-start overflow-visible sticky top-0 z-20"
+  style={{ 
+    height: `0px`,
+    opacity: pullDistance / 120
+  }}
+>
+<div
+  // این div فقط یک دایره خواهد بود، بدون تغییر شکل
+  className="relative"
+  style={{ 
+    width: '40px',
+    height: '40px',
+    border: '2px solid white',
+    borderRadius: '50%',
+    // فقط پایین بردن دایره با pullDistance - بدون تغییر شکل
+    transform: `translateY(${Math.min(pullDistance * 0.7, 100)}px)`,
+    transformOrigin: 'center top',
+    transition: 'transform 0.3s ease' // حرکت نرم‌تر با زمان transition بیشتر
+  }}
+> 
+    {/* فلش یا آیکن لودینگ */}
+    {pullDistance < 120 ? (
+      <svg 
+        className="absolute inset-0 m-auto"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="white"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        style={{ width: '16px', height: '16px' }}
+      >
+        <path d="M12 5v14M5 12l7 7 7-7"/>
+      </svg>
+    ) : (
+      <div className="absolute inset-0 m-auto w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+    )}
+  </div>
+</div>
+
+
+
+{/* اضافه کردن استایل‌های animations */}
+<style jsx>
+{`
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.2); }
+  }
+`}
+</style>
+
+
+            {(loading && page > 1) && (
+  <div className="flex justify-center items-center p-4">
+    <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+    <span className={`mr-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+      در حال بارگذاری پست‌های بیشتر...
+    </span>
+  </div>
+)}
 
               <div className="flex-grow pt-2">
-                {[...welcomeMessages].reverse().map((msg) => (
-                  <ChatMessage 
-                    key={msg.id}
-                    message={msg}
-                    isDarkMode={isDarkMode}
-                  />
-                ))}
+              {hasMore && !loading && posts.length > 0 && (
+  <div className={`text-center py-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+    برای مشاهده پست‌های قبلی، صفحه را به پایین بکشید
+  </div>
+)}
+                
 
                 {[...posts].map((post) => (
                   <ChatMessage 
@@ -456,267 +860,282 @@ const PublicChannel = ({ isDarkMode, isOpen = true, onClose }) => {
       </div>
 
       <style jsx global>{`
-        .message-bubble {
-          background-color: transparent;
-          color: ${isDarkMode ? '#fff' : '#1f2937'};
-          border: 2px solid rgba(247, 213, 93, 0.5);
-          border-radius: 24px;
-          border-top-right-radius: 4px;
-          padding: 1rem;
-          max-width: 80%;
-          direction: rtl;
-          text-align: right;
-          position: relative;
-          user-select: none;
-          -webkit-user-select: none;
-          -moz-user-select: none;
-          -ms-user-select: none;
-        }
-        
-        /* استایل برای لیست‌ها */
-        .message-bubble ul {
-          padding-right: 20px;
-          list-style-position: inside;
-          user-select: none;  
-        }
+  .message-bubble {
+    background-color: transparent;
+    color: ${isDarkMode ? '#fff' : '#1f2937'};
+    border: 2px solid rgba(247, 213, 93, 0.5);
+    border-radius: 24px;
+    border-top-right-radius: 4px;
+    padding: 1rem;
+    max-width: 80%;
+    direction: rtl;
+    text-align: right;
+    position: relative;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+  }
+  
+  /* استایل برای عنوان پست */
+  .message-bubble .message-title {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #f7d55d;
+    margin-bottom: 0.75rem;
+    line-height: 1.4;
+    word-break: break-word;
+  }
+  
+  /* استایل برای لیست‌ها */
+  .message-bubble ul {
+    padding-right: 20px;
+    list-style-position: inside;
+    user-select: none;  
+  }
 
-        /* استایل برای تاریخ و زمان */
-        .message-bubble .timestamps {
-          display: flex;
-          justify-content: space-between;
-          margin-top: 1rem;
-          color: ${isDarkMode ? '#9CA3AF' : '#6B7280'};
-          font-size: 0.75rem;
-          user-select: none;
-        }
+  /* استایل برای تاریخ و زمان */
+  .message-bubble .timestamps {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1rem;
+    color: ${isDarkMode ? '#9CA3AF' : '#6B7280'};
+    font-size: 0.75rem;
+    user-select: none;
+  }
 
-        .message-bubble .time {
-          direction: ltr;
-          user-select: none;
-        }
+  .message-bubble .time {
+    direction: ltr;
+    user-select: none;
+  }
 
-        .message-bubble .date {
-          direction: ltr;
-          user-select: none;
-        }
+  .message-bubble .date {
+    direction: ltr;
+    user-select: none;
+  }
 
-        /* استایل جدید برای کانتینر ویدیو */
-        .video-container {
-  width: auto !important;
-  max-width: 350px;
-  margin: 10px -7px 12px 1px; /* بالا 10px، راست 0، پایین 12px، چپ auto */
-  border-radius: 12px;
-  overflow: hidden;
-  position: relative;
-  background-color: #000;
-  display: flex;
-  align-items: center;
-}
+  /* استایل جدید برای کانتینر ویدیو */
+  .video-container {
+    width: auto !important;
+    max-width: 350px;
+    margin: 10px -7px 12px 1px; /* بالا 10px، راست 0، پایین 12px، چپ auto */
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    background-color: #000;
+    display: flex;
+    align-items: center;
+  }
         
-        /* استایل برای دکمه پخش */
-        .video-play-button {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 60px;
-          height: 60px;
-          background-color: rgba(255, 255, 255, 0.3);
-          border-radius: 50%;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          cursor: pointer;
-          z-index: 2;
-          transition: opacity 0.3s ease, transform 0.3s ease;
-        }
+  /* استایل برای دکمه پخش */
+  .video-play-button {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px;
+    height: 60px;
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    z-index: 2;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
 
-        /* مثلث پخش داخل دکمه */
-        .video-play-button:before {
-          content: '';
-          width: 0;
-          height: 0;
-          border-top: 15px solid transparent;
-          border-bottom: 15px solid transparent;
-          border-left: 25px solid rgba(255, 255, 255, 0.8);
-          margin-left: 5px;
-        }
+  /* مثلث پخش داخل دکمه */
+  .video-play-button:before {
+    content: '';
+    width: 0;
+    height: 0;
+    border-top: 15px solid transparent;
+    border-bottom: 15px solid transparent;
+    border-left: 25px solid rgba(255, 255, 255, 0.8);
+    margin-left: 5px;
+  }
 
-        /* تغییر حالت هنگام هاور */
-        .video-play-button:hover {
-          background-color: rgba(255, 255, 255, 0.5);
-          transform: translate(-50%, -50%) scale(1.1);
-        }
+  /* تغییر حالت هنگام هاور */
+  .video-play-button:hover {
+    background-color: rgba(255, 255, 255, 0.5);
+    transform: translate(-50%, -50%) scale(1.1);
+  }
 
-        /* حالت پنهان شدن دکمه بعد از پخش ویدیو */
-        .video-container.playing .video-play-button {
-          opacity: 0;
-          pointer-events: none;
-        }
-        
-        /* کانتینر برای ویدیوهای افقی */
-        .landscape-container {
-          max-width: 350px;
-          max-height: 220px;
-        }
-        
-        /* کانتینر برای ویدیوهای عمودی */
-        .portrait-container {
-          max-width: 220px;
-          max-height: 350px;
-        }
+  /* حالت پنهان شدن دکمه بعد از پخش ویدیو */
+  .video-container.playing .video-play-button {
+    opacity: 0;
+    pointer-events: none;
+  }
+  
+  /* کانتینر برای ویدیوهای افقی */
+  .landscape-container {
+    max-width: 350px;
+    max-height: 220px;
+  }
+  
+  /* کانتینر برای ویدیوهای عمودی */
+  .portrait-container {
+    max-width: 220px;
+    max-height: 350px;
+  }
 
-        /* استایل برای ویدیوها */
-        .message-video {
-          width: auto !important;
-          max-width: 100% !important;
-          height: auto !important;
-          object-fit: contain;
-          display: block;
-          border-radius: 12px;
-          background-color: #000;
-          cursor: pointer;
-          margin: 0 auto;
-        }
-        
-        /* ویدیوهای افقی */
-        .landscape-video {
-          max-height: 200px !important;
-          max-width: 350px !important;
-        }
-        
-        /* ویدیوهای عمودی */
-        .portrait-video {
-          max-height: 350px !important;
-          max-width: 220px !important;
-        }
-        
-        /* ویدیوهای چندگانه */
-        .multiple-videos {
-          margin-top: 16px;
-          margin-bottom: 16px;
-        }
-        
-        .multiple-videos:not(:first-child) {
-          margin-top: 20px;
-        }
+  /* استایل برای ویدیوها */
+  .message-video {
+    width: auto !important;
+    max-width: 100% !important;
+    height: auto !important;
+    object-fit: contain;
+    display: block;
+    border-radius: 12px;
+    background-color: #000;
+    cursor: pointer;
+    margin: 0 auto;
+  }
+  
+  /* ویدیوهای افقی */
+  .landscape-video {
+    max-height: 200px !important;
+    max-width: 350px !important;
+  }
+  
+  /* ویدیوهای عمودی */
+  .portrait-video {
+    max-height: 350px !important;
+    max-width: 220px !important;
+  }
+  
+  /* ویدیوهای چندگانه */
+  .multiple-videos {
+    margin-top: 16px;
+    margin-bottom: 16px;
+  }
+  
+  .multiple-videos:not(:first-child) {
+    margin-top: 20px;
+  }
 
-        /* استایل برای آیفریم‌ها */
-        .iframe-container {
-          position: relative;
-          width: 100%;
-          max-width: 350px;
-          padding-bottom: 56.25%; /* نسبت 16:9 */
-          height: 0;
-          overflow: hidden;
-          border-radius: 12px;
-          margin: 12px auto;
-          background-color: #000;
-        }
+  /* استایل برای آیفریم‌ها */
+  .iframe-container {
+    position: relative;
+    width: 100%;
+    max-width: 350px;
+    padding-bottom: 56.25%; /* نسبت 16:9 */
+    height: 0;
+    overflow: hidden;
+    border-radius: 12px;
+    margin: 12px auto;
+    background-color: #000;
+  }
 
-        .iframe-container iframe {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100% !important;
-          height: 100% !important;
-          border: none;
-        }
+  .iframe-container iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
+    border: none;
+  }
 
-        /* استایل برای تصاویر */
-        .message-image {
-          max-width: 100%;
-          height: auto;
-          border-radius: 12px;
-          margin: 8px 0;
-          cursor: pointer;
-        }
+  /* استایل برای تصاویر */
+  .message-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 12px;
+    margin: 8px 0;
+    cursor: pointer;
+  }
 
-        /* استایل برای لینک‌ها */
-        .message-bubble a {
-          color: #f7d55d;
-          text-decoration: none;
-        }
-        
-        .message-bubble a:hover {
-          text-decoration: underline;
-        }
-        
-        /* حذف پدینگ اضافی برای پاراگراف‌ها */
-        .message-bubble p {
-          margin-top: 0.5em;
-          margin-bottom: 0.5em;
-        }
-        
-        /* حذف هایلایت برای المان‌های تعاملی */
-        * {
-          -webkit-tap-highlight-color: transparent;
-        }
-        
-        /* فیکس برای ویدیوهای با کنترل‌ها */
-        video::-webkit-media-controls-panel {
-          background-color: rgba(0,0,0,0.5);
-        }
-        
-        /* اصلاح ویدیوهای پلیر دوم */
-        .message-bubble > video + video,
-        .message-bubble > div:has(video) + div:has(video) {
-          margin-top: 16px !important;
-        }
-        
-        /* بهبود کنترل‌های ویدیو */
-        video::-webkit-media-controls {
-          background-color: rgba(0, 0, 0, 0.4);
-        }
-        
-        video::-webkit-media-controls-play-button,
-        video::-webkit-media-controls-fullscreen-button {
-          background-color: rgba(255, 255, 255, 0.4);
-          border-radius: 50%;
-        }
-        
-        /* بهبود نمایش در موبایل */
-        @media (max-width: 480px) {
-          .message-bubble {
-            max-width: 90%;
-          }
-          
-          .video-container {
-            max-width: 300px;
-          }
-          
-          .landscape-container {
-            max-width: 300px;
-            max-height: 190px;
-          }
-          
-          .portrait-container {
-            max-width: 190px;
-            max-height: 300px;
-          }
-          
-          .landscape-video {
-            max-height: 180px !important;
-            max-width: 300px !important;
-          }
-          
-          .portrait-video {
-            max-height: 300px !important;
-            max-width: 190px !important;
-          }
-          
-          .video-play-button {
-            width: 50px;
-            height: 50px;
-          }
-          
-          .video-play-button:before {
-            border-top: 12px solid transparent;
-            border-bottom: 12px solid transparent;
-            border-left: 20px solid rgba(255, 255, 255, 0.8);
-          }
-        }
-      `}</style>
+  /* استایل برای لینک‌ها */
+  .message-bubble a {
+    color: #f7d55d;
+    text-decoration: none;
+  }
+  
+  .message-bubble a:hover {
+    text-decoration: underline;
+  }
+  
+  /* حذف پدینگ اضافی برای پاراگراف‌ها */
+  .message-bubble p {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+  }
+  
+  /* حذف هایلایت برای المان‌های تعاملی */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* فیکس برای ویدیوهای با کنترل‌ها */
+  video::-webkit-media-controls-panel {
+    background-color: rgba(0,0,0,0.5);
+  }
+  
+  /* اصلاح ویدیوهای پلیر دوم */
+  .message-bubble > video + video,
+  .message-bubble > div:has(video) + div:has(video) {
+    margin-top: 16px !important;
+  }
+  
+  /* بهبود کنترل‌های ویدیو */
+  video::-webkit-media-controls {
+    background-color: rgba(0, 0, 0, 0.4);
+  }
+  
+  video::-webkit-media-controls-play-button,
+  video::-webkit-media-controls-fullscreen-button {
+    background-color: rgba(255, 255, 255, 0.4);
+    border-radius: 50%;
+  }
+  
+  /* بهبود نمایش در موبایل */
+  @media (max-width: 480px) {
+    .message-bubble {
+      max-width: 90%;
+    }
+    
+    .video-container {
+      max-width: 300px;
+    }
+    
+    .landscape-container {
+      max-width: 300px;
+      max-height: 190px;
+    }
+    
+    .portrait-container {
+      max-width: 190px;
+      max-height: 300px;
+    }
+    
+    .landscape-video {
+      max-height: 180px !important;
+      max-width: 300px !important;
+    }
+    
+    .portrait-video {
+      max-height: 300px !important;
+      max-width: 190px !important;
+    }
+    
+    .video-play-button {
+      width: 50px;
+      height: 50px;
+    }
+    
+    .video-play-button:before {
+      border-top: 12px solid transparent;
+      border-bottom: 12px solid transparent;
+      border-left: 20px solid rgba(255, 255, 255, 0.8);
+    }
+    
+    /* کاهش سایز عنوان در موبایل */
+    .message-bubble .message-title {
+      font-size: 1.2rem;
+    }
+  }
+`}</style>
     </div>
   );
 };

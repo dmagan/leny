@@ -70,3 +70,23 @@
   cursor: pointer;
 }
 
+
+
+
+
+
+
+
+@keyframes ptr-spin {
+  to { transform: rotate(360deg); }
+}
+
+.ptr-spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid #007aff;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: ptr-spin 1s linear infinite;
+}
+
