@@ -151,20 +151,14 @@ const VideoPlayer = ({ videoUrl, title, isDarkMode, onClose }) => {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  // تلاش برای شروع پخش خودکار در WebView
-  useEffect(() => {
-    // تلاش برای اجرای پخش خودکار با تاخیر کوتاه
-    const timer = setTimeout(() => {
-      const video = videoRef.current;
-      if (video) {
-        // ابتدا بی‌صدا پخش می‌کنیم (اکثر WebView ها در این حالت اجازه می‌دهند)
-        video.muted = true;
-        video.play().catch(err => console.log('Auto play failed in WebView:', err));
-      }
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, []);
+// فقط آماده‌سازی ویدیو بدون پخش خودکار
+useEffect(() => {
+  const video = videoRef.current;
+  if (video) {
+    // فقط آماده‌سازی ویدیو بدون شروع پخش خودکار
+    video.load();
+  }
+}, []);
 
   return (
     <div
@@ -184,22 +178,22 @@ const VideoPlayer = ({ videoUrl, title, isDarkMode, onClose }) => {
 
         {/* Video - اضافه کردن ویژگی‌های اضافی برای سازگاری با WebView */}
         <video
-          ref={videoRef}
-          src={videoUrl}
-          className="w-full h-full object-contain"
-          onClick={togglePlay}
-          playsInline
-          webkit-playsinline="true"
-          x5-playsinline="true"
-          controls={false}
-          preload="auto"
-          disablePictureInPicture
-          // اضافه شده برای رفع مشکل در WebView
-          style={{
-            backgroundColor: '#000',
-            zIndex: 1
-          }}
-        />
+  ref={videoRef}
+  src={videoUrl}
+  className="w-full h-full object-contain"
+  onClick={togglePlay}
+  playsInline
+  webkit-playsinline="true"
+  x5-playsinline="true"
+  controls={false}
+  preload="auto"
+  disablePictureInPicture
+  // اضافه شده برای رفع مشکل در WebView
+  style={{
+    backgroundColor: '#000',
+    zIndex: 1
+  }}
+/>
 
         {/* Buffering Indicator */}
         {isBuffering && (

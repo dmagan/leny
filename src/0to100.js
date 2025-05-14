@@ -92,6 +92,13 @@ const episodes = [
     duration: "40 دقیقه",
     videoUrl: "https://iamvakilet.ir/0to100/Albank_Exchange_Tutorial.mp4"
   },
+  { 
+    id: 12, 
+    title: "آموزش دکس تولز",
+    duration: "40 دقیقه",
+    videoUrl: "https://iamvakilet.ir/0to100/DexTools_Tutorial.mp4"
+  },
+
 
   // Add more episodes here
 ];
@@ -104,15 +111,7 @@ const ZeroTo100ServicePage = ({ isDarkMode, isOpen, onClose }) => {
   const [showZeroTo100Page, setShowZeroTo100Page] = useState(false);
   const [zeroTo100PageExiting, setZeroTo100PageExiting] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      window.history.pushState({ zeroTo100Page: true }, '');
-      setTimeout(() => {
-        setShowZeroTo100Page(true);
-      }, 100);
-    }
-  }, [isOpen]);
-
+  // اول تعریف closeZeroTo100Page با useCallback
   const closeZeroTo100Page = useCallback(() => {
     setZeroTo100PageExiting(true);
     setTimeout(() => {
@@ -121,6 +120,32 @@ const ZeroTo100ServicePage = ({ isDarkMode, isOpen, onClose }) => {
       onClose ? onClose() : navigate(-1);
     }, 300);
   }, [onClose, navigate]);
+
+  // سپس استفاده از آن در useEffect
+  useEffect(() => {
+    const handleBackButton = (event) => {
+      event.preventDefault();
+      closeZeroTo100Page();
+    };
+
+    // اگر صفحه باز است، یک state به تاریخچه اضافه کنیم
+    if (isOpen) {
+      window.history.pushState({ zeroTo100Page: true }, '');
+      
+      // انیمیشن ورود
+      setTimeout(() => {
+        setShowZeroTo100Page(true);
+      }, 100);
+    }
+    
+    // شنونده برای رویداد popstate (فشردن دکمه برگشت)
+    window.addEventListener('popstate', handleBackButton);
+    
+    // پاکسازی event listener
+    return () => {
+      window.removeEventListener('popstate', handleBackButton);
+    };
+  }, [isOpen, closeZeroTo100Page]);
 
   const handleEpisodeClick = (episode) => {
     setActiveEpisode(episode);
@@ -216,6 +241,6 @@ const ZeroTo100ServicePage = ({ isDarkMode, isOpen, onClose }) => {
       </div>
     </div>
   );
-};
+};  
 
 export default ZeroTo100ServicePage;

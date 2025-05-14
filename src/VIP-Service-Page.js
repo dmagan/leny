@@ -2,21 +2,22 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowLeftCircle, Play, ShoppingCart, DoorOpen } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import PaymentCard from './PaymentCard'; 
-import { PRODUCT_PRICES } from './config'; // 
-
+import { PRODUCT_PRICES } from './config'; 
+import VideoPlayer from './VideoPlayer'; // ایمپورت کامپوننت ویدیو پلیر
 
 const VIPPage = ({ isDarkMode, isOpen, onClose }) => {
   const [showCard, setShowCard] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
-  const [showPaymentCard, setShowPaymentCard] = useState(false); // state جدید برای نمایش کارت پرداخت
-  const [selectedSubscription, setSelectedSubscription] = useState(null); // state برای اشتراک انتخاب شده
+  const [showPaymentCard, setShowPaymentCard] = useState(false); 
+  const [selectedSubscription, setSelectedSubscription] = useState(null); 
   const [addedToHistory, setAddedToHistory] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const [isRenewal, setIsRenewal] = useState(false);
   const [renewingProduct, setRenewingProduct] = useState(null);
   const [hasVIPSubscription, setHasVIPSubscription] = useState(false);
-
+  const [showVideo, setShowVideo] = useState(false);
+  const [videoUrl, setVideoUrl] = useState('https://iamvakilet.ir/learn/vip.mp4'); // آدرس ویدیو پیش‌فرض
 
   useEffect(() => {
     // بررسی آیا کاربر در حال تمدید اشتراک است یا خیر
@@ -72,34 +73,34 @@ const VIPPage = ({ isDarkMode, isOpen, onClose }) => {
   }, [isOpen, addedToHistory, location.pathname]);
 
   // بررسی وضعیت اشتراک VIP کاربر
-useEffect(() => {
-  // بررسی وضعیت اشتراک VIP کاربر
-  const checkVIPStatus = () => {
-    // بررسی وجود اطلاعات کاربر در localStorage یا sessionStorage
-    const userToken = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
-    
-    if (userToken) {
-      // بررسی محصولات خریداری شده از localStorage
-      const purchasedProductsStr = localStorage.getItem('purchasedProducts');
+  useEffect(() => {
+    // بررسی وضعیت اشتراک VIP کاربر
+    const checkVIPStatus = () => {
+      // بررسی وجود اطلاعات کاربر در localStorage یا sessionStorage
+      const userToken = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
       
-      if (purchasedProductsStr) {
-        try {
-          const purchasedProducts = JSON.parse(purchasedProductsStr);
-          // بررسی وجود اشتراک VIP فعال
-          const vipSubscription = purchasedProducts.find(p => 
-            p.isVIP && p.status === 'active'
-          );
-          
-          setHasVIPSubscription(!!vipSubscription);
-        } catch (error) {
-          console.error('خطا در پردازش اطلاعات محصولات:', error);
+      if (userToken) {
+        // بررسی محصولات خریداری شده از localStorage
+        const purchasedProductsStr = localStorage.getItem('purchasedProducts');
+        
+        if (purchasedProductsStr) {
+          try {
+            const purchasedProducts = JSON.parse(purchasedProductsStr);
+            // بررسی وجود اشتراک VIP فعال
+            const vipSubscription = purchasedProducts.find(p => 
+              p.isVIP && p.status === 'active'
+            );
+            
+            setHasVIPSubscription(!!vipSubscription);
+          } catch (error) {
+            console.error('خطا در پردازش اطلاعات محصولات:', error);
+          }
         }
       }
-    }
-  };
-  
-  checkVIPStatus();
-}, []);
+    };
+    
+    checkVIPStatus();
+  }, []);
 
   const closeCard = useCallback(() => {
     setIsExiting(true);
@@ -209,35 +210,38 @@ const handlePurchase = (subscription) => {
 
         {/* Main Content Area */}
         <div className="absolute top-16 bottom-0 left-0 right-0 flex flex-col overflow-hidden">
-      {/* Header area with VIP Card (Fixed) */}
-<div className="relative header-area">
-  {/* VIP Card */}
-  <div className="p-4">
-    <div className="bg-[#141e35] rounded-3xl relative overflow-hidden border border-gray-500" style={{ minHeight: "180px" }}>
-      {/* تصویر کاور */}
-      <img 
-        src="/cover-vip.jpg" 
-        alt="VIP Cover" 
-        className="w-full h-full object-cover absolute inset-0"
-      />
-      
-      {/* Play Button Overlay */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <button className="w-16 h-16 rounded-full bg-white/70 flex items-center justify-center z-10">
-          <Play size={36} className="text-black-500 ml-1" />
-        </button>
-      </div>
-    </div>
-  </div>
-  
-  {/* Gradient transition overlay - گرادینت جدید */}
-  <div className="absolute bottom-[-30px] left-0 right-0 pointer-events-none z-[5]" style={{
-    height: '30px',
-    background: isDarkMode 
-      ? 'linear-gradient(to bottom, rgba(17,24,39,1), rgba(17,24,39,0))'
-      : 'linear-gradient(to bottom, rgba(243,244,246,1), rgba(243,244,246,0))'
-  }}></div>
+          {/* Header area with VIP Card (Fixed) */}
+          <div className="relative header-area">
+            {/* VIP Card */}
+            <div className="p-4">
+              <div className="bg-[#141e35] rounded-3xl relative overflow-hidden border border-gray-500" style={{ minHeight: "180px" }}>
+                {/* تصویر کاور */}
+                <img 
+                  src="/cover-vip.jpg" 
+                  alt="VIP Cover" 
+                  className="w-full h-full object-cover absolute inset-0"
+                />
+                
+              {/* Play Button Overlay */}
+<div className="absolute inset-0 flex items-center justify-center">
+  <button 
+    onClick={() => setShowVideo(true)}
+    className="w-16 h-16 rounded-full bg-white/70 flex items-center justify-center z-10 hover:bg-white/90 transition-colors"
+  >
+    <Play size={36} className="text-black-500 ml-1" />
+  </button>
 </div>
+              </div>
+            </div>
+            
+            {/* Gradient transition overlay - گرادینت جدید */}
+            <div className="absolute bottom-[-30px] left-0 right-0 pointer-events-none z-[5]" style={{
+              height: '30px',
+              background: isDarkMode 
+                ? 'linear-gradient(to bottom, rgba(17,24,39,1), rgba(17,24,39,0))'
+                : 'linear-gradient(to bottom, rgba(243,244,246,1), rgba(243,244,246,0))'
+            }}></div>
+          </div>
           
           {/* Scrollable Content Area */}
           <div className="flex-1 overflow-y-auto pb-24 scrollable-content">
@@ -353,9 +357,6 @@ const handlePurchase = (subscription) => {
     }
   </button>
 </div>
-
-
-
         </div>
       </div>
       
@@ -368,6 +369,16 @@ const handlePurchase = (subscription) => {
              price={selectedSubscription.price}
              months={selectedSubscription.months}
            />
+      )}
+
+      {/* Video Player */}
+      {showVideo && (
+        <VideoPlayer
+          videoUrl={videoUrl}
+          title="ویدیو معرفی خدمات VIP"
+          isDarkMode={isDarkMode}
+          onClose={() => setShowVideo(false)}
+        />
       )}
     </div>
   );

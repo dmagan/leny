@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeftCircle, X } from 'lucide-react';
 import AudioPlayer from './AudioPlayer';
+import channelNotificationService from './ChannelNotificationService';
+
 
 // Image Modal Component with Zoom (iOS compatible)
 const ImageModal = ({ isOpen, onClose, imageUrl }) => {
@@ -509,6 +511,10 @@ const PublicChannel = ({ isDarkMode, isOpen = true, onClose }) => {
   const [hasMore, setHasMore] = useState(true);
   const containerRef = useRef(null);
   const loadingMoreRef = useRef(null);
+  // اضافه کردن state برای دکمه اسکرول به پایین
+const [showScrollButton, setShowScrollButton] = useState(false);
+const previousPostsCountRef = useRef(0);
+const [lastLoadedPostId, setLastLoadedPostId] = useState(null);
   
   // اضافه کردن انیمیشن
   const [showCard, setShowCard] = useState(false);
@@ -564,45 +570,100 @@ const touchStartY = useRef(0);
     }, 300);
   };
 
-  // Fetch posts function
-  const fetchPosts = async (pageNumber) => {
-    try {
-      setLoading(true);
-      const auth = btoa('ck_20b3c33ef902d4ccd94fc1230c940a85be290e0a:cs_e8a85df738324996fd3608154ab5bf0ccc6ded99');
-      const response = await fetch(
-        `https://p30s.com/wp-json/wp/v2/posts?_embed&order=desc&orderby=date&per_page=10&page=${pageNumber}&categories=111`,
-        {
-          headers: {
-            'Authorization': `Basic ${auth}`
-          }
+  // تابع اسکرول به آخرین پیام
+const scrollToBottom = () => {
+  if (messagesEndRef.current) {
+    messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+  }
+};
+
+// Fetch posts function
+const fetchPosts = async (pageNumber) => {
+  try {
+    setLoading(true);
+    const auth = btoa('ck_20b3c33ef902d4ccd94fc1230c940a85be290e0a:cs_e8a85df738324996fd3608154ab5bf0ccc6ded99');
+    const response = await fetch(
+      `https://p30s.com/wp-json/wp/v2/posts?_embed&order=desc&orderby=date&per_page=10&page=${pageNumber}&categories=111`,
+      {
+        headers: {
+          'Authorization': `Basic ${auth}`
         }
-      );
-      
-      if (!response.ok) throw new Error('Error fetching posts');
-      
-      const data = await response.json();
-      const totalPages = response.headers.get('X-WP-TotalPages');
-      setHasMore(pageNumber < parseInt(totalPages));
-      
-      if (pageNumber === 1) {
-        // برای صفحه اول، پست‌ها را معکوس می‌کنیم تا آخرین پست در پایین باشد
-        setPosts([...data].reverse());
-      } else {
-        // برای صفحات بعدی، پست‌های جدید را در بالای لیست قرار می‌دهیم
-        setPosts(prevPosts => [...data].reverse().concat(prevPosts));
       }
-      
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching posts:', error);
-      setLoading(false);
-      setHasMore(false);
+    );
+    
+    if (!response.ok) throw new Error('Error fetching posts');
+    
+    const data = await response.json();
+    const totalPages = response.headers.get('X-WP-TotalPages');
+    setHasMore(pageNumber < parseInt(totalPages));
+    
+    // ذخیره تعداد پست‌های فعلی قبل از بروزرسانی
+    previousPostsCountRef.current = posts.length;
+    
+    // ذخیره آیدی اولین پست موجود قبل از اضافه کردن پست‌های جدید (فقط برای صفحات بعد از اول)
+    if (pageNumber > 1 && posts.length > 0) {
+      setLastLoadedPostId(posts[0]?.id);
+    } else {
+      setLastLoadedPostId(null);
     }
-  };
+    
+    if (pageNumber === 1) {
+      // برای صفحه اول، پست‌ها را معکوس می‌کنیم تا آخرین پست در پایین باشد
+      setPosts([...data].reverse());
+      
+      // این کد را در فانکشن fetchPosts پس از تغییر کش پست‌ها اضافه کنید
+      // این کار برای آپدیت سرویس نوتیفیکیشن مهم است
+      if (data.length > 0) {
+        // اگر صفحه اول است و داده‌ها را دریافت کرده‌ایم، پست‌ها را به عنوان خوانده شده علامت‌گذاری می‌کنیم
+        channelNotificationService.markAllAsRead();
+      }
+    } else {
+      // برای صفحات بعدی، پست‌های جدید را در بالای لیست قرار می‌دهیم
+      setPosts(prevPosts => [...data].reverse().concat(prevPosts));
+    }
+    
+    setLoading(false);
+  } catch (error) {
+    console.error('Error fetching posts:', error);
+    setLoading(false);
+    setHasMore(false);
+  }
+};
+
+
+
 
   useEffect(() => {
     fetchPosts(1);
   }, []);
+  
+
+useEffect(() => {
+  // فقط وقتی که پیام‌ها لود شد، شمارشگر را ریست کنیم
+  if (!loading && posts.length > 0) {
+    // ریست کردن شمارشگر پیام‌های ناخوانده بر اساس زمان فعلی
+    channelNotificationService.markAllAsRead();
+  }
+}, [loading, posts]);
+
+useEffect(() => {
+  if (isOpen) {
+    // وقتی کانال باز می‌شود، همه پست‌ها را به عنوان خوانده شده علامت‌گذاری می‌کنیم
+    // استفاده از markAllAsRead بدون پارامتر چون در سرویس جدید از timestamp استفاده می‌شود
+    channelNotificationService.markAllAsRead();
+  }
+}, [isOpen]);
+
+
+// اضافه کردن useEffect جدید برای مدیریت نوتیفیکیشن در زمان unmount
+useEffect(() => {
+  return () => {
+    // علامت‌گذاری همه پیام‌ها به عنوان خوانده شده هنگام خروج از کانال
+    channelNotificationService.markAllAsRead();
+  };
+}, []);
+
+  // اسکرول به آخرین پیام پس از بارگذاری پست‌های جدید
 
   useEffect(() => {
     if (messagesEndRef.current && page === 1 && posts.length > 0) {
@@ -612,6 +673,29 @@ const touchStartY = useRef(0);
       }, 300);
     }
   }, [posts, page]);
+
+
+// اضافه کردن event listener برای نمایش/مخفی کردن دکمه اسکرول
+useEffect(() => {
+  if (!containerRef.current) return;
+  
+  const container = containerRef.current;
+  
+  const handleScroll = () => {
+    // اگر به اندازه کافی اسکرول کرده باشیم (100 پیکسل)، دکمه را نمایش دهیم
+    if (container.scrollTop < -100 || container.scrollHeight - container.scrollTop - container.clientHeight > 300) {
+      setShowScrollButton(true);
+    } else {
+      setShowScrollButton(false);
+    }
+  };
+  
+  container.addEventListener('scroll', handleScroll);
+  
+  return () => {
+    container.removeEventListener('scroll', handleScroll);
+  };
+}, []);
 
 
 useEffect(() => {
@@ -657,50 +741,46 @@ useEffect(() => {
     }
   };
   
-  const handleTouchEnd = () => {
-    if (!isPulling) return;
+ const handleTouchEnd = () => {
+  if (!isPulling) return;
+  
+  // اگر به اندازه کافی کشیده شده و در حال بارگذاری نیستیم
+  if (pullDistance > 120 && !loading && hasMore) {
+    // انیمیشن نمایشی قبل از شروع بارگذاری
+    setPullDistance(60);
     
-    // اگر به اندازه کافی کشیده شده و در حال بارگذاری نیستیم
-    if (pullDistance > 120 && !loading && hasMore) {
-      // انیمیشن نمایشی قبل از شروع بارگذاری - حرکت آرام‌تر
-      setPullDistance(60); // مقدار کمتر برای نرم‌تر بودن
+    setTimeout(() => {
+      // شروع بارگذاری
+      setPage(prev => prev + 1);
+      fetchPosts(page + 1);
       
+      // ریست کردن تدریجی
       setTimeout(() => {
-        // شروع بارگذاری بعد از 500ms - زمان بیشتر برای انیمیشن
-        setPage(prev => prev + 1);
-        fetchPosts(page + 1);
-        
-        // ریست کردن بعد از مدت بیشتری
+        setPullDistance(30);
         setTimeout(() => {
-          // کاهش تدریجی pullDistance برای حرکت نرم‌تر
-          setPullDistance(40);
-          setTimeout(() => {
-            setPullDistance(20);
-            setTimeout(() => {
-              setPullDistance(0);
-              setIsPulling(false);
-            }, 100);
-          }, 100);
-        }, 800);
-      }, 500);
-    } else {
-      // ریست کردن با انیمیشن نرم‌تر
-      const currentPull = pullDistance;
-      if (currentPull > 50) {
-        setPullDistance(currentPull * 0.6);
-        setTimeout(() => {
-          setPullDistance(currentPull * 0.3);
-          setTimeout(() => {
-            setPullDistance(0);
-            setIsPulling(false);
-          }, 100);
-        }, 100);
-      } else {
+          setPullDistance(0);
+          setIsPulling(false);
+        }, 200);
+      }, 400);
+    }, 300);
+    
+    // ذخیره زمان بارگذاری برای استفاده در useEffect اسکرول
+    window.lastRefreshTime = Date.now();
+  } else {
+    // ریست کردن با انیمیشن نرم‌تر
+    const currentPull = pullDistance;
+    if (currentPull > 50) {
+      setPullDistance(currentPull * 0.6);
+      setTimeout(() => {
         setPullDistance(0);
         setIsPulling(false);
-      }
+      }, 200);
+    } else {
+      setPullDistance(0);
+      setIsPulling(false);
     }
-  };
+  }
+};
   
   container.addEventListener('touchstart', handleTouchStart);
   container.addEventListener('touchmove', handleTouchMove);
@@ -712,6 +792,64 @@ useEffect(() => {
     container.removeEventListener('touchend', handleTouchEnd);
   };
 }, [isPulling, pullDistance, loading, hasMore, page]);
+
+
+
+
+// اسکرول به نشانگر پس از بارگذاری پست‌های جدید
+// اسکرول به نشانگر پس از بارگذاری پست‌های جدید - بهینه شده برای اندروید
+useEffect(() => {
+  if (!loading && lastLoadedPostId && page > 1) {
+    setTimeout(() => {
+      const divider = document.getElementById('new-content-divider');
+      if (divider && containerRef.current) {
+        // منطقه قابل مشاهده مرورگر
+        const viewportHeight = containerRef.current.clientHeight;
+        
+        // موقعیت دیوایدر نسبت به پدر
+        const dividerPosition = divider.offsetTop;
+        
+        // اسکرول به موقعیتی که دیوایدر در مرکز صفحه باشد
+        containerRef.current.scrollTo({
+          top: dividerPosition - (viewportHeight / 2) + (divider.clientHeight / 2),
+          behavior: 'smooth'
+        });
+        
+        // هایلایت موقت دیوایدر برای جلب توجه
+        divider.style.transition = 'background-color 0.5s ease';
+        const originalBg = isDarkMode ? 'rgba(17, 24, 39, 0.8)' : 'rgba(243, 244, 246, 0.8)';
+        const highlightBg = isDarkMode ? 'rgba(55, 65, 81, 0.95)' : 'rgba(229, 231, 235, 0.95)';
+        
+        // افکت بصری برای جلب توجه
+        divider.style.backgroundColor = highlightBg;
+        setTimeout(() => {
+          divider.style.backgroundColor = originalBg;
+        }, 800);
+      }
+    }, 1000);
+  }
+}, [loading, lastLoadedPostId, page, isDarkMode]);
+
+
+// اضافه کردن useEffect جدید برای مدیریت unread notification ها در زمان unmount کامپوننت
+useEffect(() => {
+  // وقتی کامپوننت unmount می‌شود
+  return () => {
+    // مطمئن شوید که همه پست‌ها به عنوان خوانده شده علامت‌گذاری شده‌اند
+    if (posts.length > 0) {
+      const latestPostId = posts[0]?.id;
+      channelNotificationService.markAllAsRead(latestPostId);
+    } else {
+      channelNotificationService.markAllAsRead();
+    }
+  };
+}, [posts]);
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
   if (!isOpen) return null;
 
   return (
@@ -749,6 +887,8 @@ useEffect(() => {
 
         {/* Main Content Area */}
         <div className="absolute top-16 bottom-0 left-0 right-0 flex flex-col overflow-hidden">
+
+
           {/* Scrollable Content Area */}
           <div ref={containerRef} className="flex-1 overflow-y-auto pb-4">
             <div className="px-4">
@@ -823,27 +963,44 @@ useEffect(() => {
 )}
 
               <div className="flex-grow pt-2">
-              {hasMore && !loading && posts.length > 0 && (
-  <div className={`text-center py-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-    برای مشاهده پست‌های قبلی، صفحه را به پایین بکشید
+  {hasMore && !loading && posts.length > 0 && (
+    <div className={`text-center py-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+      برای مشاهده پست‌های قبلی، صفحه را به پایین بکشید
+    </div>
+  )}
+  
+  {posts.map((post, index) => (
+    <React.Fragment key={post.id}>
+     {lastLoadedPostId === post.id && (
+  <div 
+    dir="rtl"
+    id="new-content-divider"
+    className={`w-full py-3 my-4 text-center border-t-2 border-dashed ${
+      isDarkMode ? 'border-gray-600 text-gray-400' : 'border-gray-300 text-gray-600'
+    }`}
+    style={{
+      position: 'relative',
+      zIndex: 10,
+      backgroundColor: isDarkMode ? 'rgba(17, 24, 39, 0.8)' : 'rgba(243, 244, 246, 0.8)',
+      backdropFilter: 'blur(2px)'
+    }}
+  >
+    <div className="font-bold">پست‌های جدید ↑   پست‌های قدیمی ↓</div>
   </div>
 )}
-                
+      <ChatMessage 
+        message={post}
+        isDarkMode={isDarkMode}
+      />
+    </React.Fragment>
+  ))}
 
-                {[...posts].map((post) => (
-                  <ChatMessage 
-                    key={post.id}
-                    message={post}
-                    isDarkMode={isDarkMode}
-                  />
-                ))}
-
-                {loading && page === 1 && (
-                  <div className="flex justify-center items-center p-4">
-                    <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                  </div>
-                )}
-              </div>
+  {loading && page === 1 && (
+    <div className="flex justify-center items-center p-4">
+      <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+  )}
+</div>
 
               {!loading && !hasMore && posts.length > 0 && (
                 <div className="text-center text-gray-500 py-4">
@@ -857,6 +1014,38 @@ useEffect(() => {
           
           {/* گرادینت پایین صفحه حذف شد */}
         </div>
+
+
+{/* دکمه اسکرول به پایین */}
+{showScrollButton && (
+  <div className="fixed bottom-7 left-0 right-0 flex justify-center z-20 pointer-events-none">
+    <button
+      onClick={scrollToBottom}
+      className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg pointer-events-auto 
+      bg-[#f7d55d] text-gray-800
+      border border-yellow-400`}
+      style={{
+        animation: 'fadeIn 0.3s ease-out',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+      }}
+    >
+      <svg 
+        xmlns="http://www.w3.org/2000/svg" 
+        viewBox="0 0 24 24" 
+        width="24" 
+        height="24" 
+        fill="none" 
+        stroke="currentColor" 
+        strokeWidth="2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+      >
+        <polyline points="6 9 12 15 18 9"></polyline>
+      </svg>
+    </button>
+  </div>
+)}
+
       </div>
 
       <style jsx global>{`
@@ -1134,10 +1323,16 @@ useEffect(() => {
     .message-bubble .message-title {
       font-size: 1.2rem;
     }
+
+    @keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
   }
 `}</style>
     </div>
   );
+  
 };
 
 export default PublicChannel;

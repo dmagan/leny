@@ -139,6 +139,8 @@ window.authenticatedFetch = async (url, options = {}) => {
       // اگر توکن منقضی شده باشد، تلاش برای تمدید خودکار
       if (localStorage.getItem('userPassword')) {
         const userInfo = JSON.parse(localStorage.getItem('userInfo') || sessionStorage.getItem('userInfo') || '{}');
+        console.log('توکن نامعتبر است، در حال تمدید خودکار در authenticatedFetch...');
+        
         const loginResponse = await fetch('https://p30s.com/wp-json/jwt-auth/v1/token', {
           method: 'POST',
           headers: {
@@ -157,10 +159,15 @@ window.authenticatedFetch = async (url, options = {}) => {
             if (localStorage.getItem('userToken')) {
               localStorage.setItem('userToken', data.token);
               localStorage.setItem('userInfo', JSON.stringify(data));
+              localStorage.setItem('lastTokenRefresh', new Date().getTime().toString());
+              localStorage.setItem('tokenExpiration', (new Date().getTime() + 30 * 24 * 60 * 60 * 1000).toString());
             } else {
               sessionStorage.setItem('userToken', data.token);
               sessionStorage.setItem('userInfo', JSON.stringify(data));
+              sessionStorage.setItem('lastTokenRefresh', new Date().getTime().toString());
             }
+            
+            console.log('توکن با موفقیت در authenticatedFetch تمدید شد');
             
             // تلاش مجدد درخواست با توکن جدید
             return fetch(url, {
@@ -771,6 +778,67 @@ useEffect(() => {
 // بررسی و بارگیری مجدد اشتراک‌های کاربر پس از ورود
 useEffect(() => {
   if (isLoggedIn) {
+    // اضافه کردن کد تمدید توکن
+    const setupTokenRefreshOnStartup = async () => {
+      const token = localStorage.getItem('userToken');
+      const tokenExpiration = parseInt(localStorage.getItem('tokenExpiration') || '0');
+      const now = new Date().getTime();
+      const userPassword = localStorage.getItem('userPassword');
+      
+      // اگر توکن وجود دارد و "مرا به خاطر بسپار" فعال بوده (پسورد ذخیره شده باشد)
+      if (token && userPassword) {
+        // بررسی اینکه آیا توکن نزدیک به انقضا است یا منقضی شده
+        if (now > tokenExpiration - 7 * 24 * 60 * 60 * 1000) { // اگر کمتر از 7 روز مانده
+          try {
+            // ابتدا بررسی کنیم که آیا توکن فعلی هنوز معتبر است
+            const validationResponse = await fetch('https://p30s.com/wp-json/jwt-auth/v1/token/validate', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            
+            // اگر توکن نامعتبر است یا کمتر از 1 روز به انقضای آن مانده، تمدید کنیم
+            if (!validationResponse.ok || now > tokenExpiration - 1 * 24 * 60 * 60 * 1000) {
+              const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+              
+              // تمدید توکن با لاگین مجدد
+              if (userInfo.user_email) {
+                console.log('در حال تمدید خودکار توکن در استارت اپ...');
+                const response = await fetch('https://p30s.com/wp-json/jwt-auth/v1/token', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    username: userInfo.user_email,
+                    password: userPassword
+                  })
+                });
+                
+                if (response.ok) {
+                  const data = await response.json();
+                  if (data.token) {
+                    localStorage.setItem('userToken', data.token);
+                    localStorage.setItem('userInfo', JSON.stringify(data));
+                    localStorage.setItem('lastTokenRefresh', now.toString());
+                    localStorage.setItem('tokenExpiration', (now + 30 * 24 * 60 * 60 * 1000).toString());
+                    console.log('توکن با موفقیت در استارت اپ تمدید شد');
+                  }
+                }
+              }
+            }
+          } catch (error) {
+            console.error('خطا در بررسی/تمدید توکن در استارت اپ:', error);
+          }
+        }
+      }
+    };
+
+    // فراخوانی تابع تمدید توکن
+    setupTokenRefreshOnStartup();
+    
+    // کد قبلی شما برای بارگیری اشتراک‌های کاربر
     const reloadUserSubscriptions = async () => {
       try {
         const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
@@ -807,7 +875,6 @@ useEffect(() => {
     reloadUserSubscriptions();
   }
 }, [isLoggedIn]);
-
 
   const handleLogout = () => {
     localStorage.removeItem('userToken');

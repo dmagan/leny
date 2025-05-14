@@ -10,10 +10,15 @@ import supportNotificationService from './SupportNotificationService';
 
 // کامپوننت نمایش هر پیام
 const ChatMessage = ({ message, isDarkMode }) => {
-  const formattedDate = new Date(message.date).toLocaleDateString('fa-IR');
-  const formattedTime = new Date(message.date).toLocaleTimeString('fa-IR', {
+  const formattedDate = new Date(message.date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+  const formattedTime = new Date(message.date).toLocaleTimeString('en-US', {
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
+    hour12: false
   });
 
   return (
@@ -98,7 +103,6 @@ const ChatMessage = ({ message, isDarkMode }) => {
     </div>
   );
 };
-
 const SupportPage = ({ isDarkMode }) => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
@@ -218,7 +222,7 @@ const SupportPage = ({ isDarkMode }) => {
   // ارسال پیام جدید
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!message.trim() || loading) return;  // حذف بررسی activeTicketId
+    if (!message.trim()) return; // حذف بررسی activeTicketId
     
     const messageText = message;
     setMessage('');
@@ -384,16 +388,17 @@ setMessages([]);
       pendingMessagesRef.current = stillPending;
       
     // تنها زمانی که پیام‌ها دریافت شده‌اند و همگام‌سازی تمام شده، وضعیت لودینگ را به‌روز کنیم
-    if (!data.isSyncing && serverMessages.length > 0 && (firstLoadRef.current || loading)) {
+if (!data.isSyncing && serverMessages.length > 0 && (firstLoadRef.current || loading)) {
       // به‌جای تنظیم فوری، یک تأخیر واقعی (حداقل 1 ثانیه) ایجاد می‌کنیم
       // تا اطمینان حاصل کنیم که اسکلتون‌ها همیشه نمایش داده می‌شوند
       setTimeout(() => {
-        setLoading(false);
-        firstLoadRef.current = false;
+          setLoading(false);
+  firstLoadRef.current = false;
+
         
         // اسکرول به انتهای پیام‌ها پس از لود اولیه
         scrollToBottom(false);
-      }, 5000); // تأخیر طولانی‌تر برای تضمین نمایش اسکلتون‌ها
+      }, 3000); // تأخیر طولانی‌تر برای تضمین نمایش اسکلتون‌ها
     }
     };
     
@@ -575,40 +580,38 @@ useEffect(() => {
             ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}
           `}>
             <form onSubmit={handleSendMessage} className="flex items-center gap-2 p-2">
-              <input
-                ref={inputRef}
-                type="text"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="پیام خود را بنویسید..."
-                className={`
-                  flex-1 p-2 bg-transparent focus:outline-none
-                  ${isDarkMode ? 'text-white placeholder-gray-500' : 'text-gray-900 placeholder-gray-500'}
-                  ${loading ? 'opacity-75' : 'opacity-100'}
-                `}
-                style={{ direction: 'rtl' }}
-                disabled={loading}
-              />
+             <input
+  ref={inputRef}
+  type="text"
+  value={message}
+  onChange={(e) => setMessage(e.target.value)}
+  placeholder="پیام خود را بنویسید..."
+  className={`
+    flex-1 p-2 bg-transparent focus:outline-none
+    ${isDarkMode ? 'text-white placeholder-gray-500' : 'text-gray-900 placeholder-gray-500'}
+  `}
+  style={{ direction: 'rtl' }}
+/>
               <button
-                type="submit"
-                disabled={!message.trim() || isSyncing || loading}
-                className={`
-                  p-2 rounded-full transition-colors
-                  ${
-                    message.trim() && !isSyncing && !loading
-                      ? 'text-[#f7d55d]'
-                      : isDarkMode
-                      ? 'text-gray-600'
-                      : 'text-gray-400'
-                  }
-                  ${
-                    message.trim() && !isSyncing && !loading &&
-                    (isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100')
-                  }
-                `}
-              >
-                <Send size={20} />
-              </button>
+  type="submit"
+  disabled={!message.trim() || isSyncing} // حذف loading از شرط
+  className={`
+    p-2 rounded-full transition-colors
+    ${
+      message.trim() && !isSyncing
+        ? 'text-[#f7d55d]'
+        : isDarkMode
+        ? 'text-gray-600'
+        : 'text-gray-400'
+    }
+    ${
+      message.trim() && !isSyncing &&
+      (isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100')
+    }
+  `}
+>
+  <Send size={20} />
+</button>
             </form>
           </div>
         </div>

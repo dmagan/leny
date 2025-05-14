@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeftCircle, Play, ShoppingCart, DoorOpen } from 'lucide-react';
+import { ArrowLeftCircle, Play, ShoppingCart, DoorOpen, X } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import PaymentCard from './PaymentCard'; // کامپوننت کارت پرداخت را import می‌کنیم
 import { Store } from 'react-notifications-component';
@@ -18,6 +18,7 @@ const ZeroTo100ServicePage = ({ isDarkMode, isOpen, onClose }) => {
   const [has0to100Subscription, setHas0to100Subscription] = useState(false);
   const [isCheckingSubscription, setIsCheckingSubscription] = useState(true);
   const [showActualZeroTo100Page, setShowActualZeroTo100Page] = useState(false); // این خط باید اینجا باشد
+  const [showVideo, setShowVideo] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -271,12 +272,32 @@ const handlePurchase = () => {
                 className="w-full h-full object-cover absolute inset-0"
               />
               
-              {/* Play Button Overlay */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <button className="w-16 h-16 rounded-full bg-white/70 flex items-center justify-center z-10">
-                  <Play size={36} className="text-black-500 ml-1" />
-                </button>
-              </div>
+{/* Play Button Overlay */}
+<div className="absolute inset-0 flex items-center justify-center">
+  {!showVideo ? (
+    <button 
+      onClick={() => setShowVideo(true)}
+      className="w-16 h-16 rounded-full bg-white/70 flex items-center justify-center z-10"
+    >
+      <Play size={36} className="text-black-500 ml-1" />
+    </button>
+  ) : (
+    <div className="absolute inset-0 w-full h-full bg-black/90 flex items-center justify-center z-20">
+      <button 
+        onClick={() => setShowVideo(false)}
+        className="absolute top-4 right-4 text-white z-30 bg-black/50 rounded-full p-1"
+      >
+        <X size={24} />
+      </button>
+      <video 
+        src="https://iamvakilet.ir/learn/0ta100.mp4"
+        controls
+        autoPlay
+        className="w-full h-full object-contain max-h-[80vh]"
+      />
+    </div>
+  )}
+</div>
             </div>
           </div>
           

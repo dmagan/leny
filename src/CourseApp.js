@@ -12,6 +12,9 @@ import SignalStreamServicePage from './SignalStream-Service-Page';
 import PaymentCard from './PaymentCard';
 import { PRODUCT_PRICES } from './config';
 import supportNotificationService from './SupportNotificationService';
+import channelNotificationService from './ChannelNotificationService';
+
+
 
 
 
@@ -174,6 +177,7 @@ const CourseApp = ({  // این قسمت رو جایگزین کنید
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
   const [isUIDLoading, setIsUIDLoading] = useState(false);
 const [showActualZeroTo100Page, setShowActualZeroTo100Page] = useState(false);
+const [unreadChannelPosts, setUnreadChannelPosts] = useState(0);
 
   const [showPaymentCard, setShowPaymentCard] = useState({
     show: false,
@@ -701,6 +705,28 @@ localStorage.removeItem('sliderAutoplayEnabled');
 setAutoplayEnabled(true);
 }, []);
 
+
+
+// اضافه کردن useEffect برای راه‌اندازی سرویس‌های نوتیفیکیشن
+useEffect(() => {
+  if (isLoggedIn) {
+    // راه‌اندازی سرویس نوتیفیکیشن کانال
+    channelNotificationService.start();
+    channelNotificationService.addListener(count => {
+      setUnreadChannelPosts(count);
+    });
+    
+    // تمیز کردن در زمان unmount
+    return () => {
+      channelNotificationService.removeListener(setUnreadChannelPosts);
+      channelNotificationService.stop();
+    };
+  } else {
+    // ریست کردن شمارشگر پست‌های ناخوانده در صورت خروج کاربر
+    setUnreadChannelPosts(0);
+  }
+}, [isLoggedIn]); // فقط وقتی وضعیت ورود کاربر تغییر می‌کند، اجرا شود
+
 // این کد را در بخش useEffect های فایل CourseApp.js اضافه کنید
 useEffect(() => {
   const verifyAndRefreshToken = async () => {
@@ -1114,8 +1140,8 @@ const handleSignalStreamClick = async () => {
 />
 
       {/* Header */}
-     <div className={`px-6 py-4 flex items-center justify-between ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
-  <img src="/Logo-App2.png" alt="Logo" className="h-8 w-auto" />
+<div className={`px-6 py-4 flex items-center justify-between ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+  <img src="/Logo-UpLeft.png" alt="Logo" className="h-8 w-auto" />
   <span className={`text-lg ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>خانه</span>
   <ThemeSwitcher isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />
 </div>
@@ -1492,25 +1518,40 @@ const handleSignalStreamClick = async () => {
      
 
      
-  {/* Bottom Navigation */}
+{/* Bottom Navigation */}
 <div className="fixed bottom-0 left-0 right-0">
   <div className="mx-4 mb-4">
-    <div className={`flex items-center justify-between rounded-full px-6 py-2 shadow-lg
-      ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+    <div className={`flex items-center justify-between rounded-full px-6 shadow-lg
+      ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`} style={{ paddingTop: '0px', paddingBottom: '0px' }}>
       <NavItem icon={<Home size={24} />} label="خانه" active={true} isDarkMode={isDarkMode}/>
       <NavItem icon={<MonitorPlay size={24} />} label="پست ها" active={false} isDarkMode={isDarkMode}/>
-      <NavItem icon={<Megaphone size={24} />} label="کانال عمومی" active={false} isDarkMode={isDarkMode} onLogout={onLogout} />
-      <NavItem icon={isLoggedIn ? <UserCheck size={24} /> : <UserX size={24} />}  
-                                                                active={false} label="پروفایل" isDarkMode={isDarkMode} isProfile={true}  isLoggedIn={isLoggedIn} onLogout={onLogout}/>     
-      {/* برای تست موقت، badgeCount را به طور مستقیم 5 قرار دهید */}
       <NavItem 
-  icon={<Headphones size={24} />} 
-  label="پشتیبانی" 
-  active={false} 
-  isDarkMode={isDarkMode} 
-  isLoggedIn={isLoggedIn} 
-  badgeCount={unreadSupportMessages} // استفاده از مقدار واقعی به جای 5
-/>
+        icon={<img src="/center.png" width="48" height="48" alt="center" />} 
+        label="آپدیت مارکت" 
+        active={false} 
+        isDarkMode={isDarkMode} 
+        onLogout={onLogout} 
+        badgeCount={unreadChannelPosts}
+        badgePosition="top-3" // موقعیت بادج آپدیت مارکت
+      />
+      <NavItem 
+        icon={isLoggedIn ? <UserCheck size={24} /> : <UserX size={24} />}  
+        active={false} 
+        label="پروفایل" 
+        isDarkMode={isDarkMode} 
+        isProfile={true}  
+        isLoggedIn={isLoggedIn} 
+        onLogout={onLogout}
+      />     
+      <NavItem 
+        icon={<Headphones size={24} />} 
+        label="پشتیبانی" 
+        active={false} 
+        isDarkMode={isDarkMode} 
+        isLoggedIn={isLoggedIn} 
+        badgeCount={unreadSupportMessages}
+        badgePosition="top-0" // موقعیت بادج پشتیبانی - بالاتر از آپدیت مارکت
+      />
     </div>
   </div>
 </div>
@@ -1591,7 +1632,7 @@ const handleSignalStreamClick = async () => {
   );
 };
 
-const NavItem = ({ icon, label, active, isDarkMode, isProfile, onLogout, isLoggedIn, badgeCount }) => {
+const NavItem = ({ icon, label, active, isDarkMode, isProfile, onLogout, isLoggedIn, badgeCount, badgePosition = "top-3" }) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
@@ -1601,7 +1642,7 @@ const NavItem = ({ icon, label, active, isDarkMode, isProfile, onLogout, isLogge
       } else {
         navigate('/login');
       }
-    } else if (label === "کانال عمومی") {
+    } else if (label === "آپدیت مارکت") {
       navigate('/chanel-public');
     } else if (label === "پست ها") {
       navigate('/chanel-posts');
@@ -1622,19 +1663,19 @@ const NavItem = ({ icon, label, active, isDarkMode, isProfile, onLogout, isLogge
     }
   };
   
-  return (
+   return (
     <button 
       onClick={handleClick} 
       className="flex flex-col items-center p-2 relative"
     >
       <div className={active ? "text-yellow-500" : isDarkMode ? "text-gray-400" : "text-gray-500"}>
-  {icon}
-  {badgeCount > 0 && (
-  <div className="absolute -top-0.5 -right-0.5 w-6 h-6 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full animate__animated animate__heartBeat animate__infinite">
-    {badgeCount > 9 ? '9+' : badgeCount}
-  </div>
-)}
-</div>
+        {icon}
+        {badgeCount > 0 && (
+          <div className={`absolute ${badgePosition} -right-1 w-5 h-5 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full animate__animated animate__heartBeat animate__infinite`}>
+            {badgeCount > 9 ? '9+' : badgeCount}
+          </div>
+        )}
+      </div>
 
       <span className={`text-xs mt-1 ${active ? "text-yellow-500" : isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
         {label}

@@ -104,7 +104,7 @@ const LoginPage = ({ isDarkMode, setIsLoggedIn, onClose }) => {
     password: '',
     confirmPassword: ''
   });
-  const [saveLogin, setSaveLogin] = useState(false);
+const [saveLogin, setSaveLogin] = useState(true);
 
   // state برای حالت بازیابی رمز عبور
   const [isForgotPassword, setIsForgotPassword] = useState(false);
@@ -201,159 +201,249 @@ const LoginPage = ({ isDarkMode, setIsLoggedIn, onClose }) => {
 
   // این کد را در بخش handleLoginSuccess در فایل LoginPage.js جایگزین کنید
 
-  const handleLoginSuccess = async (result) => {
-    setIsLoggedIn(true);
+const handleLoginSuccess = async (result) => {
+  setIsLoggedIn(true);
+  try {
+    // ذخیره توکن و اطلاعات کاربر
+    const token = result.token || localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+    
+    if (!token) {
+      console.error('خطا: توکن کاربر یافت نشد');
+      return;
+    }
+    
+    // ذخیره توکن و اطلاعات کاربر در localStorage یا sessionStorage
+    const now = new Date().getTime();
+    if (saveLogin) {
+      localStorage.setItem('userToken', token);
+      localStorage.setItem('userInfo', JSON.stringify(result));
+      // ذخیره رمز عبور برای تمدید خودکار توکن در آینده
+      localStorage.setItem('userPassword', formData.password);
+      // ذخیره زمان تمدید و انقضای توکن
+      localStorage.setItem('lastTokenRefresh', now.toString());
+      localStorage.setItem('tokenExpiration', (now + 30 * 24 * 60 * 60 * 1000).toString()); // 30 روز
+    } else {
+      sessionStorage.setItem('userToken', token);
+      sessionStorage.setItem('userInfo', JSON.stringify(result));
+      sessionStorage.setItem('lastTokenRefresh', now.toString());
+    }
+    
+    console.log("توکن ذخیره شد و کاربر با موفقیت وارد سیستم شد");
+    
+    // دریافت خریدهای کاربر از API
     try {
-      // ذخیره توکن و اطلاعات کاربر
-      const token = result.token || localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+      console.log("در حال دریافت خریدهای کاربر...");
+      const purchasesResponse = await fetch('https://p30s.com/wp-json/pcs/v1/user-purchases', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        }
+      });
       
-      if (!token) {
-        console.error('خطا: توکن کاربر یافت نشد');
-        return;
+      if (!purchasesResponse.ok) {
+        console.error('خطا در دریافت خریدها. کد وضعیت:', purchasesResponse.status);
+        throw new Error('خطا در دریافت خریدهای کاربر');
       }
       
-      // ذخیره توکن و اطلاعات کاربر در localStorage یا sessionStorage
-      const now = new Date().getTime();
-      if (saveLogin) {
-        localStorage.setItem('userToken', token);
-        localStorage.setItem('userInfo', JSON.stringify(result));
-        // ذخیره رمز عبور برای تمدید خودکار توکن در آینده
-        localStorage.setItem('userPassword', formData.password);
-        // ذخیره زمان تمدید و انقضای توکن
-        localStorage.setItem('lastTokenRefresh', now.toString());
-        localStorage.setItem('tokenExpiration', new Date(now + 30 * 24 * 60 * 60 * 1000).getTime().toString()); // 30 روز
+      const purchasesData = await purchasesResponse.json();
+      console.log("پاسخ API خریدهای کاربر:", purchasesData);
+      
+      if (purchasesData.success && Array.isArray(purchasesData.purchases)) {
+        // ذخیره خریدها در localStorage و sessionStorage
+        localStorage.setItem('purchasedProducts', JSON.stringify(purchasesData.purchases));
+        localStorage.setItem('lastProductCheck', now.toString());
+        
+        // همچنین در sessionStorage ذخیره می‌کنیم
+        sessionStorage.setItem('purchasedProducts', JSON.stringify(purchasesData.purchases));
+        sessionStorage.setItem('lastProductCheck', now.toString());
+        
+        console.log(`${purchasesData.purchases.length} محصول خریداری شده در localStorage و sessionStorage ذخیره شد`);
       } else {
-        sessionStorage.setItem('userToken', token);
-        sessionStorage.setItem('userInfo', JSON.stringify(result));
-        sessionStorage.setItem('lastTokenRefresh', now.toString());
+        console.warn("هیچ خریدی یافت نشد یا پاسخ نامعتبر است");
+        localStorage.setItem('purchasedProducts', JSON.stringify([]));
+        sessionStorage.setItem('purchasedProducts', JSON.stringify([]));
       }
-      
-      console.log("Token saved and user is logged in");
-      
-      // دریافت خریدهای کاربر از API
-      try {
-        const purchasesResponse = await fetch('https://p30s.com/wp-json/pcs/v1/user-purchases', {
+    } catch (error) {
+      console.error('خطا در بارگیری محصولات:', error);
+      // در صورت خطا، localStorage را با آرایه خالی پر می‌کنیم
+      localStorage.setItem('purchasedProducts', JSON.stringify([]));
+      sessionStorage.setItem('purchasedProducts', JSON.stringify([]));
+    }
+    
+    // تنظیم سیستم تمدید خودکار توکن
+    if (saveLogin) {
+      console.log("تنظیم سیستم تمدید خودکار توکن...");
+      setupTokenRefresh(token, true);
+    }
+    
+    // بررسی وضعیت VIP کاربر (اختیاری)
+    try {
+      if (saveLogin) { // فقط برای کاربرانی که "مرا به خاطر بسپار" را فعال کرده‌اند
+        const vipResponse = await fetch('https://p30s.com/wp-json/pcs/v1/check-vip-status', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Accept': 'application/json'
           }
         });
         
-        if (!purchasesResponse.ok) {
-          throw new Error('خطا در دریافت خریدهای کاربر');
+        if (vipResponse.ok) {
+          const vipData = await vipResponse.json();
+          if (vipData.success) {
+            localStorage.setItem('userVipStatus', JSON.stringify({
+              has_vip: vipData.has_vip,
+              details: vipData.vip_details || [],
+              checkedAt: now
+            }));
+            console.log("وضعیت VIP کاربر بررسی شد:", vipData.has_vip ? "فعال" : "غیرفعال");
+          }
         }
+      }
+    } catch (vipError) {
+      console.error('خطا در بررسی وضعیت VIP:', vipError);
+    }
+    
+    // هدایت به صفحه اصلی
+    console.log("در حال هدایت به صفحه اصلی...");
+    navigate('/');
+    
+  } catch (error) {
+    console.error('خطا در فرآیند ورود:', error);
+    
+    // حتی در صورت خطا، سعی می‌کنیم کاربر را به صفحه اصلی هدایت کنیم
+    setTimeout(() => {
+      navigate('/');
+    }, 500);
+  }
+};
+  // تابع کمکی برای تنظیم تمدید خودکار توکن
+const setupTokenRefresh = (token, isPersistent) => {
+  if (!isPersistent) return; // فقط برای حالت "مرا به خاطر بسپار"
+  
+  // ذخیره زمان انقضای توکن (30 روز)
+  const expirationTime = new Date().getTime() + 30 * 24 * 60 * 60 * 1000;
+  localStorage.setItem('tokenExpiration', expirationTime.toString());
+  
+  // ارسال پینگ هر 12 ساعت برای نگه داشتن توکن
+  const pingInterval = 12 * 60 * 60 * 1000; // 12 ساعت
+  
+  // تابع پینگ به سرور برای حفظ فعال بودن توکن
+  const pingServer = async () => {
+    try {
+      // اول بررسی کنیم که آیا توکن نزدیک به انقضا است
+      const currentToken = localStorage.getItem('userToken');
+      const expiration = parseInt(localStorage.getItem('tokenExpiration') || '0');
+      const now = new Date().getTime();
+      
+      // اگر کمتر از 3 روز به انقضای توکن مانده، آن را تمدید کنیم
+      if (now > expiration - 3 * 24 * 60 * 60 * 1000) {
+        const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+        const userPassword = localStorage.getItem('userPassword');
         
-        const purchasesData = await purchasesResponse.json();
-        console.log("User purchases response:", purchasesData);
-        
-        if (purchasesData.success && Array.isArray(purchasesData.purchases)) {
-          // ذخیره خریدها در localStorage و sessionStorage
-          localStorage.setItem('purchasedProducts', JSON.stringify(purchasesData.purchases));
-          localStorage.setItem('lastProductCheck', now.toString());
+        if (userInfo.user_email && userPassword) {
+          console.log('توکن نزدیک به انقضا است، در حال تمدید خودکار...');
+          // تلاش مجدد لاگین با اطلاعات ذخیره شده
+          const refreshResponse = await fetch('https://p30s.com/wp-json/jwt-auth/v1/token', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              username: userInfo.user_email,
+              password: userPassword
+            })
+          });
           
-          // همچنین در sessionStorage ذخیره می‌کنیم
-          sessionStorage.setItem('purchasedProducts', JSON.stringify(purchasesData.purchases));
-          sessionStorage.setItem('lastProductCheck', now.toString());
-          
-          console.log("Purchases saved to localStorage and sessionStorage");
-        } else {
-          console.warn("No purchases found or invalid response");
-          localStorage.setItem('purchasedProducts', JSON.stringify([]));
-          sessionStorage.setItem('purchasedProducts', JSON.stringify([]));
+          if (refreshResponse.ok) {
+            const refreshData = await refreshResponse.json();
+            if (refreshData.token) {
+              // به‌روزرسانی توکن در localStorage
+              localStorage.setItem('userToken', refreshData.token);
+              localStorage.setItem('userInfo', JSON.stringify(refreshData));
+              localStorage.setItem('lastTokenRefresh', new Date().getTime().toString());
+              
+              // تنظیم مجدد زمان انقضا
+              const newExpiration = new Date().getTime() + 30 * 24 * 60 * 60 * 1000;
+              localStorage.setItem('tokenExpiration', newExpiration.toString());
+              
+              console.log('توکن با موفقیت تمدید شد، انقضای جدید:', new Date(newExpiration).toLocaleString());
+              return;
+            }
+          }
         }
-      } catch (error) {
-        console.error('Error loading products:', error);
-        // در صورت خطا، localStorage را خالی می‌کنیم
-        localStorage.setItem('purchasedProducts', JSON.stringify([]));
-        sessionStorage.setItem('purchasedProducts', JSON.stringify([]));
       }
       
-      // اضافه کردن یک پینگ به سرور برای حفظ توکن فعال
-      setupTokenRefresh(token, saveLogin);
+      // اگر هنوز به تمدید نیاز نیست، فقط یک اعتبارسنجی انجام دهیم
+      const validationResponse = await fetch('https://p30s.com/wp-json/jwt-auth/v1/token/validate', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${currentToken}`
+        }
+      });
       
-      // مستقیم به صفحه اصلی هدایت می‌کنیم (به جای پروفایل)
-      navigate('/');
-      
+      if (validationResponse.ok) {
+        console.log('توکن همچنان معتبر است');
+        localStorage.setItem('lastTokenRefresh', new Date().getTime().toString());
+      } else {
+        // اگر توکن نامعتبر است، تلاش برای تمدید خودکار
+        throw new Error('توکن نامعتبر است');
+      }
     } catch (error) {
-      console.error('Error in handleLoginSuccess:', error);
-      navigate('/');
+      console.error('خطا در بررسی یا تمدید توکن:', error);
+      // تلاش برای تمدید خودکار
+      try {
+        const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+        const userPassword = localStorage.getItem('userPassword');
+        
+        if (userInfo.user_email && userPassword) {
+          console.log('در حال تمدید خودکار توکن...');
+          const refreshResponse = await fetch('https://p30s.com/wp-json/jwt-auth/v1/token', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              username: userInfo.user_email,
+              password: userPassword
+            })
+          });
+          
+          if (refreshResponse.ok) {
+            const refreshData = await refreshResponse.json();
+            if (refreshData.token) {
+              localStorage.setItem('userToken', refreshData.token);
+              localStorage.setItem('userInfo', JSON.stringify(refreshData));
+              localStorage.setItem('lastTokenRefresh', new Date().getTime().toString());
+              
+              const newExpiration = new Date().getTime() + 30 * 24 * 60 * 60 * 1000;
+              localStorage.setItem('tokenExpiration', newExpiration.toString());
+              
+              console.log('توکن با موفقیت تمدید شد');
+            }
+          }
+        }
+      } catch (refreshError) {
+        console.error('خطا در تمدید خودکار توکن:', refreshError);
+      }
     }
   };
   
-  // تابع کمکی برای تنظیم تمدید خودکار توکن
-  const setupTokenRefresh = (token, isPersistent) => {
-    if (!isPersistent) return; // فقط برای حالت "مرا به خاطر بسپار"
-    
-    // ارسال پینگ هر ۶ ساعت برای نگه داشتن توکن
-    const pingInterval = 6 * 60 * 60 * 1000; // 6 ساعت
-    
-    // تابع پینگ به سرور برای حفظ فعال بودن توکن
-    const pingServer = async () => {
-      try {
-        const response = await fetch('https://p30s.com/wp-json/jwt-auth/v1/token/validate', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (!response.ok) {
-          // اگر توکن نامعتبر شده، تلاش برای تمدید خودکار
-          const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
-          const userPassword = localStorage.getItem('userPassword');
-          
-          if (userInfo.user_email && userPassword) {
-            // تلاش مجدد لاگین با اطلاعات ذخیره شده
-            const refreshResponse = await fetch('https://p30s.com/wp-json/jwt-auth/v1/token', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                username: userInfo.user_email,
-                password: userPassword
-              })
-            });
-            
-            if (refreshResponse.ok) {
-              const refreshData = await refreshResponse.json();
-              if (refreshData.token) {
-                // به‌روزرسانی توکن در localStorage
-                localStorage.setItem('userToken', refreshData.token);
-                localStorage.setItem('userInfo', JSON.stringify(refreshData));
-                localStorage.setItem('lastTokenRefresh', new Date().getTime().toString());
-                localStorage.setItem('tokenExpiration', new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).getTime().toString());
-                console.log('توکن با موفقیت تمدید شد');
-              }
-            }
-          }
-        } else {
-          console.log('توکن همچنان معتبر است');
-          localStorage.setItem('lastTokenRefresh', new Date().getTime().toString());
-        }
-      } catch (error) {
-        console.error('خطا در بررسی یا تمدید توکن:', error);
-      }
-    };
-    
-    // اجرای اولیه تابع پینگ
-    pingServer();
-    
-    // تنظیم پینگ دوره‌ای
-    const intervalId = setInterval(pingServer, pingInterval);
-    
-    // ذخیره شناسه اینتروال برای پاک کردن در زمان خروج کاربر
-    localStorage.setItem('tokenRefreshIntervalId', intervalId.toString());
-    
-    // اضافه کردن یک event listener برای بررسی توکن در زمان بازیابی صفحه
-    window.addEventListener('focus', pingServer);
-    
-    return () => {
-      clearInterval(intervalId);
-      window.removeEventListener('focus', pingServer);
-    };
+  // اجرای اولیه تابع پینگ
+  pingServer();
+  
+  // تنظیم پینگ دوره‌ای
+  const intervalId = setInterval(pingServer, pingInterval);
+  
+  // ذخیره شناسه اینتروال برای پاک کردن در زمان خروج کاربر
+  localStorage.setItem('tokenRefreshIntervalId', intervalId.toString());
+  
+  // اضافه کردن یک event listener برای بررسی توکن در زمان بازیابی صفحه
+  window.addEventListener('focus', pingServer);
+  
+  return () => {
+    clearInterval(intervalId);
+    window.removeEventListener('focus', pingServer);
   };
-
+};
 
   const validateLogin = async (username, password, rememberMe) => {
     try {
