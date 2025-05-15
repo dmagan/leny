@@ -3,6 +3,7 @@ export const PRODUCT_PRICES = {
   DEX: '249',
   ZERO_TO_100: '199',
   DEX_ZERO_TO_100_PACKAGE: '349',
+  TRADE_PRO: '750',
   
   // قیمت‌های VIP با دوره‌های مختلف
   VIP: {

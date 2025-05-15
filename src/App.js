@@ -33,6 +33,7 @@ import { shouldShowInstallPrompt } from './detectIOS';
 import DesktopWarning from './DesktopWarning';
 import ZeroTo100 from './0to100';
 import supportNotificationService from './SupportNotificationService';
+import TradeProPage from './TradePro-Service-Page';
 
 
 
@@ -226,6 +227,27 @@ function AppRoutes({
         />
       } />
       
+
+      <Route path="/tradepro" element={
+  <>
+    <CourseApp 
+      isDarkMode={isDarkMode} 
+      setIsDarkMode={setIsDarkMode} 
+      products={products} 
+      cryptoPrices={cryptoPrices} 
+      stories={stories} 
+      loading={loading} 
+      sliders={sliders}
+      isLoggedIn={isLoggedIn}
+      onLogout={handleLogout}
+    />
+    <TradeProPage 
+      isDarkMode={isDarkMode}
+      isOpen={true}
+      onClose={() => navigate(-1)}
+    />
+  </>
+} />
 
       <Route path="/asad" element={<AsadPage isDarkMode={isDarkMode} />} />
 

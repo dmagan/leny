@@ -2,6 +2,9 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeftCircle, X } from 'lucide-react';
 import AudioPlayer from './AudioPlayer';
+import vipNotificationService from './VIPNotificationService';
+
+
 
 // Image Modal Component
 const ImageModal = ({ isOpen, onClose, imageUrl }) => {
@@ -218,6 +221,20 @@ const VIPChannel = ({ isDarkMode, isOpen, onClose }) => {
     observer.observe(loadingMoreRef.current);
     return () => observer.disconnect();
   }, [loading, hasMore, page]);
+
+  useEffect(() => {
+  if (isOpen) {
+    // وقتی کانال باز می‌شود، همه پست‌ها را به عنوان خوانده شده علامت‌گذاری می‌کنیم
+    vipNotificationService.markAllAsRead();
+  }
+}, [isOpen]);
+
+useEffect(() => {
+  return () => {
+    // علامت‌گذاری همه پیام‌ها به عنوان خوانده شده هنگام خروج از کانال
+    vipNotificationService.markAllAsRead();
+  };
+}, []);
 
   return (
     <div 

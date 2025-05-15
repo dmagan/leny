@@ -71,7 +71,7 @@ if (expectedPrice) {
   if (Math.abs(paidAmount - expectedPrice) > allowedDifference) {
     return {
       success: false,
-      message: `مبلغ پرداختی (${paidAmount.toFixed(2)} دلار) با مبلغ محصول (${expectedPrice.toFixed(2)} دلار) مطابقت ندارد`
+      message: `مبلغ پرداختی (${paidAmount.toFixed(2)} $) با مبلغ محصول (${expectedPrice.toFixed(2)} $) مطابقت ندارد`
     };
   }
 }
@@ -797,7 +797,7 @@ const handleSubmit = async () => {
                 {productTitle}
               </p>
               <p className="text-[#f7d55d] font-bold mt-2 text-lg">
-                {price} دلار
+                {price} $
               </p>
             </div>
 

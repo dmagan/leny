@@ -13,6 +13,9 @@ import PaymentCard from './PaymentCard';
 import { PRODUCT_PRICES } from './config';
 import supportNotificationService from './SupportNotificationService';
 import channelNotificationService from './ChannelNotificationService';
+import vipNotificationService from './VIPNotificationService';
+import TradeProPage from './TradePro-Service-Page';
+
 
 
 
@@ -178,6 +181,8 @@ const CourseApp = ({  // این قسمت رو جایگزین کنید
   const [isUIDLoading, setIsUIDLoading] = useState(false);
 const [showActualZeroTo100Page, setShowActualZeroTo100Page] = useState(false);
 const [unreadChannelPosts, setUnreadChannelPosts] = useState(0);
+const [unreadVIPPosts, setUnreadVIPPosts] = useState(0);
+const [showTradeProPage, setShowTradeProPage] = useState(false);
 
   const [showPaymentCard, setShowPaymentCard] = useState({
     show: false,
@@ -305,168 +310,174 @@ const [unreadChannelPosts, setUnreadChannelPosts] = useState(0);
         price: PRODUCT_PRICES.DEX_ZERO_TO_100_PACKAGE
       });
     }
+    else if (service.id === 5) { // ترید حرفه‌ای
+    setShowTradeProPage(true); // استفاده از تابع handleTradeProClick
+  }
   };
 
-  const handleVIPClick = async () => {
-    const userInfo = localStorage.getItem('userInfo') || sessionStorage.getItem('userInfo');
-    if (!userInfo) {
-      navigate('/login');
-      return;
-    }
-  
-    try {
-      // بررسی مستقیم localStorage برای محصول اشتراک
-      const purchasedProductsStr = localStorage.getItem('purchasedProducts');
-      
-      if (purchasedProductsStr) {
-        try {
-          const purchasedProducts = JSON.parse(purchasedProductsStr);
-          console.log("محصولات خریداری شده:", purchasedProducts);
-          
-          // بررسی برای یافتن اشتراک فعال - شامل هرگونه اشتراک فعال
-          const subscriptionProduct = purchasedProducts.find(p => 
-            (p.isVIP === true || 
-             (p.title && typeof p.title === 'string' && 
-              (p.title.includes('VIP') || p.title.includes('اشتراک')))
-            ) && 
-            p.status === 'active'
-          );
-          
-          console.log("محصول اشتراک پیدا شده:", subscriptionProduct);
-          
-          if (subscriptionProduct) {
-            // اگر اشتراک فعال پیدا شد، به کانال VIP هدایت می‌شود
-            navigate('/chat');
-            return;
-          }
-        } catch (parseError) {
-          console.error('خطا در پردازش داده‌های localStorage:', parseError);
-        }
-      }
-      
-      // اگر در localStorage پیدا نشد، از API بررسی می‌کنیم
-      const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
-      const response = await fetch('https://p30s.com/wp-json/pcs/v1/check-vip-status', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error('خطا در بررسی وضعیت VIP');
-      }
-      
-      const data = await response.json();
-      console.log("پاسخ API برای وضعیت VIP:", data);
-      
-      if (data.success && data.has_vip) {
-        // کاربر VIP است، به کانال VIP هدایت شود
-        navigate('/chat');
-      } else {
-        // کاربر VIP نیست، نمایش پیام مناسب
-        if (data.vip_details && data.vip_details.length > 0) {
-          // اشتراک VIP منقضی شده است
-          Store.addNotification({
-            title: (
-              <div dir="rtl" style={{ textAlign: 'right', paddingRight: '15px' }}>
-                خطا
-              </div>
-            ),
-            message: (
-              <div dir="rtl" style={{ textAlign: 'right' }}>
-                زمان اشتراک VIP شما به پایان رسیده است
-              </div>
-            ),
-            type: "warning",
-            insert: "top",
-            container: "center",
-            animationIn: ["animate__animated", "animate__flipInX"],
-            animationOut: ["animate__animated", "animate__flipOutX"],
-            dismiss: { duration: 4000, showIcon: true, pauseOnHover: true }
-          });
-        } else {
-          // اشتراک VIP خریداری نشده است
-          Store.addNotification({
-            title: (
-              <div dir="rtl" style={{ textAlign: 'right', paddingRight: '15px' }}>
-                خطا
-              </div>
-            ),
-            message: (
-              <div dir="rtl" style={{ textAlign: 'right' }}>
-                شما هنوز اشتراک VIP را خریداری نکرده‌اید. به‌صورت خودکار به صفحه خرید هدایت می‌شوید
-              </div>
-            ),
-            type: "danger",
-            insert: "top",
-            container: "center",
-            animationIn: ["animate__animated", "animate__flipInX"],
-            animationOut: ["animate__animated", "animate__flipOutX"],
-            dismiss: { duration: 5000, showIcon: true, pauseOnHover: true }
-          });
-        }
+const handleVIPClick = async () => {
+  const userInfo = localStorage.getItem('userInfo') || sessionStorage.getItem('userInfo');
+  if (!userInfo) {
+    navigate('/login');
+    return;
+  }
+
+  try {
+    // بررسی مستقیم localStorage برای محصول اشتراک
+    const purchasedProductsStr = localStorage.getItem('purchasedProducts');
+    
+    if (purchasedProductsStr) {
+      try {
+        const purchasedProducts = JSON.parse(purchasedProductsStr);
+        console.log("محصولات خریداری شده:", purchasedProducts);
         
-        // نمایش صفحه خرید VIP
-        setTimeout(() => {
-          setShowVIPPage(true);
-        }, 2000);
-      }
-    } catch (error) {
-      console.error('خطا در بررسی وضعیت VIP:', error);
-      
-      // دوباره localStorage را بررسی می‌کنیم
-      const purchasedProductsStr = localStorage.getItem('purchasedProducts');
-      
-      if (purchasedProductsStr) {
-        try {
-          const purchasedProducts = JSON.parse(purchasedProductsStr);
-          
-          // بررسی برای یافتن اشتراک فعال - شامل هرگونه اشتراک فعال
-          const subscriptionProduct = purchasedProducts.find(p => 
-            (p.isVIP === true || 
-             (p.title && typeof p.title === 'string' && 
-              (p.title.includes('VIP') || p.title.includes('اشتراک')))
-            ) && 
-            p.status === 'active'
-          );
-          
-          if (subscriptionProduct) {
-            // اگر اشتراک فعال پیدا شد، به کانال VIP هدایت می‌شود
-            navigate('/chat');
-            return;
-          }
-        } catch (parseError) {
-          console.error('خطا در پردازش داده‌های localStorage:', parseError);
+        // بررسی برای یافتن اشتراک فعال - شامل هرگونه اشتراک فعال
+        const subscriptionProduct = purchasedProducts.find(p => 
+          (p.isVIP === true || 
+           (p.title && typeof p.title === 'string' && 
+            (p.title.includes('VIP') || p.title.includes('اشتراک')))
+          ) && 
+          p.status === 'active'
+        );
+        
+        console.log("محصول اشتراک پیدا شده:", subscriptionProduct);
+        
+        if (subscriptionProduct) {
+          // اگر اشتراک فعال پیدا شد، به کانال VIP هدایت می‌شود
+          vipNotificationService.markAllAsRead(); // علامت‌گذاری همه پیام‌ها به عنوان خوانده شده
+          navigate('/chat');
+          return;
         }
+      } catch (parseError) {
+        console.error('خطا در پردازش داده‌های localStorage:', parseError);
+      }
+    }
+    
+    // اگر در localStorage پیدا نشد، از API بررسی می‌کنیم
+    const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+    const response = await fetch('https://p30s.com/wp-json/pcs/v1/check-vip-status', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('خطا در بررسی وضعیت VIP');
+    }
+    
+    const data = await response.json();
+    console.log("پاسخ API برای وضعیت VIP:", data);
+    
+    if (data.success && data.has_vip) {
+      // کاربر VIP است، به کانال VIP هدایت شود
+      vipNotificationService.markAllAsRead(); // علامت‌گذاری همه پیام‌ها به عنوان خوانده شده
+      navigate('/chat');
+    } else {
+      // کاربر VIP نیست، نمایش پیام مناسب
+      if (data.vip_details && data.vip_details.length > 0) {
+        // اشتراک VIP منقضی شده است
+        Store.addNotification({
+          title: (
+            <div dir="rtl" style={{ textAlign: 'right', paddingRight: '15px' }}>
+              خطا
+            </div>
+          ),
+          message: (
+            <div dir="rtl" style={{ textAlign: 'right' }}>
+              زمان اشتراک VIP شما به پایان رسیده است
+            </div>
+          ),
+          type: "warning",
+          insert: "top",
+          container: "center",
+          animationIn: ["animate__animated", "animate__flipInX"],
+          animationOut: ["animate__animated", "animate__flipOutX"],
+          dismiss: { duration: 4000, showIcon: true, pauseOnHover: true }
+        });
+      } else {
+        // اشتراک VIP خریداری نشده است
+        Store.addNotification({
+          title: (
+            <div dir="rtl" style={{ textAlign: 'right', paddingRight: '15px' }}>
+              خطا
+            </div>
+          ),
+          message: (
+            <div dir="rtl" style={{ textAlign: 'right' }}>
+              شما هنوز اشتراک VIP را خریداری نکرده‌اید. به‌صورت خودکار به صفحه خرید هدایت می‌شوید
+            </div>
+          ),
+          type: "danger",
+          insert: "top",
+          container: "center",
+          animationIn: ["animate__animated", "animate__flipInX"],
+          animationOut: ["animate__animated", "animate__flipOutX"],
+          dismiss: { duration: 5000, showIcon: true, pauseOnHover: true }
+        });
       }
       
-      // اگر در localStorage هم محصول فعال پیدا نشد، پیام خطا نمایش داده می‌شود
-      Store.addNotification({
-        title: (
-          <div dir="rtl" style={{ textAlign: 'right', paddingRight: '15px' }}>
-            خطا
-          </div>
-        ),
-        message: (
-          <div dir="rtl" style={{ textAlign: 'right' }}>
-            خطا در بررسی وضعیت اشتراک. به‌صورت خودکار به صفحه خرید هدایت می‌شوید
-          </div>
-        ),
-        type: "danger",
-        insert: "top",
-        container: "center",
-        animationIn: ["animate__animated", "animate__flipInX"],
-        animationOut: ["animate__animated", "animate__flipOutX"],
-        dismiss: { duration: 5000, showIcon: true, pauseOnHover: true }
-      });
-      
-      // نمایش صفحه VIP
+      // نمایش صفحه خرید VIP
       setTimeout(() => {
         setShowVIPPage(true);
       }, 2000);
     }
-  };
+  } catch (error) {
+    console.error('خطا در بررسی وضعیت VIP:', error);
+    
+    // دوباره localStorage را بررسی می‌کنیم
+    const purchasedProductsStr = localStorage.getItem('purchasedProducts');
+    
+    if (purchasedProductsStr) {
+      try {
+        const purchasedProducts = JSON.parse(purchasedProductsStr);
+        
+        // بررسی برای یافتن اشتراک فعال - شامل هرگونه اشتراک فعال
+        const subscriptionProduct = purchasedProducts.find(p => 
+          (p.isVIP === true || 
+           (p.title && typeof p.title === 'string' && 
+            (p.title.includes('VIP') || p.title.includes('اشتراک')))
+          ) && 
+          p.status === 'active'
+        );
+        
+        if (subscriptionProduct) {
+          // اگر اشتراک فعال پیدا شد، به کانال VIP هدایت می‌شود
+          vipNotificationService.markAllAsRead(); // علامت‌گذاری همه پیام‌ها به عنوان خوانده شده
+          navigate('/chat');
+          return;
+        }
+      } catch (parseError) {
+        console.error('خطا در پردازش داده‌های localStorage:', parseError);
+      }
+    }
+    
+    // اگر در localStorage هم محصول فعال پیدا نشد، پیام خطا نمایش داده می‌شود
+    Store.addNotification({
+      title: (
+        <div dir="rtl" style={{ textAlign: 'right', paddingRight: '15px' }}>
+          خطا
+        </div>
+      ),
+      message: (
+        <div dir="rtl" style={{ textAlign: 'right' }}>
+          خطا در بررسی وضعیت اشتراک. به‌صورت خودکار به صفحه خرید هدایت می‌شوید
+        </div>
+      ),
+      type: "danger",
+      insert: "top",
+      container: "center",
+      animationIn: ["animate__animated", "animate__flipInX"],
+      animationOut: ["animate__animated", "animate__flipOutX"],
+      dismiss: { duration: 5000, showIcon: true, pauseOnHover: true }
+    });
+    
+    // نمایش صفحه VIP
+    setTimeout(() => {
+      setShowVIPPage(true);
+    }, 2000);
+  }
+};
 
 
 
@@ -540,6 +551,74 @@ const [unreadChannelPosts, setUnreadChannelPosts] = useState(0);
     // اگر محصول خریداری شده باشد، به صفحه دکس تریدینگ هدایت می‌شود
     navigate('/dex');
   };
+
+const handleTradeProClick = () => {
+  const userInfo = localStorage.getItem('userInfo') || sessionStorage.getItem('userInfo');
+  if (!userInfo) {
+    navigate('/login');
+    return;
+  }
+
+  const purchasedProducts = localStorage.getItem('purchasedProducts');
+  if (!purchasedProducts) {
+    // نمایش پیام مناسب و هدایت به صفحه ترید حرفه‌ای
+    Store.addNotification({
+      title: (
+        <div dir="rtl" style={{ textAlign: 'right', paddingRight: '15px' }}>
+          اطلاعیه
+        </div>
+      ),
+      message: (
+        <div dir="rtl" style={{ textAlign: 'right' }}>
+          شما هنوز دوره ترید حرفه‌ای را خریداری نکرده‌اید
+        </div>
+      ),
+      type: "danger",
+      insert: "top",
+      container: "center",
+      animationIn: ["animate__animated", "animate__flipInX"],
+      animationOut: ["animate__animated", "animate__flipOutX"],
+      dismiss: { duration: 3000, showIcon: true, pauseOnHover: true }
+    });
+    setTimeout(() => {
+      setShowTradeProPage(true);
+    }, 2000);
+    return;
+  }
+
+  const products = JSON.parse(purchasedProducts);
+  // بررسی اینکه آیا محصول ترید حرفه‌ای خریداری شده است
+  const tradeProProduct = products.find(p => 
+    p.title && p.title.includes('ترید حرفه‌ای') && p.status === 'active'
+  );
+
+  if (!tradeProProduct) {
+    Store.addNotification({
+      title: (
+        <div dir="rtl" style={{ textAlign: 'right', paddingRight: '15px' }}>اطلاعیه </div>
+      ),
+      message: (
+        <div dir="rtl" style={{ textAlign: 'right' }}>
+          شما هنوز دوره ترید حرفه‌ای را خریداری نکرده‌اید. به صورت خودکار به صفحه مورد نظر هدایت می شوید
+        </div>
+      ),
+      type: "danger",
+      insert: "top",
+      container: "center",
+      animationIn: ["animate__animated", "animate__flipInX"],
+      animationOut: ["animate__animated", "animate__flipOutX"],
+      dismiss: { duration: 5000, showIcon: true, pauseOnHover: true },
+    });
+
+    setTimeout(() => {
+      setShowTradeProPage(true);
+    }, 2000);
+    return;
+  }
+
+  // اگر محصول خریداری شده باشد، به صفحه ترید حرفه‌ای هدایت می‌شود
+  navigate('/tradepro');
+};
 
   const handleSliderWithPaymentClick = (productName, productPrice) => {
   // بررسی وضعیت ورود کاربر
@@ -982,6 +1061,36 @@ const disableAutoplay = () => {
   };
 }, [autoplayEnabled]);
 
+
+// اضافه کردن useEffect برای راه‌اندازی سرویس نوتیفیکیشن VIP
+useEffect(() => {
+  if (isLoggedIn) {
+    // راه‌اندازی سرویس - خود سرویس داخلاً بررسی می‌کند که آیا کاربر VIP است
+    const initService = async () => {
+      const started = await vipNotificationService.start();
+      if (started) {
+        vipNotificationService.addListener(count => {
+          setUnreadVIPPosts(count);
+        });
+      } else {
+        // اگر کاربر VIP نیست، مقدار را صفر قرار می‌دهیم
+        setUnreadVIPPosts(0);
+      }
+    };
+    
+    initService();
+    
+    // تمیز کردن در زمان unmount
+    return () => {
+      vipNotificationService.removeListener(setUnreadVIPPosts);
+      vipNotificationService.stop();
+    };
+  } else {
+    // ریست کردن شمارشگر پست‌های ناخوانده VIP در صورت خروج کاربر
+    setUnreadVIPPosts(0);
+  }
+}, [isLoggedIn]); // فقط وقتی وضعیت ورود کاربر تغییر می‌کند، اجرا شود
+
 const handleSignalStreamClick = async () => {
   // نمایش وضعیت لودینگ
   setIsUIDLoading(true);
@@ -1407,22 +1516,26 @@ const handleSignalStreamClick = async () => {
     </div>
     */}
 
-    <div  onClick={handleVIPClick}  className={`p-4 rounded-2xl flex items-center gap-3 border-2 ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900' }`}>
-      <div className="">
-        <div className="w-16 h-16 text-blue-100">
-        <img src="/Services/VIP.jpg" alt="Signal Stream" className="w-full h-full object-cover rounded-lg" />
-
-        </div>
-      </div>
-      <div>
-      <h3 className={`font-medium text-base ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-          ورود به کانال VIP
-          </h3>
-          <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-          کانال ویژه تیم PCS
-          </p>
-      </div>
+<div onClick={handleVIPClick} className={`p-4 rounded-2xl flex items-center gap-3 border-2 ${isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900'}`}>
+  <div className="relative">
+    <div className="w-16 h-16 text-blue-100">
+      <img src="/Services/VIP.jpg" alt="Signal Stream" className="w-full h-full object-cover rounded-lg" />
     </div>
+    {unreadVIPPosts > 0 && (
+      <div className="absolute -top-2 -right-2 w-6 h-6 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full animate__animated animate__heartBeat animate__infinite">
+        {unreadVIPPosts > 9 ? '9+' : unreadVIPPosts}
+      </div>
+    )}
+  </div>
+  <div>
+    <h3 className={`font-medium text-base ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+      ورود به کانال VIP
+    </h3>
+    <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+      کانال ویژه تیم PCS
+    </p>
+  </div>
+</div>
 
     <div onClick={handleDexClick} className={`p-4 rounded-2xl flex items-center gap-3 border-2 ${isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900'}`}>
             <div className="">
@@ -1456,6 +1569,22 @@ const handleSignalStreamClick = async () => {
           </p>
       </div>
     </div>
+
+    <div onClick={handleTradeProClick} className={`p-4 rounded-2xl flex items-center gap-3 border-2 ${isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900'}`}>
+  <div className="">
+    <div className="w-16 h-16 text-blue-500">
+      <img src="/Services/TradePro.jpg" alt="Trade Pro" className="w-full h-full object-cover rounded-lg" />
+    </div>
+  </div>
+  <div>
+    <h3 className={`font-medium text-base ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+      ورود به دوره ترید حرفه‌ای
+    </h3>
+    <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+      آموزش استراتژی‌های پیشرفته ترید
+    </p>
+  </div>
+</div>
 
     <div  onClick={() => navigate('/mentor')} className={`p-4 rounded-2xl flex items-center gap-3 border-2 ${ isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900' }`}>
       <div className="">
@@ -1618,6 +1747,18 @@ const handleSignalStreamClick = async () => {
     onClose={() => setShowSignalStreamPage(false)}
   />
 )}
+
+{/* TradeProPage */}
+{showTradeProPage && (
+  <TradeProPage
+    isDarkMode={isDarkMode}
+    isOpen={showTradeProPage}
+    onClose={() => setShowTradeProPage(false)}
+  />
+)}
+
+
+
 {/* PaymentCard */}
 {showPaymentCard.show && (
         <PaymentCard
