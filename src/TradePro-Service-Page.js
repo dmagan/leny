@@ -6,6 +6,7 @@ import PaymentCard from './PaymentCard';
 import { PRODUCT_PRICES } from './config';
 import VideoPlayer from './VideoPlayer';
 
+
 const TradeProPage = ({ isDarkMode, isOpen, onClose }) => {
   const [showCard, setShowCard] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
@@ -24,6 +25,7 @@ const [hours, setHours] = useState(10);
 const [minutes, setMinutes] = useState(24);
 const [seconds, setSeconds] = useState(59);
 const [countdownEnded, setCountdownEnded] = useState(false);
+const [hasTradeProAccess, setHasTradeProAccess] = useState(false);
 
   const modules = [
     {
@@ -466,8 +468,8 @@ const handlePurchase = () => {
             </div>
             
             <p className="text-sm bg-red-500/90 text-white font-bold px-4 py-2 rounded-lg">
-  هر روز <span className="text-2xl font-extrabold">5$</span> به این مبلغ اضافه خواهد شد
-</p>
+  هر روز <span className="text-2xl font-extrabold">5$</span>  به این مبلغ اضافه خواهد شد 
+<p dir='rtl'>تا 750$</p></p>
         <h3 className="font-bold mt-1.5">همین الان خرید کنید</h3>
 
           </>
@@ -553,19 +555,23 @@ const handlePurchase = () => {
             background: 'linear-gradient(to top, rgba(0,0,0,80), rgba(0,0,0,0))'
           }}></div>
 
-          {/* Fixed Button at Bottom */}
-          {!hasAccess && (
-            <div className="absolute bottom-6 left-4 right-4 z-10">
-              <button 
-                onClick={handlePurchase}
-                className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-4 rounded-xl transition-colors shadow-lg text-center flex items-center justify-center"
-                dir="rtl"
-              >
-                <span>خرید دوره ترید حرفه‌ای</span>
-                <ShoppingCart size={24} className="mr-2" />
-              </button>
-            </div>
-          )}
+{/* Fixed Button at Bottom */}
+<div className="absolute bottom-6 left-4 right-4 z-10">
+  <button 
+    onClick={hasAccess 
+  ? () => navigate('/tradepro-course')
+  : handlePurchase
+}
+    className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-4 rounded-xl transition-colors shadow-lg text-center flex items-center justify-center"
+    dir="rtl"
+  >
+    <span>{hasAccess ? 'ورود به آموزش ترید حرفه‌ای' : 'خرید دوره ترید حرفه‌ای'}</span>
+    {hasAccess 
+      ? <DoorOpen size={24} className="mr-2" /> 
+      : <ShoppingCart size={24} className="mr-2" />
+    }
+  </button>
+</div>
         </div>
       </div>
       

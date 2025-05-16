@@ -170,19 +170,22 @@ const ProfilePage = ({ isDarkMode, setIsLoggedIn, onLogout }) => {
             const groupedSubscriptions = {};
             
             data.purchases.forEach(purchase => {
-              let subscriptionType = 'other';
-              if (purchase.isVIP) subscriptionType = 'vip';
-              else if (purchase.title && purchase.title.includes('دکس')) subscriptionType = 'dex';
-              else if (purchase.title && (purchase.title.includes('صفر تا صد') || purchase.title.includes('0 تا 100'))) 
-                subscriptionType = 'zero-to-100';
-              else if (purchase.title && (purchase.title.includes('سیگنال') || purchase.title.includes('Signal'))) 
-                subscriptionType = 'signal';
-                
-              if (!groupedSubscriptions[subscriptionType]) {
-                groupedSubscriptions[subscriptionType] = [];
-              }
-              groupedSubscriptions[subscriptionType].push(purchase);
-            });
+  let subscriptionType = 'other';
+  if (purchase.isVIP) subscriptionType = 'vip';
+  else if (purchase.title && purchase.title.includes('دکس')) subscriptionType = 'dex';
+  else if (purchase.title && (purchase.title.includes('صفر تا صد') || purchase.title.includes('0 تا 100'))) 
+    subscriptionType = 'zero-to-100';
+  else if (purchase.title && (purchase.title.includes('سیگنال') || purchase.title.includes('Signal'))) 
+    subscriptionType = 'signal';
+  // اضافه کردن شرط برای دوره ترید حرفه‌ای
+  else if (purchase.title && purchase.title.includes('ترید حرفه‌ای'))
+    subscriptionType = 'trade-pro';
+    
+  if (!groupedSubscriptions[subscriptionType]) {
+    groupedSubscriptions[subscriptionType] = [];
+  }
+  groupedSubscriptions[subscriptionType].push(purchase);
+});
             
             // استخراج آخرین اشتراک فعال از هر گروه
             const activeSubscriptions = [];
@@ -256,20 +259,24 @@ const ProfilePage = ({ isDarkMode, setIsLoggedIn, onLogout }) => {
             
             const groupedSubscriptions = {};
             
-            parsedProducts.forEach(product => {
-              let subscriptionType = 'other';
-              if (product.isVIP) subscriptionType = 'vip';
-              else if (product.title && product.title.includes('دکس')) subscriptionType = 'dex';
-              else if (product.title && (product.title.includes('صفر تا صد') || product.title.includes('0 تا 100'))) 
-                subscriptionType = 'zero-to-100';
-              else if (product.title && (product.title.includes('سیگنال') || product.title.includes('Signal'))) 
-                subscriptionType = 'signal';
-                
-              if (!groupedSubscriptions[subscriptionType]) {
-                groupedSubscriptions[subscriptionType] = [];
-              }
-              groupedSubscriptions[subscriptionType].push(product);
-            });
+           // در بخش catch که از کش استفاده می‌کند:
+parsedProducts.forEach(product => {
+  let subscriptionType = 'other';
+  if (product.isVIP) subscriptionType = 'vip';
+  else if (product.title && product.title.includes('دکس')) subscriptionType = 'dex';
+  else if (product.title && (product.title.includes('صفر تا صد') || product.title.includes('0 تا 100'))) 
+    subscriptionType = 'zero-to-100';
+  else if (product.title && (product.title.includes('سیگنال') || product.title.includes('Signal'))) 
+    subscriptionType = 'signal';
+  // اضافه کردن شرط برای دوره ترید حرفه‌ای
+  else if (product.title && product.title.includes('ترید حرفه‌ای'))
+    subscriptionType = 'trade-pro';
+    
+  if (!groupedSubscriptions[subscriptionType]) {
+    groupedSubscriptions[subscriptionType] = [];
+  }
+  groupedSubscriptions[subscriptionType].push(product);
+});
             
             const activeSubscriptions = [];
             
@@ -313,30 +320,33 @@ const ProfilePage = ({ isDarkMode, setIsLoggedIn, onLogout }) => {
     }
   };
 
-  const handleRenewal = (product) => {
-    setShowCard(false);
-    
-    sessionStorage.setItem('renewProduct', JSON.stringify({
-      id: product.id,
-      title: product.title,
-      isVIP: product.isVIP,
-      isDex: product.title.includes('دکس')
-    }));
-    
-    setTimeout(() => {
-      if (product.isVIP) {
-        navigate('/vip-services', { state: { renewal: true } });
-      } else if (product.title.includes('دکس')) {
-        navigate('/dex-services', { state: { renewal: true } });
-      } else if (product.title.includes('صفر تا صد') || product.title.includes('0 تا 100')) {
-        navigate('/0to100-services', { state: { renewal: true } });
-      } else if (product.title.includes('سیگنال') || product.title.includes('Signal')) {
-        navigate('/signal-stream', { state: { renewal: true } });
-      } else {
-        navigate('/products', { state: { renewal: true } });
-      }
-    }, 300);
-  };
+const handleRenewal = (product) => {
+  setShowCard(false);
+  
+  sessionStorage.setItem('renewProduct', JSON.stringify({
+    id: product.id,
+    title: product.title,
+    isVIP: product.isVIP,
+    isDex: product.title.includes('دکس'),
+    isTradePro: product.title.includes('ترید حرفه‌ای')
+  }));
+  
+  setTimeout(() => {
+    if (product.isVIP) {
+      navigate('/vip-services', { state: { renewal: true } });
+    } else if (product.title.includes('دکس')) {
+      navigate('/dex-services', { state: { renewal: true } });
+    } else if (product.title.includes('صفر تا صد') || product.title.includes('0 تا 100')) {
+      navigate('/0to100-services', { state: { renewal: true } });
+    } else if (product.title.includes('سیگنال') || product.title.includes('Signal')) {
+      navigate('/signal-stream', { state: { renewal: true } });
+    } else if (product.title.includes('ترید حرفه‌ای')) {
+      navigate('/tradepro', { state: { renewal: true } });
+    } else {
+      navigate('/products', { state: { renewal: true } });
+    }
+  }, 300);
+};
 
   return (
     <div className="fixed inset-0 z-50 bg-black/75 overflow-hidden transition-opacity duration-300"
@@ -417,12 +427,13 @@ const ProfilePage = ({ isDarkMode, setIsLoggedIn, onLogout }) => {
      product.title.includes('صفر تا صد') || 
      product.title.includes('0 تا 100') || 
      product.title.includes('۰ تا ۱۰۰') || 
+     product.title.includes('ترید حرفه‌ای') || 
      product.remainingDays === 'unlimited' ? 
       'دسترسی نامحدود' : 
       `روزهای باقیمانده: ${product.remainingDays}`
     }
   </p>
-)}
+)}  
                             </div>
                             <span className={`text-sm ${product.status === 'active' ? 'text-green-500' : 'text-red-500'}`}>
                               {product.status === 'active' ? 'فعال' : 'منقضی شده'}

@@ -619,7 +619,6 @@ const handleTradeProClick = () => {
   // اگر محصول خریداری شده باشد، به صفحه ترید حرفه‌ای هدایت می‌شود
   navigate('/tradepro');
 };
-
   const handleSliderWithPaymentClick = (productName, productPrice) => {
   // بررسی وضعیت ورود کاربر
   const userToken = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');

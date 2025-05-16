@@ -881,7 +881,7 @@ useEffect(() => {
             <ArrowLeftCircle className="w-8 h-8" />
           </button>
           <h2 className={`w-full text-center text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-            کانال عمومی
+           آپدیت مارکت
           </h2>
         </div>
 

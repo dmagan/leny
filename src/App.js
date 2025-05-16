@@ -34,6 +34,9 @@ import DesktopWarning from './DesktopWarning';
 import ZeroTo100 from './0to100';
 import supportNotificationService from './SupportNotificationService';
 import TradeProPage from './TradePro-Service-Page';
+import TradeProCoursePage from './tradepro';
+
+
 
 
 
@@ -228,7 +231,7 @@ function AppRoutes({
       } />
       
 
-      <Route path="/tradepro" element={
+<Route path="/tradepro" element={
   <>
     <CourseApp 
       isDarkMode={isDarkMode} 
@@ -242,6 +245,28 @@ function AppRoutes({
       onLogout={handleLogout}
     />
     <TradeProPage 
+      isDarkMode={isDarkMode}
+      isOpen={true}
+      onClose={() => navigate(-1)}
+    />
+  </>
+} />
+
+
+<Route path="/tradepro-course" element={
+  <>
+    <CourseApp 
+      isDarkMode={isDarkMode} 
+      setIsDarkMode={setIsDarkMode} 
+      products={products} 
+      cryptoPrices={cryptoPrices} 
+      stories={stories} 
+      loading={loading} 
+      sliders={sliders}
+      isLoggedIn={isLoggedIn}
+      onLogout={handleLogout}
+    />
+    <TradeProCoursePage 
       isDarkMode={isDarkMode}
       isOpen={true}
       onClose={() => navigate(-1)}
