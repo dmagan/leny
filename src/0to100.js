@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeftCircle } from 'lucide-react';
+import { ArrowLeftCircle, SearchCheck  } from 'lucide-react';
 import VideoPlayer from './components/VideoPlayer';
+import CryptoTermsPage from './CryptoTermsPage';
+import DexTermsPage from './DexTermsPage';
 
 
 const PlayButton = ({ isActive }) => (
@@ -19,88 +21,146 @@ const PlayButton = ({ isActive }) => (
   </svg>
 );
 
+
+const SearchButton = () => (
+  <svg 
+    width="32" height="32" viewBox="0 0 32 32" 
+    fill="none" xmlns="http://www.w3.org/2000/svg" 
+    className="cursor-pointer transition-colors"
+  >
+    <circle cx="16" cy="16" r="15" 
+      stroke="#4B5563" strokeWidth="2"/>
+    <circle cx="16" cy="16" r="6" 
+      stroke="#4B5563" strokeWidth="2"/>
+    <path d="20.5 20.5L22 22" 
+      stroke="#4B5563" 
+      strokeWidth="2" 
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
 const episodes = [
   { 
     id: 0,
-    title: "مقدمه فصل اول",
+    title: "مقدمه پارت اول",
     duration: "15 دقیقه",
     videoUrl: "https://iamvakilet.ir/0to100/Introduction1_Chapter1.mp4"
   },
   { 
     id: 1, 
-    title: "روش های کلاه برداری فصل اول",
-    duration: "30 دقیقه",
-    videoUrl: "https://iamvakilet.ir/0to100/Methods_of_Fraud_Chapter1.mp4"
+    title: "مقدمه پارت دوم",
+    duration: "40 دقیقه",
+    videoUrl: "https://iamvakilet.ir/0to100/Introduction2_Chapter1.mp4"
   },
   { 
     id: 2, 
-    title: "بلاک و بیتکوین و کوین و توکن فصل اول",
+    title: "بلاک و بیتکوین",
     duration: "35 دقیقه",
     videoUrl: "https://iamvakilet.ir/0to100/Blockchain_Bitcoin_Coins_and_Tokens_Chapter1.mp4"
   },
   { 
     id: 3, 
-    title: "روش های درامد زایی فصل اول",
+    title: "هاوینگ و آلت سیزن چیست",
+    duration: "35 دقیقه",
+    videoUrl: "https://iamvakilet.ir/0to100/halving_altseason.mp4"
+  },
+  { 
+    id: 4, 
+    title: "بولران چیست",
+    duration: "35 دقیقه",
+    videoUrl: "https://iamvakilet.ir/0to100/BullRun.mp4"
+  },
+  { 
+    id: 5, 
+    title: "ایردراپ چیست",
+    duration: "35 دقیقه",
+    videoUrl: "https://iamvakilet.ir/0to100/Airdrop.mp4"
+  },
+  { 
+    id: 6, 
+    title: "روشهای درآمد زایی",
     duration: "40 دقیقه",
     videoUrl: "https://iamvakilet.ir/0to100/Methods_of_Income_Generation_Chapter1.mp4"
   },
   { 
-    id: 4, 
-    title: "آموزش سایت کوین گکو فصل 2",
-    duration: "40 دقیقه",
-    videoUrl: "https://iamvakilet.ir/0to100/CoinGecko_Site_Tutorial_Chapter2.mp4"
-  },
-  { 
-    id: 5, 
-    title: "آموزش سایت تریدینگ ویو",
-    duration: "40 دقیقه",
-    videoUrl: "https://iamvakilet.ir/0to100/TradingView_Site_Tutorial.mp4"
-  },
-  { 
-    id: 6, 
-    title: "مقدمه فصل دوم",
-    duration: "40 دقیقه",
-    videoUrl: "https://iamvakilet.ir/0to100/Introduction2_Chapter1.mp4"
-  },
-  { 
     id: 7, 
-    title: "ولت فانتوم و تونکیپر",
-    duration: "40 دقیقه",
-    videoUrl: "https://iamvakilet.ir/0to100/Phantom_and_Tonkeeper_Wallet.mp4"
+    title: "روش های کلاه برداری",
+    duration: "30 دقیقه",
+    videoUrl: "https://iamvakilet.ir/0to100/Methods_of_Fraud_Chapter1.mp4"
   },
   { 
     id: 8, 
-    title: "آموزش سایت دیبانک",
-    duration: "40 دقیقه",
-    videoUrl: "https://iamvakilet.ir/0to100/Dibank_Site_Tutorial.mp4"
+    title: "اصطلاحات بازار کریپتو",
+    duration: "جستجو",
+    videoUrl: "https://iamvakilet.ir/0to100/Crypto_Market_Terminology.mp4"
   },
   { 
     id: 9, 
-    title: "آموزش ولت متامسک",
+    title: "ولت متامسک",
     duration: "40 دقیقه",
     videoUrl: "https://iamvakilet.ir/0to100/Metamask_Wallet_Tutorial.mp4"
   },
   { 
     id: 10, 
-    title: "آموزش سایت های مانیتورینگ",
+    title: "ولت فانتوم و تونکیپر",
+    duration: "40 دقیقه",
+    videoUrl: "https://iamvakilet.ir/0to100/Phantom_and_Tonkeeper_Wallet.mp4"
+  },
+  { 
+    id: 11, 
+    title: "سایت تریدینگ ویو",
+    duration: "40 دقیقه",
+    videoUrl: "https://iamvakilet.ir/0to100/TradingView_Site_Tutorial.mp4"
+  },
+  { 
+    id: 12, 
+    title: "کوین گکو",
+    duration: "40 دقیقه",
+    videoUrl: "https://iamvakilet.ir/0to100/CoinGecko_Site_Tutorial_Chapter2.mp4"
+  },
+  { 
+    id: 13, 
+    title: "مانیتورینگ",
     duration: "40 دقیقه",
     videoUrl: "https://iamvakilet.ir/0to100/Monitoring_Sites_Tutorial.mp4"
   },
   { 
-    id: 11, 
-    title: "آموزش صرافی البانک",
+    id: 14, 
+    title: "صرافی البانک",
     duration: "40 دقیقه",
-    videoUrl: "https://iamvakilet.ir/0to100/Albank_Exchange_Tutorial.mp4"
+    videoUrl: "https://iamvakilet.ir/0to100/Lbank_Exchange_Tutorial.mp4"
   },
   { 
-    id: 12, 
-    title: "آموزش دکس تولز",
+    id: 15, 
+    title: "دکس تولز",
     duration: "40 دقیقه",
     videoUrl: "https://iamvakilet.ir/0to100/DexTools_Tutorial.mp4"
   },
-
-
-  // Add more episodes here
+  { 
+    id: 16, 
+    title: "اصطلاحات دکس",
+    duration: "جستجو",
+    videoUrl: "https://iamvakilet.ir/0to100/DEX_Market_Terminology.mp4"
+  },
+  { 
+    id: 17, 
+    title: "کندل شناسی",
+    duration: "40 دقیقه",
+    videoUrl: "https://iamvakilet.ir/0to100/Candlestick_Analysis.mp4"
+  },
+  { 
+    id: 18, 
+    title: "مونتوم",
+    duration: "40 دقیقه",
+    videoUrl: "https://iamvakilet.ir/0to100/Momentum_Analysis.mp4"
+  },
+  { 
+    id: 19, 
+    title: "سایت دیبانک",
+    duration: "40 دقیقه",
+    videoUrl: "https://iamvakilet.ir/0to100/Dbank_Site_Tutorial.mp4"
+  },
 ];
 
 const ZeroTo100ServicePage = ({ isDarkMode, isOpen, onClose }) => {
@@ -110,6 +170,10 @@ const ZeroTo100ServicePage = ({ isDarkMode, isOpen, onClose }) => {
 
   const [showZeroTo100Page, setShowZeroTo100Page] = useState(false);
   const [zeroTo100PageExiting, setZeroTo100PageExiting] = useState(false);
+  const [showCryptoTerms, setShowCryptoTerms] = useState(false);
+  const [showDexTerms, setShowDexTerms] = useState(false);
+
+
 
   // اول تعریف closeZeroTo100Page با useCallback
   const closeZeroTo100Page = useCallback(() => {
@@ -147,10 +211,27 @@ const ZeroTo100ServicePage = ({ isDarkMode, isOpen, onClose }) => {
     };
   }, [isOpen, closeZeroTo100Page]);
 
-  const handleEpisodeClick = (episode) => {
+const handleEpisodeClick = (episode) => {
+  // اگر قسمت اصطلاحات بازار کریپتو باشد
+  if (episode.id === 16) {
+  setShowDexTerms(true);
+} else if (episode.id === 8) {
+  setShowCryptoTerms(true);
+} else {
+    // برای بقیه قسمت‌ها ویدیو پخش شود
     setActiveEpisode(episode);
     setShowVideo(true);
-  };
+  }
+};
+
+const handleCloseCryptoTerms = () => {
+  setShowCryptoTerms(false);
+};
+
+const handleCloseDexTerms = () => {
+  setShowDexTerms(false);
+};
+
 
   const handleCloseVideo = () => {
     setShowVideo(false);
@@ -187,7 +268,7 @@ const ZeroTo100ServicePage = ({ isDarkMode, isOpen, onClose }) => {
                   <ArrowLeftCircle className="w-8 h-8" />
                 </button>
                 <h1 className={`w-full text-center text-lg font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
-                  دوره صفر تا صد کریپتو
+                  آموزش صفر تا صد کریپتو
                 </h1>
               </>
             )}
@@ -220,8 +301,12 @@ const ZeroTo100ServicePage = ({ isDarkMode, isOpen, onClose }) => {
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center justify-center">
-                      <PlayButton isActive={activeEpisode?.id === episode.id} />
-                    </div>
+  {(episode.id === 8 || episode.id === 16) ? (
+    <SearchButton />
+  ) : (
+    <PlayButton isActive={activeEpisode?.id === episode.id} />
+  )}
+</div>
                     <div className="flex-1 mr-4">
                       <h3 className="font-medium whitespace-pre-line text-right">
                         <bdi>{episode.title}</bdi>
@@ -238,6 +323,20 @@ const ZeroTo100ServicePage = ({ isDarkMode, isOpen, onClose }) => {
             </div>
           </div>
         </div>
+        {/* این کد را اینجا قرار دهید */}
+        {showCryptoTerms && (
+          <CryptoTermsPage
+            isDarkMode={isDarkMode}
+            onBack={handleCloseCryptoTerms}
+          />
+        )}
+
+        {showDexTerms && (
+  <DexTermsPage
+    isDarkMode={isDarkMode}
+    onBack={handleCloseDexTerms}
+  />
+)}
       </div>
     </div>
   );

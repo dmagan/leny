@@ -380,10 +380,29 @@ const ChatMessage = ({ message, isDarkMode }) => {
     const doc = parser.parseFromString(content, 'text/html');
     
     // پردازش ویدیوها
-    const videos = doc.querySelectorAll('video');
-    videos.forEach((video, index) => {
-      // کدهای فعلی پردازش ویدیو...
-    });
+const videos = doc.querySelectorAll('video');
+videos.forEach((video, index) => {
+  // ایجاد container برای ویدیو
+  const container = doc.createElement('div');
+  container.className = 'video-container';
+  
+  // افزودن کلاس‌های مناسب به ویدیو
+  video.classList.add('message-video');
+  
+  // حذف استایل‌های inline که ممکن است مشکل ایجاد کنند
+  video.style.width = '';
+  video.style.height = '';
+  video.style.maxWidth = '';
+  
+  // تنظیمات ویدیو
+  video.controls = true;
+  video.preload = 'metadata';
+  video.loading = 'lazy';
+  
+  // جایگزینی ویدیو با container
+  video.parentNode.insertBefore(container, video);
+  container.appendChild(video);
+});
     
     // پردازش آیفریم‌ها (مثلاً برای ویدیوهای YouTube)
     const iframes = doc.querySelectorAll('iframe');
@@ -1105,16 +1124,16 @@ useEffect(() => {
 
   /* استایل جدید برای کانتینر ویدیو */
   .video-container {
-    width: auto !important;
-    max-width: 350px;
-    margin: 10px -7px 12px 1px; /* بالا 10px، راست 0، پایین 12px، چپ auto */
-    border-radius: 12px;
-    overflow: hidden;
-    position: relative;
-    background-color: #000;
-    display: flex;
-    align-items: center;
-  }
+  width: 40% !important;
+  max-width: 0%;
+  margin: 10px 0 12px 0;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  background-color: #000;
+  display: flex;
+  align-items: center;
+}
         
   /* استایل برای دکمه پخش */
   .video-play-button {
@@ -1137,7 +1156,7 @@ useEffect(() => {
   /* مثلث پخش داخل دکمه */
   .video-play-button:before {
     content: '';
-    width: 0;
+    width: 0; 
     height: 0;
     border-top: 15px solid transparent;
     border-bottom: 15px solid transparent;
@@ -1170,17 +1189,17 @@ useEffect(() => {
   }
 
   /* استایل برای ویدیوها */
-  .message-video {
-    width: auto !important;
-    max-width: 100% !important;
-    height: auto !important;
-    object-fit: contain;
-    display: block;
-    border-radius: 12px;
-    background-color: #000;
-    cursor: pointer;
-    margin: 0 auto;
-  }
+.message-video {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  object-fit: contain;
+  display: block;
+  border-radius: 12px;
+  background-color: #000;
+  cursor: pointer;
+  margin: 0;
+}
   
   /* ویدیوهای افقی */
   .landscape-video {
@@ -1285,8 +1304,9 @@ useEffect(() => {
     }
     
     .video-container {
-      max-width: 300px;
-    }
+  max-width: 100%;
+}
+
     
     .landscape-container {
       max-width: 300px;

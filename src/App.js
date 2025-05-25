@@ -35,6 +35,8 @@ import ZeroTo100 from './0to100';
 import supportNotificationService from './SupportNotificationService';
 import TradeProPage from './TradePro-Service-Page';
 import TradeProCoursePage from './tradepro';
+import CryptoTermsPage from './CryptoTermsPage';
+
 
 
 
@@ -252,6 +254,13 @@ function AppRoutes({
   </>
 } />
 
+
+
+
+<Route
+  path="/dex-terms"
+  element={<CryptoTermsPage isDarkMode={isDarkMode} onBack={() => navigate(-1)} />}
+/>
 
 <Route path="/tradepro-course" element={
   <>
@@ -719,14 +728,23 @@ const App = () => {
 
 useEffect(() => {
   // فقط یک بار در لود اولیه چک می‌کنیم
-  if (shouldShowInstallPrompt()) {
-    // یک تاخیر کوتاه برای اطمینان از لود شدن صفحه قبل از نمایش راهنما
-    const timer = setTimeout(() => {
-      setShowIOSPrompt(true);
-    }, 2000);
-    
-    return () => clearTimeout(timer);
-  }
+  const checkIOSPrompt = () => {
+    if (shouldShowInstallPrompt()) {
+      // یک تاخیر کوتاه برای اطمینان از لود شدن صفحه قبل از نمایش راهنما
+      const timer = setTimeout(() => {
+        setShowIOSPrompt(true);
+      }, 2000);
+      
+      return timer;
+    }
+    return null;
+  };
+  
+  const timer = checkIOSPrompt();
+  
+  return () => {
+    if (timer) clearTimeout(timer);
+  };
 }, []);
 
 

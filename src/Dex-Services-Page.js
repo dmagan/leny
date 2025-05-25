@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeftCircle, Play, ShoppingCart, DoorOpen, X } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import PaymentCard from './PaymentCard'; 
-import { PRODUCT_PRICES } from './config';
+import { PRODUCT_PRICES } from './config'
+import VideoPlayer from './VideoPlayer';;
 
 const DexServicesPage = ({ isDarkMode, isOpen, onClose }) => {
   const [showCard, setShowCard] = useState(false);
@@ -15,7 +16,7 @@ const DexServicesPage = ({ isDarkMode, isOpen, onClose }) => {
 const [renewingProduct, setRenewingProduct] = useState(null);
 const [hasDexSubscription, setHasDexSubscription] = useState(false);
 const [showVideo, setShowVideo] = useState(false);
-
+const [videoUrl] = useState('https://iamvakilet.ir/learn/dex.mp4');
 
 
 
@@ -175,29 +176,12 @@ useEffect(() => {
       
 {/* Play Button Overlay */}
 <div className="absolute inset-0 flex items-center justify-center">
-  {!showVideo ? (
-    <button 
-      onClick={() => setShowVideo(true)}
-      className="w-16 h-16 rounded-full bg-white/70 flex items-center justify-center z-10"
-    >
-      <Play size={36} className="text-black-500 ml-1" />
-    </button>
-  ) : (
-    <div className="absolute inset-0 w-full h-full bg-black/90 flex items-center justify-center z-20">
-      <button 
-        onClick={() => setShowVideo(false)}
-        className="absolute top-4 right-4 text-white z-30 bg-black/50 rounded-full p-1"
-      >
-        <X size={24} />
-      </button>
-      <video 
-        src="https://iamvakilet.ir/learn/dex.mp4"
-        controls
-        autoPlay
-        className="w-full h-full object-contain max-h-[80vh]"
-      />
-    </div>
-  )}
+  <button 
+    onClick={() => setShowVideo(true)}
+    className="w-16 h-16 rounded-full bg-white/70 flex items-center justify-center z-10 hover:bg-white/90 transition-colors"
+  >
+    <Play size={36} className="text-black-500 ml-1" />
+  </button>
 </div>
     </div>
   </div>
@@ -358,6 +342,16 @@ useEffect(() => {
     price={PRODUCT_PRICES.DEX}
   />
 )}
+
+      {/* Video Player */}
+      {showVideo && (
+        <VideoPlayer
+          videoUrl={videoUrl}
+          title="ویدیو معرفی دکس تریدینگ"
+          isDarkMode={isDarkMode}
+          onClose={() => setShowVideo(false)}
+        />
+      )}
     </div>
   );
 };

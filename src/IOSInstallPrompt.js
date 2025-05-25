@@ -18,13 +18,26 @@ const detectDevice = () => {
   };
 };
 
-// برای ذخیره وضعیت نمایش پیام در localStorage
+// برای ذخیره وضعیت نمایش پیام در localStorage با تاریخ
 export const setPromptAsSeen = () => {
-  localStorage.setItem('iosPromptSeen', 'true');
+  localStorage.setItem('iosPromptLastShown', new Date().getTime().toString());
 };
 
-export const hasSeenPrompt = () => {
-  return localStorage.getItem('iosPromptSeen') === 'true';
+export const shouldShowPrompt = () => {
+  const lastShown = localStorage.getItem('iosPromptLastShown');
+  
+  // اگر هرگز نمایش داده نشده، باید نمایش دهیم
+  if (!lastShown) return true;
+  
+  // محاسبه زمان گذشته از آخرین نمایش
+  const now = new Date().getTime();
+  const timeSinceLastShown = now - parseInt(lastShown);
+  
+  // تنظیم زمان: هر 24 ساعت دوباره نمایش دهد
+  const oneDayInMs = 24 * 60 * 60 * 1000;
+  
+  // اگر بیش از 24 ساعت گذشته، دوباره نمایش دهیم
+  return timeSinceLastShown > oneDayInMs;
 };
 
 // کامپوننت هشدار برای دسکتاپ
@@ -135,9 +148,9 @@ const DeviceDetectionWrapper = () => {
     const device = detectDevice();
     setDeviceInfo(device);
     
-    // نمایش پیام اگر دستگاه iOS باشد و قبلاً پیام را ندیده باشد
+    // نمایش پیام اگر دستگاه iOS باشد و زمان نمایش مجدد رسیده باشد
     // یا اگر دستگاه دسکتاپ باشد
-    if ((device.isIOS && !hasSeenPrompt()) || device.isDesktop) {
+    if ((device.isIOS && shouldShowPrompt()) || device.isDesktop) {
       setShowPrompt(true);
     }
   }, []);

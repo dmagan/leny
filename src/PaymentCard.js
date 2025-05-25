@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Store } from 'react-notifications-component';
 import { X, Upload, Copy, Check, Clipboard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { PRODUCT_PRICES } from './config';
+
 
 
 const notify = (title, message, type = 'danger', duration = 7000) => {
@@ -789,22 +791,34 @@ const handleSubmit = async () => {
 
         <div className="scrollable-content overflow-y-auto h-full pb-safe">
           <div className="p-6 pb-8">
-            <div className="mb-8 text-center">
-              <h1 className={`text-2xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                پرداخت
-              </h1>
-              <p className={`text-lg font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                {productTitle}
-              </p>
-              <p className="text-[#f7d55d] font-bold mt-2 text-lg">
-                {price} $
-              </p>
-            </div>
+           <div className="mb-3 text-center">
+
+<h1 className={`text-2xl font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+    پرداخت
+  </h1>
+  <p className={`text-lg font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+    {productTitle}
+  </p>
+  {productTitle.includes('پکیج') || productTitle.includes('دکس') && productTitle.includes('صفر تا صد') ? (
+<div className="mt-1">
+    <p className="text-gray-400">
+      {PRODUCT_PRICES.DEX}$ + {PRODUCT_PRICES.ZERO_TO_100}$ = <span className="line-through">{parseInt(PRODUCT_PRICES.DEX) + parseInt(PRODUCT_PRICES.ZERO_TO_100)}$</span>
+    </p>
+    <p className="text-[#f7d55d] font-bold mt-1 text-3xl">
+      {price} $
+    </p>
+  </div>
+) : (
+  <p className="text-[#f7d55d] font-bold mt-1 text-3xl">
+    {price} $
+  </p>
+)}
+</div>
 
             
 
               {/* راهنمای پرداخت */}
-<div className="my-6 p-4 rounded-xl  border border-yellow-500/90">
+<div className="mt-2 mb-4 p-4 rounded-xl border border-yellow-500/90">
   <p className="text-gray-100 text-sm text-right mb-4 font-bold" dir="rtl">
     برای خرید اشتراک می‌بایست به آدرس ولت زیر <span className="text-red-500">تتر</span> بر روی <span className="text-red-500">شبکه trc20</span> ارسال کنید:
   </p>
@@ -827,7 +841,7 @@ const handleSubmit = async () => {
   </div>
 </div>
               
-              <div className="space-y-4">
+              <div className="space-y-2">
               <div className="relative">
   <div className="flex items-center relative">
     <input

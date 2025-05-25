@@ -384,8 +384,9 @@ const handleRenewal = (product) => {
   
         <div className="scrollable-content h-full overflow-y-auto pb-safe">
           <div className="px-6 pb-8 pt-4">
-            <div className="mb-8 text-center pt-4">
-              <div className="w-16 h-16 bg-[#f7d55d] rounded-full mx-auto mb-6 flex items-center justify-center">
+            <div className="mb-2 text-center pt-4">
+              <div className="w-16 h-16 bg-[#f7d55d] rounded-full mx-auto mb-2 flex items-center justify-center">
+
                 <User className="w-8 h-8 text-white" />
               </div>
                <h1 className={`text-2xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -398,7 +399,7 @@ const handleRenewal = (product) => {
  )}
             </div>
   
-            <div className="space-y-4 text-right" dir="rtl">
+  <div className="space-y-2 text-right" dir="rtl">
               <h2 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-4 `}>
                 اشتراک‌های شما
               </h2>
@@ -411,7 +412,8 @@ const handleRenewal = (product) => {
                 </>
               ) : purchasedProducts.length > 0 ? (
                 purchasedProducts.map(product => (
-                  <div key={product.id} className={`p-4 rounded-xl border ${isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900'}`}>
+                  <div key={product.id} className={`p-2 rounded-xl border ${isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900'}`}>
+
                     <div className="flex flex-col gap-4">
                       <div className="flex items-center justify-between">
                         <div className="flex-1">

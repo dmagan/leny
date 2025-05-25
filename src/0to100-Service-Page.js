@@ -5,6 +5,7 @@ import PaymentCard from './PaymentCard'; // کامپوننت کارت پرداخ
 import { Store } from 'react-notifications-component';
 import ZeroTo100 from './0to100';
 import { PRODUCT_PRICES } from './config';
+import VideoPlayer from './VideoPlayer'; // این خط رو اضافه کن
 
 
 const ZeroTo100ServicePage = ({ isDarkMode, isOpen, onClose }) => {
@@ -19,6 +20,7 @@ const ZeroTo100ServicePage = ({ isDarkMode, isOpen, onClose }) => {
   const [isCheckingSubscription, setIsCheckingSubscription] = useState(true);
   const [showActualZeroTo100Page, setShowActualZeroTo100Page] = useState(false); // این خط باید اینجا باشد
   const [showVideo, setShowVideo] = useState(false);
+const [videoUrl] = useState('https://iamvakilet.ir/learn/0ta100.mp4'); // این خط رو اضافه کن
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -111,7 +113,6 @@ const ZeroTo100ServicePage = ({ isDarkMode, isOpen, onClose }) => {
             return;
           }
         } catch (parseError) {
-          console.error('خطا در خواندن اشتراک‌های موجود از localStorage:', parseError);
         }
       }
       
@@ -158,7 +159,6 @@ const ZeroTo100ServicePage = ({ isDarkMode, isOpen, onClose }) => {
         }
       })
       .catch(error => {
-        console.error("خطا در بررسی API:", error);
       });
     };
     
@@ -219,7 +219,7 @@ const handlePurchase = () => {
   
   // نمایش پنل پرداخت بدون بررسی مجدد از API
   setSelectedSubscription({
-  title: "دوره آموزش ۰ تا ۱۰۰ کریپتو",
+  title: " آموزش ۰ تا ۱۰۰ کریپتو",
   price: PRODUCT_PRICES.ZERO_TO_100
 });
   setShowPaymentCard(true);
@@ -262,51 +262,45 @@ const handlePurchase = () => {
 
         {/* Main Content Area */}
         <div className="absolute top-16 bottom-0 left-0 right-0 flex flex-col overflow-hidden">
-          {/* Course Cover Card (Fixed at top) */}
-          <div className="p-4">
-            <div className="bg-[#141e35] rounded-3xl relative overflow-hidden border border-gray-500" style={{ minHeight: "180px" }}>
-              {/* تصویر کاور */}
-              <img 
-                src="/0ta100.png" 
-                alt="Zero to 100 Cover" 
-                className="w-full h-full object-cover absolute inset-0"
-              />
-              
+{/* Header area with Course Cover Card (Fixed) */}
+<div className="relative header-area">
+  {/* Course Cover Card */}
+  <div className="p-4">
+    <div className="bg-[#141e35] rounded-3xl relative overflow-hidden border border-gray-500" style={{ minHeight: "180px" }}>
+      {/* تصویر کاور */}
+      <img 
+        src="/0ta100.png" 
+        alt="Zero to 100 Cover" 
+        className="w-full h-full object-cover absolute inset-0"
+      />
+      
 {/* Play Button Overlay */}
 <div className="absolute inset-0 flex items-center justify-center">
-  {!showVideo ? (
-    <button 
-      onClick={() => setShowVideo(true)}
-      className="w-16 h-16 rounded-full bg-white/70 flex items-center justify-center z-10"
-    >
-      <Play size={36} className="text-black-500 ml-1" />
-    </button>
-  ) : (
-    <div className="absolute inset-0 w-full h-full bg-black/90 flex items-center justify-center z-20">
-      <button 
-        onClick={() => setShowVideo(false)}
-        className="absolute top-4 right-4 text-white z-30 bg-black/50 rounded-full p-1"
-      >
-        <X size={24} />
-      </button>
-      <video 
-        src="https://iamvakilet.ir/learn/0ta100.mp4"
-        controls
-        autoPlay
-        className="w-full h-full object-contain max-h-[80vh]"
-      />
-    </div>
-  )}
+  <button 
+    onClick={() => setShowVideo(true)}
+    className="w-16 h-16 rounded-full bg-white/70 flex items-center justify-center z-10 hover:bg-white/90 transition-colors"
+  >
+    <Play size={36} className="text-black-500 ml-1" />
+  </button>
 </div>
-            </div>
-          </div>
+    </div>
+  </div>
+  
+  {/* Gradient transition overlay - گرادینت جدید */}
+  <div className="absolute bottom-[-30px] left-0 right-0 pointer-events-none z-[5]" style={{
+    height: '30px',
+    background: isDarkMode 
+      ? 'linear-gradient(to bottom, rgba(17,24,39,1), rgba(17,24,39,0))'
+      : 'linear-gradient(to bottom, rgba(243,244,246,1), rgba(243,244,246,0))'
+  }}></div>
+</div>
           
           {/* Scrollable Content Area */}
           <div className="flex-1 overflow-y-auto pb-24">
             <div className="px-4 space-y-4">
               {/* Introduction section */}
               <div className="p-4 rounded-xl bg-[#141e35] text-white" dir="rtl">
-                <h3 className="text-lg font-bold mb-3 text-yellow-500 text-right">سر فصل های دوره صفر تا صد</h3>
+                <h3 className="text-lg font-bold mb-3 text-yellow-500 text-right">سر فصل های آموزش صفر تا صد</h3>
                 <div className="text-sm text-right mb-4">
                   <h3 className="text-white-400 font-bold mb-2">مهم: جهت جلوگیری از هرگونه کپی ناقص نام سرفصل ها و استراتژی های مهم در سرفصل ها ذکر نمیشود. محتوا های اصلی را داخل دوره مشاهده میکنید.</h3>
                 </div>
@@ -393,7 +387,7 @@ const handlePurchase = () => {
               <div className="p-4 rounded-xl bg-[#141e35] text-white" dir="rtl">
   <div className="flex justify-between items-center">
     <div>
-      <h3 className="text-lg font-bold mb-2 text-yellow-400 text-right">قیمت دوره:</h3>
+      <h3 className="text-lg font-bold mb-2 text-yellow-400 text-right">قیمت دوره آموزشی:</h3>
       <p className="text-2xl font-bold text-green-500">{PRODUCT_PRICES.ZERO_TO_100} دلار</p>
     </div>
     <div className="bg-yellow-500/20 text-yellow-400 rounded-xl p-2 text-sm">
@@ -430,7 +424,7 @@ const handlePurchase = () => {
                 dir="rtl"
               >
                 <span>
-                  {has0to100Course ? 'ورود به دوره ۰ تا ۱۰۰' : 'ثبت نام در دوره'}
+                  {has0to100Course ? 'ورود به آموزش  ۰ تا ۱۰۰' : ' ثبت نام در دوره آموزشی'}
                 </span>
                 {/* نمایش آیکون متفاوت بر اساس وضعیت اشتراک */}
                 {has0to100Course 
@@ -454,12 +448,22 @@ const handlePurchase = () => {
         />
       )}
       
-      {/* ZeroTo100 Component - اضافه کردن این بخش */}
+   {/* ZeroTo100 Component - اضافه کردن این بخش */}
       {showActualZeroTo100Page && (
         <ZeroTo100
           isDarkMode={isDarkMode}
           isOpen={showActualZeroTo100Page}
           onClose={() => setShowActualZeroTo100Page(false)}
+        />
+      )}
+
+      {/* Video Player */}
+      {showVideo && (
+        <VideoPlayer
+          videoUrl={videoUrl}
+          title="ویدیو معرفی آموزش ۰ تا ۱۰۰"
+          isDarkMode={isDarkMode}
+          onClose={() => setShowVideo(false)}
         />
       )}
     </div>

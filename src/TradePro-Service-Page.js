@@ -343,12 +343,12 @@ useEffect(() => {
       Store.addNotification({
         title: (
           <div dir="rtl" style={{ textAlign: 'right', paddingRight: '15px' }}>
-            خرید دوره
+            خرید دوره آموزشی
           </div>
         ),
         message: (
           <div dir="rtl" style={{ textAlign: 'right' }}>
-            برای مشاهده این ویدیو باید دوره ترید حرفه‌ای را خریداری کنید.
+            برای مشاهده این ویدیو باید آموزش ترید حرفه‌ای را خریداری کنید.
           </div>
         ),
         type: "info",
@@ -413,7 +413,7 @@ const handlePurchase = () => {
             <ArrowLeftCircle className="w-8 h-8" />
           </button>
           <h2 className={`w-full text-center text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-            دوره ترید حرفه‌ای
+            آموزش ترید حرفه‌ای
           </h2>
         </div>
 
@@ -505,7 +505,7 @@ const handlePurchase = () => {
     
     {/* محتوای دوره */}
     <div className="p-4 rounded-xl bg-[#141e35] text-white" dir="rtl">
-      <h3 className="text-lg font-bold mb-3 text-yellow-400 text-right">در این دوره، بدون حاشیه، مستقیم می‌روی سر اصل ماجرا:</h3>
+      <h3 className="text-lg font-bold mb-3 text-yellow-400 text-right">در این دوره آموزشی، بدون حاشیه، مستقیم می‌روی سر اصل ماجرا:</h3>
       <ul className="list-disc list-inside space-y-1 pr-4 text-right">
         <li>آموزش تحلیل فاندامنتال از منابع اصلی جهانی و معرفی دقیق‌ترین وب‌سایت‌ها و ابزارهای حرفه‌ای</li>
         <li>استراتژی‌های معاملاتی واقعی که توسط تیم ما در بازار استفاده می‌شود بدون نسخه‌برداری از منابع عمومی</li>
@@ -515,7 +515,7 @@ const handlePurchase = () => {
         <li>آموزش کاربردی از مفاهیم اقتصاد کلان و تاثیر آن‌ها بر بازار کریپتو</li>
       </ul>
       <p className="text-right mt-3">
-        و ده‌ها محتوای تخصصی دیگر که فقط در این دوره ارائه می‌شود، آن هم با زبانی ساده و قابل‌درک، اما کاملاً حرفه‌ای.
+        و ده‌ها محتوای تخصصی دیگر که فقط در این دوره آموزشی ارائه می‌شود، آن هم با زبانی ساده و قابل‌درک، اما کاملاً حرفه‌ای.
       </p>
     </div>
     
@@ -532,7 +532,7 @@ const handlePurchase = () => {
       <div className="p-4 rounded-xl bg-[#141e35] text-white" dir="rtl">
         <div className="flex justify-between items-center">
           <div>
-            <h3 className="text-lg font-bold mb-2 text-yellow-400 text-right">قیمت دوره:</h3>
+            <h3 className="text-lg font-bold mb-2 text-yellow-400 text-right">قیمت دوره آموزشی:</h3>
             <p className="text-2xl font-bold text-green-500">${currentPrice} <span className="text-base opacity-75 line-through">$750</span></p>
             <p className="text-sm text-gray-300 mt-1">
               از امروز تا روز لانچ (اول آگوست) هر روز قیمت افزایش پیدا می‌کند  تا به قیمت اصلی ۷۵۰ دلار برسد.
@@ -565,7 +565,7 @@ const handlePurchase = () => {
     className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-4 rounded-xl transition-colors shadow-lg text-center flex items-center justify-center"
     dir="rtl"
   >
-    <span>{hasAccess ? 'ورود به آموزش ترید حرفه‌ای' : 'خرید دوره ترید حرفه‌ای'}</span>
+    <span>{hasAccess ? 'ورود به آموزش ترید حرفه‌ای' : 'خرید آموزش ترید حرفه‌ای'}</span>
     {hasAccess 
       ? <DoorOpen size={24} className="mr-2" /> 
       : <ShoppingCart size={24} className="mr-2" />

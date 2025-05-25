@@ -160,6 +160,25 @@ useEffect(() => {
   }
 }, []);
 
+// اضافه کردن مدیریت دکمه بک برای VideoPlayer
+useEffect(() => {
+  const handleBackButton = (event) => {
+    event.preventDefault();
+    onClose(); // بستن ویدیو و برگشت به لیست قسمت‌ها
+  };
+
+  // اضافه کردن یک state جدید به تاریخچه برای ویدیو
+  window.history.pushState({ videoPlayer: true }, '');
+  
+  // شنونده برای رویداد popstate (فشردن دکمه برگشت)
+  window.addEventListener('popstate', handleBackButton);
+  
+  // پاکسازی event listener
+  return () => {
+    window.removeEventListener('popstate', handleBackButton);
+  };
+}, []); // فقط یک بار در mount اجرا شود
+
   return (
     <div
       className={`fixed inset-0 z-50 ${isDarkMode ? 'bg-black' : 'bg-white'}`}

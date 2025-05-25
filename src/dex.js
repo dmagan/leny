@@ -30,7 +30,7 @@ const episodes = [
     id: 1, 
     title: "قسمت اول: مقدمه و آشنایی با مفاهیم DEX", 
     duration: "37 دقیقه",
-    videoUrl: "https://iamvakilet.ir/01.mp4"
+    videoUrl: "https://iamvakilet.ir/dex/01.mp4"
   },
   { 
     id: 2, 

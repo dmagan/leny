@@ -203,7 +203,7 @@ const [showTradeProPage, setShowTradeProPage] = useState(false);
     },
     {
       id: 2,
-      name: "دکس تریدینگ",
+      name: "آموزش دکس تریدینگ",
       imageSrc: "/Services/dex.jpg",
     },
     {
@@ -213,12 +213,12 @@ const [showTradeProPage, setShowTradeProPage] = useState(false);
     },
     {
       id: 4,
-      name: "دوره دکس تریدینگ +‌ 0 تا 100",
+      name: "آموزش دکس تریدینگ +‌ 0 تا 100",
       imageSrc: "/Services/0to100+dex.jpg",
     },
     {
       id: 5,
-      name: "ترید حرفه‌ای",
+      name: "آموزش ترید حرفه‌ای",
       imageSrc: "/Services/TradePro.jpg",
     }
     /*{
@@ -252,7 +252,6 @@ const [showTradeProPage, setShowTradeProPage] = useState(false);
       if (purchasedProductsStr) {
         try {
           const products = JSON.parse(purchasedProductsStr);
-          console.log("خریدهای کاربر:", products);
           
           // بررسی آیا پکیج ترکیبی خریداری شده است
           const hasPackage = products.some(p => 
@@ -286,7 +285,7 @@ const [showTradeProPage, setShowTradeProPage] = useState(false);
               ),
               message: (
                 <div dir="rtl" style={{ textAlign: 'right' }}>
-                  شما قبلاً این دوره‌ها را خریداری کرده‌اید. می‌توانید از طریق منوی مربوطه به محتوای دوره‌ها دسترسی داشته باشید.
+                  شما قبلاً این آموزشها را خریداری کرده‌اید. می‌توانید از طریق منوی مربوطه به محتوای دوره‌ها دسترسی داشته باشید.
                 </div>
               ),
               type: "info",
@@ -299,7 +298,6 @@ const [showTradeProPage, setShowTradeProPage] = useState(false);
             return;
           }
         } catch (error) {
-          console.error('خطا در بررسی خریدهای کاربر:', error);
         }
       }
       
@@ -329,7 +327,6 @@ const handleVIPClick = async () => {
     if (purchasedProductsStr) {
       try {
         const purchasedProducts = JSON.parse(purchasedProductsStr);
-        console.log("محصولات خریداری شده:", purchasedProducts);
         
         // بررسی برای یافتن اشتراک فعال - شامل هرگونه اشتراک فعال
         const subscriptionProduct = purchasedProducts.find(p => 
@@ -340,7 +337,6 @@ const handleVIPClick = async () => {
           p.status === 'active'
         );
         
-        console.log("محصول اشتراک پیدا شده:", subscriptionProduct);
         
         if (subscriptionProduct) {
           // اگر اشتراک فعال پیدا شد، به کانال VIP هدایت می‌شود
@@ -349,7 +345,6 @@ const handleVIPClick = async () => {
           return;
         }
       } catch (parseError) {
-        console.error('خطا در پردازش داده‌های localStorage:', parseError);
       }
     }
     
@@ -367,7 +362,6 @@ const handleVIPClick = async () => {
     }
     
     const data = await response.json();
-    console.log("پاسخ API برای وضعیت VIP:", data);
     
     if (data.success && data.has_vip) {
       // کاربر VIP است، به کانال VIP هدایت شود
@@ -423,7 +417,6 @@ const handleVIPClick = async () => {
       }, 2000);
     }
   } catch (error) {
-    console.error('خطا در بررسی وضعیت VIP:', error);
     
     // دوباره localStorage را بررسی می‌کنیم
     const purchasedProductsStr = localStorage.getItem('purchasedProducts');
@@ -448,7 +441,6 @@ const handleVIPClick = async () => {
           return;
         }
       } catch (parseError) {
-        console.error('خطا در پردازش داده‌های localStorage:', parseError);
       }
     }
     
@@ -501,7 +493,7 @@ const handleVIPClick = async () => {
         ),
         message: (
           <div dir="rtl" style={{ textAlign: 'right' }}>
-            شما هنوز دوره دکس تریدینگ را خریداری نکرده‌اید
+            شما هنوز آموزش دکس تریدینگ را خریداری نکرده‌اید
           </div>
         ),
         type: "danger",
@@ -530,7 +522,7 @@ const handleVIPClick = async () => {
         ),
         message: (
                  <div dir="rtl" style={{ textAlign: 'right' }}>
-                   شما هنوز دوره دکس تریدینگ را خریداری نکرده‌اید . به صورت خودکار به صغحه مورد نظر هدایت می شوید
+                   شما هنوز آموزش دکس تریدینگ را خریداری نکرده‌اید . به صورت خودکار به صغحه مورد نظر هدایت می شوید
                  </div>
                ),
         type: "danger",
@@ -570,7 +562,7 @@ const handleTradeProClick = () => {
       ),
       message: (
         <div dir="rtl" style={{ textAlign: 'right' }}>
-          شما هنوز دوره ترید حرفه‌ای را خریداری نکرده‌اید
+          شما هنوز آموزش ترید حرفه‌ای را خریداری نکرده‌اید
         </div>
       ),
       type: "danger",
@@ -599,7 +591,7 @@ const handleTradeProClick = () => {
       ),
       message: (
         <div dir="rtl" style={{ textAlign: 'right' }}>
-          شما هنوز دوره ترید حرفه‌ای را خریداری نکرده‌اید. به صورت خودکار به صفحه مورد نظر هدایت می شوید
+          شما هنوز آموزش ترید حرفه‌ای را خریداری نکرده‌اید. به صورت خودکار به صفحه مورد نظر هدایت می شوید
         </div>
       ),
       type: "danger",
@@ -635,7 +627,6 @@ const handleTradeProClick = () => {
   if (purchasedProductsStr) {
     try {
       const products = JSON.parse(purchasedProductsStr);
-      console.log("خریدهای کاربر:", products);
       
       // بررسی آیا محصول مشابه قبلاً خریداری شده است
       const hasSimilarProduct = products.some(p => 
@@ -673,7 +664,7 @@ const handleTradeProClick = () => {
           ),
           message: (
             <div dir="rtl" style={{ textAlign: 'right' }}>
-              شما قبلاً این دوره را خریداری کرده‌اید. می‌توانید از طریق منوی مربوطه به محتوای دوره دسترسی داشته باشید.
+              شما قبلاً این دوره آموشی را خریداری کرده‌اید. می‌توانید از طریق منوی مربوطه به محتوای دوره دسترسی داشته باشید.
             </div>
           ),
           type: "info",
@@ -686,7 +677,6 @@ const handleTradeProClick = () => {
         return;
       }
     } catch (error) {
-      console.error('خطا در بررسی خریدهای کاربر:', error);
     }
   }
   
@@ -715,7 +705,7 @@ const handleZeroTo100Click = () => {
       ),
       message: (
         <div dir="rtl" style={{ textAlign: 'right' }}>
-          شما هنوز دوره صفر تا صد را خریداری نکرده‌اید
+          شما هنوز آموزش صفر تا صد را خریداری نکرده‌اید
         </div>
       ),
       type: "danger",
@@ -746,7 +736,7 @@ const handleZeroTo100Click = () => {
       ),
       message: (
         <div dir="rtl" style={{ textAlign: 'right' }}>
-          شما هنوز دوره صفر تا صد را خریداری نکرده‌اید. به صورت خودکار به صفحه مورد نظر هدایت می شوید
+          شما هنوز آموزش صفر تا صد را خریداری نکرده‌اید. به صورت خودکار به صفحه مورد نظر هدایت می شوید
         </div>
       ),
       type: "danger",
@@ -866,7 +856,6 @@ useEffect(() => {
           }
         }
       } catch (error) {
-        console.error('خطا در بررسی اعتبار توکن:', error);
       }
     }
   };
@@ -1304,9 +1293,17 @@ const handleSignalStreamClick = async () => {
 
 {/* Story Highlights */}
 <div className="px-4">
-<h2 className={`text-2xl mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`} dir="rtl">
-هایلایت های ما
+<h2
+  className={`text-2xl font-black mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}
+  dir="rtl"
+  style={{
+    textShadow:
+      '1px 0 0 currentColor, -1px 0 0 currentColor, 0 1px 0 currentColor, 0 -1px 0 currentColor'
+  }}
+>
+استوری ها
 </h2>
+
   <div className="relative">
     <div 
       className="flex overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory gap-0.5"
@@ -1352,7 +1349,7 @@ const handleSignalStreamClick = async () => {
 {stories.length > 0 && (
   <div className="flex justify-center gap-2 mt-2 mb-4">
     {/* فقط 2 نقطه نمایش داده شود */}
-    {[0, 1,2,3,4,5,6].filter(index => index < stories.length).map((index) => (
+    {[0, 1,2,3,4].filter(index => index < stories.length).map((index) => (
       <button
         key={index}
         onClick={() => {
@@ -1438,9 +1435,19 @@ const handleSignalStreamClick = async () => {
 </div>
 {/* Services */}
 <div className="p-4">
-<h1 dir="rtl" className={`text-2xl mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+
+  <h2
+  className={`text-2xl font-black mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}
+  dir="rtl"
+  style={{
+    textShadow:
+      '1px 0 0 currentColor, -1px 0 0 currentColor, 0 1px 0 currentColor, 0 -1px 0 currentColor'
+  }}
+>
   خدمات ما
-</h1>
+</h2>
+
+
   <div className="relative">
     <div 
       ref={sliderRef}
@@ -1544,7 +1551,7 @@ const handleSignalStreamClick = async () => {
       </div>
       <div>
       <h3 className={`font-medium text-base ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-          ورود به دوره حرفه ای دکس تریدینگ
+          ورود به آموزش حرفه ای دکس تریدینگ
           </h3>
           <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
           نحوه پیدا کردن میم کوین های پامپی 
@@ -1561,7 +1568,7 @@ const handleSignalStreamClick = async () => {
       </div>
       <div>
       <h3 className={`font-medium text-base ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-          ورود به دوره ۰ تا ۱۰۰ کریپتو
+          ورود به آموزش ۰ تا ۱۰۰ کریپتو
           </h3>
           <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
           آشنایی با مفاهیم پایه تا حرفه ای
@@ -1577,7 +1584,7 @@ const handleSignalStreamClick = async () => {
   </div>
   <div>
     <h3 className={`font-medium text-base ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-      ورود به دوره ترید حرفه‌ای
+      ورود به آموزش ترید حرفه‌ای
     </h3>
     <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
       آموزش استراتژی‌های پیشرفته ترید
@@ -1652,16 +1659,17 @@ const handleSignalStreamClick = async () => {
     <div className={`flex items-center justify-between rounded-full px-6 shadow-lg
       ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`} style={{ paddingTop: '0px', paddingBottom: '0px' }}>
       <NavItem icon={<Home size={24} />} label="خانه" active={true} isDarkMode={isDarkMode}/>
-      <NavItem icon={<MonitorPlay size={24} />} label="پست ها" active={false} isDarkMode={isDarkMode}/>
+      <NavItem icon={<MonitorPlay size={24} />} label="پست ها" active={false} isDarkMode={isDarkMode} isLoggedIn={isLoggedIn} />
       <NavItem 
-        icon={<img src="/center.png" width="48" height="48" alt="center" />} 
-        label="آپدیت مارکت" 
-        active={false} 
-        isDarkMode={isDarkMode} 
-        onLogout={onLogout} 
-        badgeCount={unreadChannelPosts}
-        badgePosition="top-3" // موقعیت بادج آپدیت مارکت
-      />
+  icon={<img src="/center.png" width="48" height="48" alt="center" />} 
+  label="آپدیت مارکت" 
+  active={false} 
+  isDarkMode={isDarkMode}
+  isLoggedIn={isLoggedIn} // این خط را اضافه کنید 
+  onLogout={onLogout} 
+  badgeCount={unreadChannelPosts}
+  badgePosition="top-3"
+/>
       <NavItem 
         icon={isLoggedIn ? <UserCheck size={24} /> : <UserX size={24} />}  
         active={false} 
@@ -1775,33 +1783,41 @@ const handleSignalStreamClick = async () => {
 const NavItem = ({ icon, label, active, isDarkMode, isProfile, onLogout, isLoggedIn, badgeCount, badgePosition = "top-3" }) => {
   const navigate = useNavigate();
 
-  const handleClick = () => {
-    if (isProfile) {
-      if (isLoggedIn) {
-        navigate('/profile');
-      } else {
-        navigate('/login');
-      }
-    } else if (label === "آپدیت مارکت") {
-      navigate('/chanel-public');
-    } else if (label === "پست ها") {
-      navigate('/chanel-posts');
-    } else if (label === "محصولات") {
-      navigate('/products');
-    } else if (label === "سفارش‌ها") {
-      if (isLoggedIn) {
-        navigate('/orders');
-      } else {
-        navigate('/login');
-      }
-    } else if (label === "پشتیبانی") {
-      if (isLoggedIn) {
-        navigate('/support');
-      } else {
-        navigate('/login');
-      }
+const handleClick = () => {
+  if (isProfile) {
+    if (isLoggedIn) {
+      navigate('/profile');
+    } else {
+      navigate('/login');
     }
-  };
+  } else if (label === "آپدیت مارکت") {
+    if (isLoggedIn) {
+      navigate('/chanel-public');
+    } else {
+      navigate('/login');
+    }
+  } else if (label === "پست ها") {
+    if (isLoggedIn) {
+      navigate('/chanel-posts');
+    } else {
+      navigate('/login');
+    }
+  } else if (label === "محصولات") {
+    navigate('/products');
+  } else if (label === "سفارش‌ها") {
+    if (isLoggedIn) {
+      navigate('/orders');
+    } else {
+      navigate('/login');
+    }
+  } else if (label === "پشتیبانی") {
+    if (isLoggedIn) {
+      navigate('/support');
+    } else {
+      navigate('/login');
+    }
+  }
+};
   
    return (
     <button 
