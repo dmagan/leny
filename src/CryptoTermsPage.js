@@ -591,7 +591,7 @@ const cryptoTerms = [
         )}
 
         {/* Content */}
-        <div className="absolute top-[147px] bottom-0 left-0 right-0 overflow-y-auto p-4">
+        <div className="absolute top-[149px] bottom-0 left-0 right-0 overflow-y-auto p-4">
 
           {filteredTerms.length === 0 ? (
             <div className={`flex flex-col items-center justify-center h-48 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>

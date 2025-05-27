@@ -2,7 +2,9 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeftCircle, X } from 'lucide-react';
 import AudioPlayer from './AudioPlayer';
+import VideoPlayer from './components/VideoPlayer';
 import channelNotificationService from './ChannelNotificationService';
+
 
 
 // Image Modal Component with Zoom (iOS compatible)
@@ -361,7 +363,7 @@ const ImageModal = ({ isOpen, onClose, imageUrl }) => {
   );
 };
 // Chat Message Component
-const ChatMessage = ({ message, isDarkMode }) => {
+const ChatMessage = ({ message, isDarkMode, onVideoClick }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [mediaUrl, setMediaUrl] = useState('');
   const [mediaType, setMediaType] = useState(''); // 'image' یا 'video'
@@ -372,78 +374,134 @@ const ChatMessage = ({ message, isDarkMode }) => {
   const audioUrl = message.meta?.audio_url;
 
   // پردازش محتوا برای اصلاح ویدیو و تصاویر
-  useEffect(() => {
-    if (!content || !messageRef.current) return;
+useEffect(() => {
+  if (!content || !messageRef.current) return;
+  
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(content, 'text/html');
+  
+  // پردازش ویدیوها
+  const videos = doc.querySelectorAll('video');
+  
+  videos.forEach((video, index) => {
+    // بررسی source tags
+    const sources = video.querySelectorAll('source');
+    let videoSrc = video.getAttribute('src');
     
-    // استفاده از DOMParser برای تبدیل HTML به DOM
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(content, 'text/html');
+    // اگر src مستقیم نداشت، از source tag استفاده کن
+    if (!videoSrc && sources.length > 0) {
+      videoSrc = sources[0].getAttribute('src');
+    }
     
-    // پردازش ویدیوها
-const videos = doc.querySelectorAll('video');
-videos.forEach((video, index) => {
-  // ایجاد container برای ویدیو
-  const container = doc.createElement('div');
-  container.className = 'video-container';
-  
-  // افزودن کلاس‌های مناسب به ویدیو
-  video.classList.add('message-video');
-  
-  // حذف استایل‌های inline که ممکن است مشکل ایجاد کنند
-  video.style.width = '';
-  video.style.height = '';
-  video.style.maxWidth = '';
-  
-  // تنظیمات ویدیو
-  video.controls = true;
-  video.preload = 'metadata';
-  video.loading = 'lazy';
-  
-  // جایگزینی ویدیو با container
-  video.parentNode.insertBefore(container, video);
-  container.appendChild(video);
-});
+    const videoTitle = video.getAttribute('title') || 'ویدیو';
     
-    // پردازش آیفریم‌ها (مثلاً برای ویدیوهای YouTube)
-    const iframes = doc.querySelectorAll('iframe');
-    iframes.forEach(iframe => {
-      // کدهای فعلی پردازش آیفریم...
+    if (!videoSrc) {
+      return; // اگر src پیدا نشد، این ویدیو را رد کن
+    }
+    
+    const videoPlaceholder = doc.createElement('div');
+    videoPlaceholder.innerHTML = `
+      <div style="
+        position: relative;
+        width: 100%;
+        max-width: 280px;
+        height: 180px;
+        background: linear-gradient(135deg, #1a1a1a 0%, #333 100%);
+        border-radius: 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid rgba(247, 213, 93, 0.3);
+        margin: 10px ;
+        transition: all 0.3s ease;
+      " 
+      data-video-src="${videoSrc}" 
+      data-video-title="${videoTitle}"
+      class="video-play-trigger">
+        <div style="
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          color: white;
+          text-align: center;
+        ">
+          <div style="
+            width: 70px;
+            height: 70px;
+            background: rgba(247, 213, 93, 0.9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 15px rgba(247, 213, 93, 0.3);
+          ">
+            <div style="
+              width: 0;
+              height: 0;
+              border-left: 20px solid white;
+              border-top: 12px solid transparent;
+              border-bottom: 12px solid transparent;
+              margin-left: 4px;
+            "></div>
+          </div>
+          <span style="
+            font-size: 14px; 
+            color: #f7d55d;
+            font-weight: 500;
+          ">کلیک برای پخش ویدیو</span>
+        </div>
+      </div>
+    `;
+    
+    // جایگزینی ویدیو
+    video.parentNode.replaceChild(videoPlaceholder, video);
+  });
+  
+  // پردازش تصاویر
+  const images = doc.querySelectorAll('img');
+  images.forEach(img => {
+    img.classList.add('message-image');
+    const originalSrc = img.getAttribute('src');
+    const highQualitySrc = originalSrc ? originalSrc.replace(/-\d+x\d+\./, '.') : originalSrc;
+    
+    img.onclick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (highQualitySrc) {
+        setMediaUrl(highQualitySrc);
+        setMediaType('image');
+        setIsModalOpen(true);
+      }
+    };
+    
+    img.classList.add('max-w-full', 'h-auto', 'rounded-xl');
+  });
+  
+  if (messageRef.current) {
+    messageRef.current.innerHTML = '';
+    Array.from(doc.body.childNodes).forEach(node => {
+      messageRef.current.appendChild(node);
     });
     
-// پردازش تصاویر
-const images = doc.querySelectorAll('img');
-images.forEach(img => {
-  img.classList.add('message-image');
-  
-  // استخراج URL با کیفیت بالا (حذف پسوندهای اندازه وردپرس)
-  const originalSrc = img.getAttribute('src');
-  const highQualitySrc = originalSrc ? originalSrc.replace(/-\d+x\d+\./, '.') : originalSrc;
-  
-  // افزودن قابلیت کلیک برای بزرگنمایی
-  img.onclick = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (highQualitySrc) {
-      setMediaUrl(highQualitySrc);
-      setMediaType('image');
-      setIsModalOpen(true);
-    }
-  };
-  
-  // اضافه کردن کلاس برای محدود کردن سایز تصاویر
-  img.classList.add('max-w-full', 'h-auto', 'rounded-xl');
-});
-    // به‌روزرسانی محتوا
-    if (messageRef.current) {
-      // پاک کردن محتوای قبلی
-      messageRef.current.innerHTML = '';
-      // افزودن محتوای جدید
-      Array.from(doc.body.childNodes).forEach(node => {
-        messageRef.current.appendChild(node);
+    // اضافه کردن event listener بعد از appendChild
+    const videoTriggers = messageRef.current.querySelectorAll('.video-play-trigger');
+    videoTriggers.forEach(trigger => {
+      trigger.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const videoSrc = trigger.getAttribute('data-video-src');
+        const videoTitle = trigger.getAttribute('data-video-title');
+        
+        if (videoSrc && onVideoClick) {
+          onVideoClick(videoSrc, videoTitle);
+        }
       });
-    }
-  }, [content]);
-
+    });
+  }
+}, [content, onVideoClick]);
   const getFormattedDate = (date) => {
     const d = new Date(date);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -534,6 +592,9 @@ const PublicChannel = ({ isDarkMode, isOpen = true, onClose }) => {
 const [showScrollButton, setShowScrollButton] = useState(false);
 const previousPostsCountRef = useRef(0);
 const [lastLoadedPostId, setLastLoadedPostId] = useState(null);
+const [showVideoPlayer, setShowVideoPlayer] = useState(false);
+const [currentVideo, setCurrentVideo] = useState({ url: '', title: '' });
+
   
   // اضافه کردن انیمیشن
   const [showCard, setShowCard] = useState(false);
@@ -1008,9 +1069,13 @@ useEffect(() => {
   </div>
 )}
       <ChatMessage 
-        message={post}
-        isDarkMode={isDarkMode}
-      />
+  message={post}
+  isDarkMode={isDarkMode}
+  onVideoClick={(url, title) => {
+    setCurrentVideo({ url, title });
+    setShowVideoPlayer(true);
+  }}
+/>
     </React.Fragment>
   ))}
 
@@ -1066,6 +1131,19 @@ useEffect(() => {
 )}
 
       </div>
+
+      {/* Video Player Modal */}
+{showVideoPlayer && (
+  <VideoPlayer
+    videoUrl={currentVideo.url}
+    title={currentVideo.title}
+    isDarkMode={isDarkMode}
+    onClose={() => {
+      setShowVideoPlayer(false);
+      setCurrentVideo({ url: '', title: '' });
+    }}
+  />
+)}
 
       <style jsx global>{`
   .message-bubble {

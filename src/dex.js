@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeftCircle } from 'lucide-react';
 import VideoPlayer from './components/VideoPlayer';
+import DexTermsPage from './DexTermsPage'; 
 
 const PlayButton = ({ isActive }) => (
   <svg 
@@ -19,90 +20,104 @@ const PlayButton = ({ isActive }) => (
   </svg>
 );
 
+
+const SearchButton = () => (
+  <svg 
+    width="32" height="32" viewBox="0 0 32 32" 
+    fill="none" xmlns="http://www.w3.org/2000/svg" 
+    className="cursor-pointer transition-colors"
+  >
+    <circle cx="16" cy="16" r="15" 
+      stroke="#4B5563" strokeWidth="2"/>
+    <circle cx="16" cy="16" r="6" 
+      stroke="#4B5563" strokeWidth="2"/>
+    <path d="20.5 20.5L22 22" 
+      stroke="#4B5563" 
+      strokeWidth="2" 
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+
 const episodes = [
   { 
     id: 0,
-    title: "مقدمه", 
-    duration: "10 دقیقه",
-    videoUrl: "https://iamvakilet.ir/dex/intro.mp4"
+    title: "1 مقدمه", 
+    duration: "20 دقیقه",
+    videoUrl: "https://iamvakilet.ir/dex/intro1.mp4"
   },
-  { 
-    id: 1, 
-    title: "قسمت اول: مقدمه و آشنایی با مفاهیم DEX", 
+    { 
+    id: 1,
+    title: "2 مقدمه", 
     duration: "37 دقیقه",
-    videoUrl: "https://iamvakilet.ir/dex/01.mp4"
+    videoUrl: "https://iamvakilet.ir/dex/intro2.mp4"
   },
   { 
     id: 2, 
-    title: "قسمت دوم: نحوه ثبت نام در DEX و انتقال ارز", 
+    title: "قسمت اول", 
     duration: "29 دقیقه",
-    videoUrl: "https://iamvakilet.ir/dex/02.mp4"  },
+    videoUrl: "https://iamvakilet.ir/dex/01.mp4" 
+   },
   { 
     id: 3, 
-    title: "قسمت سوم: آشنایی با کیف پول‌های DEX", 
+    title: "قسمت دوم", 
     duration: "19 دقیقه",
-    videoUrl: "https://iamvakilet.ir/dex/03.mp4"  },
+    videoUrl: "https://iamvakilet.ir/dex/02.mp4"
+      },
   { 
     id: 4, 
-    title: "قسمت چهارم: نحوه خرید و فروش در DEX", 
+    title: "قسمت سوم", 
     duration: "31 دقیقه",
-    videoUrl: "https://iamvakilet.ir/dex/04.mp4"  },
+    videoUrl: "https://iamvakilet.ir/dex/03.mp4"  },
   { 
     id: 5, 
-    title: "قسمت پنجم: مدیریت ریسک در معاملات DEX", 
+     title: "قسمت چهارم", 
     duration: "34 دقیقه",
-    videoUrl: "https://iamvakilet.ir/dex/05.mp4"  },
+    videoUrl: "https://iamvakilet.ir/dex/04.mp4"  },
   { 
     id: 6, 
-    title: "قسمت ششم: استراتژی‌های معاملاتی در DEX", 
+     title: "قسمت پنجم", 
     duration: "22 دقیقه",
-    videoUrl: "https://iamvakilet.ir/dex/06.mp4"  },
+    videoUrl: "https://iamvakilet.ir/dex/05.mp4"  },
   { 
     id: 7, 
-    title: "قسمت هفتم: تحلیل تکنیکال در DEX", 
-    duration: "24 دقیقه",
-    videoUrl: "https://iamvakilet.ir/dex/07.mp4"  },
+     title: "قسمت ششم", 
+    duration: "15 دقیقه",
+    videoUrl: "https://iamvakilet.ir/dex/06.mp4"  },
   { 
     id: 8, 
-    title: "قسمت هشتم: تحلیل فاندامنتال در DEX", 
-    duration: "02 دقیقه",
-    videoUrl: "https://iamvakilet.ir/dex/08.mp4"  },
+      title: "قسمت هفتم", 
+    duration: "9 دقیقه",
+    videoUrl: "https://iamvakilet.ir/dex/07.mp4"  },
   { 
     id: 9, 
-    title: "قسمت نهم: مدیریت سرمایه در DEX", 
-    duration: "15 دقیقه",
-    videoUrl: "https://iamvakilet.ir/dex/09.mp4"  },
+       title: "قسمت هشتم", 
+    duration: "22 دقیقه",
+    videoUrl: "https://iamvakilet.ir/dex/08.mp4"  },
   { 
     id: 10, 
-    title: "قسمت دهم: شناسایی فرصت‌های معاملاتی", 
-    duration: "09 دقیقه",
-    videoUrl: "https://iamvakilet.ir/dex/10.mp4"  },
+      title: "قسمت نهم", 
+    duration: "34 دقیقه",
+    videoUrl: "https://iamvakilet.ir/dex/09.mp4"  },
   { 
     id: 11, 
-    title: "قسمت یازدهم: اتوماسیون معاملات در DEX", 
-    duration: "22 دقیقه",
-    videoUrl: "https://iamvakilet.ir/dex/11.mp4"  },
-  { 
-    id: 12, 
-    title: "قسمت دوازدهم: مدیریت پورتفولیو در DEX", 
-    duration: "34 دقیقه",
-    videoUrl: "https://iamvakilet.ir/dex/12.mp4"  },
-  { 
-    id: 13, 
-    title: "قسمت سیزدهم: استراتژی‌های پیشرفته معاملاتی", 
+      title: "قسمت دهم", 
     duration: "47 دقیقه",
-    videoUrl: "https://iamvakilet.ir/dex/13.mp4"  },
-  { 
-    id: 14, 
-    title: "قسمت آخر: توضیح مسیر از زمان روشن کردن کامپیوتر تا انتها به علاوه یک سوپرایز واچ لیست میم کوین\n\nکاربرانی که vip هستند نیازی به واچ لیست ندارند و مستقیم به آنها اعلام خواهد شد", 
-    duration: "30 دقیقه",
-    videoUrl: "https://iamvakilet.ir/dex/14.mp4"  }
+    videoUrl: "https://iamvakilet.ir/dex/10.mp4"  },
+    { 
+    id: 12, 
+    title: "اصطلاحات دکس", 
+    duration: "جستجو",
+    videoUrl: "https://iamvakilet.ir/dex/dex_terms.mp4"  
+  }
 ];
 
 const DexPage = ({ isDarkMode, isOpen, onClose }) => {
   const navigate = useNavigate();
   const [activeEpisode, setActiveEpisode] = useState(null);
   const [showVideo, setShowVideo] = useState(false);
+  const [showDexTerms, setShowDexTerms] = useState(false);
   
   // انیمیشن
   const [showDexPage, setShowDexPage] = useState(false);
@@ -144,10 +159,19 @@ const DexPage = ({ isDarkMode, isOpen, onClose }) => {
     }, 300);
   }, [onClose, navigate]);
 
-  const handleEpisodeClick = (episode) => {
+ const handleEpisodeClick = (episode) => {
+  if (episode.id === 12) {
+    setShowDexTerms(true);
+  } else {
     setActiveEpisode(episode);
     setShowVideo(true);
-  };
+  }
+};
+
+const handleCloseDexTerms = () => {
+  setShowDexTerms(false);
+};
+
 
   const handleCloseVideo = () => {
     setShowVideo(false);
@@ -217,8 +241,12 @@ const DexPage = ({ isDarkMode, isOpen, onClose }) => {
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center justify-center">
-                      <PlayButton isActive={activeEpisode?.id === episode.id} />
-                    </div>
+  {episode.id === 12 ? (
+    <SearchButton />
+  ) : (
+    <PlayButton isActive={activeEpisode?.id === episode.id} />
+  )}
+</div>
                     <div className="flex-1 mr-4">
                       <h3 className="font-medium whitespace-pre-line text-right">
                         <bdi>{episode.title}</bdi>
@@ -236,6 +264,12 @@ const DexPage = ({ isDarkMode, isOpen, onClose }) => {
           </div>
         </div>
       </div>
+      {showDexTerms && (
+  <DexTermsPage
+    isDarkMode={isDarkMode}
+    onBack={handleCloseDexTerms}
+  />
+)}
     </div>
   );
 };

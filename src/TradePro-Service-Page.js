@@ -272,7 +272,7 @@ useEffect(() => {
   
   // تاریخ پایان تخفیف: 1 آگوست 2025 در منطقه زمانی اروپا
   const targetDate = new Date(Date.UTC(2025, 7, 1, 23, 59, 59)); // ماه‌ها از 0 شروع می‌شوند، پس 7 = آگوست
-  const startDate = new Date(Date.UTC(2025, 4, 15, 0, 0, 0));    // 15 مه 2025، 4 = مه
+  const startDate = new Date(Date.UTC(2025, 4, 24, 0, 0, 0));    // 15 مه 2025، 4 = مه
   
   // محاسبه قیمت اولیه بر اساس زمان اروپا
   const now = getEuropeTime();

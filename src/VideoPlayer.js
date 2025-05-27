@@ -160,13 +160,18 @@ useEffect(() => {
   }
 }, []);
 
-// اضافه کردن مدیریت دکمه بک برای VideoPlayer
+// اضافه کردن مدیریت دکمه بک برای VideoPlayer  
 useEffect(() => {
   const handleBackButton = (event) => {
     event.preventDefault();
-    onClose(); // بستن ویدیو و برگشت به لیست قسمت‌ها
+    onClose(); // دقیقاً مثل کلیک روی دکمه X عمل می‌کند
   };
 
+  // اطلاع‌رسانی به React Native که VideoPlayer باز شده
+  window.postMessage(JSON.stringify({
+    type: 'VIDEO_PLAYER_OPENED'
+  }), '*');
+  
   // اضافه کردن یک state جدید به تاریخچه برای ویدیو
   window.history.pushState({ videoPlayer: true }, '');
   
@@ -176,8 +181,13 @@ useEffect(() => {
   // پاکسازی event listener
   return () => {
     window.removeEventListener('popstate', handleBackButton);
+    
+    // اطلاع‌رسانی به React Native که VideoPlayer بسته شده
+    window.postMessage(JSON.stringify({
+      type: 'VIDEO_PLAYER_CLOSED'
+    }), '*');
   };
-}, []); // فقط یک بار در mount اجرا شود
+}, [onClose]);
 
   return (
     <div

@@ -36,6 +36,7 @@ import supportNotificationService from './SupportNotificationService';
 import TradeProPage from './TradePro-Service-Page';
 import TradeProCoursePage from './tradepro';
 import CryptoTermsPage from './CryptoTermsPage';
+import ErrorBoundary from './ErrorBoundary';
 
 
 
@@ -1158,55 +1159,55 @@ useEffect(() => {
     fetchStories();
   }, []);
 
-  return (
-    <div>
-      <ReactNotifications />
-      {/** اضافه کردن Toaster در بالای BrowserRouter */}
-      <Toaster 
-        position="top-center" 
-        containerStyle={{ zIndex: 11000 }} 
-      />
+ return (
+ <ErrorBoundary isDarkMode={isDarkMode}>
+   <div>
+     <ReactNotifications />
+     {/** اضافه کردن Toaster در بالای BrowserRouter */}
+     <Toaster 
+       position="top-center" 
+       containerStyle={{ zIndex: 11000 }} 
+     />
 
-      
+     {/* اضافه کردن کامپوننت راهنمای iOS */}
+     {showIOSPrompt && (
+       <IOSInstallPrompt 
+         isDarkMode={isDarkMode} 
+         onClose={() => setShowIOSPrompt(false)} 
+       />
+     )}
 
-{/* اضافه کردن کامپوننت راهنمای iOS */}
-{showIOSPrompt && (
-        <IOSInstallPrompt 
-          isDarkMode={isDarkMode} 
-          onClose={() => setShowIOSPrompt(false)} 
-        />
-      )}
+     {/* اضافه کردن هشدار دسکتاپ */}
+     {showDesktopWarning && (
+       <DesktopWarning 
+         isDarkMode={isDarkMode} 
+       />
+     )}
 
-{/* اضافه کردن هشدار دسکتاپ */}
-{showDesktopWarning && (
-  <DesktopWarning 
-    isDarkMode={isDarkMode} 
-  />
-)}
-
-      <BrowserRouter>
-        <OrientationLock isDarkMode={isDarkMode}>
-          {loading ? (
-            <CustomLoading />
-          ) : (
-            <AppRoutes 
-              isDarkMode={isDarkMode} 
-              setIsDarkMode={setIsDarkMode}
-              products={products}
-              cryptoPrices={cryptoPrices}
-              stories={stories}
-              loading={loading}
-              sliders={sliders}
-              isLoggedIn={isLoggedIn}
-              handleLogout={handleLogout}
-              setIsLoggedIn={setIsLoggedIn}
-              unreadSupportMessages={unreadSupportMessages}
-            />
-          )}
-        </OrientationLock>
-      </BrowserRouter>
-    </div>
-  );
+     <BrowserRouter>
+       <OrientationLock isDarkMode={isDarkMode}>
+         {loading ? (
+           <CustomLoading />
+         ) : (
+           <AppRoutes 
+             isDarkMode={isDarkMode} 
+             setIsDarkMode={setIsDarkMode}
+             products={products}
+             cryptoPrices={cryptoPrices}
+             stories={stories}
+             loading={loading}
+             sliders={sliders}
+             isLoggedIn={isLoggedIn}
+             handleLogout={handleLogout}
+             setIsLoggedIn={setIsLoggedIn}
+             unreadSupportMessages={unreadSupportMessages}
+           />
+         )}
+       </OrientationLock>
+     </BrowserRouter>
+   </div>
+ </ErrorBoundary>
+);
   
 };
 

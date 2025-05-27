@@ -105,6 +105,7 @@ const LoginPage = ({ isDarkMode, setIsLoggedIn, onClose }) => {
     confirmPassword: ''
   });
 const [saveLogin, setSaveLogin] = useState(true);
+const [acceptTerms, setAcceptTerms] = useState(false);
 
   // state برای حالت بازیابی رمز عبور
   const [isForgotPassword, setIsForgotPassword] = useState(false);
@@ -545,6 +546,18 @@ const setupTokenRefresh = (token, isPersistent) => {
         });
         return;
       }
+       if (!acceptTerms) {
+    Store.addNotification({
+      title: "خطا",
+      message: "لطفاً تیک قوانین و مقررات را فعال کنید و سپس روی کلید ثبت نام کلیک کنید",
+      type: "danger",
+      insert: "top",
+      container: "center",
+      dismiss: { duration: 4000, showIcon: true, pauseOnHover: true },
+      style: { direction: 'rtl', textAlign: 'right' }
+    });
+    return;
+  }
   
       if (!validateEmail(formData.email)) {
         Store.addNotification({
@@ -1078,7 +1091,31 @@ const setupTokenRefresh = (token, isPersistent) => {
                         autoCorrect: "off"
                       })}
                       {renderInput('password', 'رمز عبور', 'password', true, setShowPassword)}
-                      {renderInput('confirmPassword', 'تکرار رمز عبور', 'password', true, setShowPassword)}
+                      {renderInput('confirmPassword', 'تکرار رمز عبور', 'password', true, setShowPassword)} 
+{!isLogin && (
+  <div className="pt-4 pb-2">
+    <label className={`flex items-start gap-3 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+      <input
+        type="checkbox"
+        checked={acceptTerms}
+        onChange={(e) => setAcceptTerms(e.target.checked)}
+        className="mt-1 rounded border-gray-300"
+      />
+      <span className="leading-relaxed">
+        با ثبت نام، 
+        <a 
+          href="https://persiancryptosource.com/privacy-policy.html" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className={`mx-1 underline ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'}`}
+        >
+          سیاست حفظ حریم خصوصی
+        </a>
+        و قوانین استفاده موافقت می‌کنم.
+      </span>
+    </label>
+  </div>
+)}
                     </>
                   )}
                 </div>

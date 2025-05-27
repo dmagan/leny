@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>سیاست حفظ حریم خصوصی - PCS</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Vazirmatn', 'Tahoma', sans-serif;
+            line-height: 1.8;
+            background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+            color: #e5e7eb;
+            min-height: 100vh;
+            padding: 20px;
+            direction: rtl;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .header {
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            padding: 40px 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            animation: shine 3s infinite;
+        }
+        
+        @keyframes shine {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(30deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(30deg); }
+        }
+        
+        h1 {
+            color: #1f2937;
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        h2 {
+            color: #ffd700;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 30px 0 20px 0;
+            padding: 15px 20px;
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 10px;
+            border-right: 5px solid #ffd700;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        h2:hover {
+            background: rgba(255, 215, 0, 0.15);
+            transform: translateX(-5px);
+        }
+        
+        h2::before {
+            content: '▶';
+            position: absolute;
+            right: -5px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #ffd700;
+            font-size: 0.8rem;
+        }
+        
+        p {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            text-align: justify;
+            color: #d1d5db;
+            line-height: 2;
+            padding: 0 10px;
+        }
+        
+        .contact {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1));
+            padding: 25px;
+            border-radius: 15px;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            margin: 30px 0;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .contact::before {
+            content: '✉';
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 1.5rem;
+            color: #ffd700;
+            opacity: 0.5;
+        }
+        
+        .contact p {
+            color: #ffd700;
+            font-weight: 500;
+            font-size: 1.2rem;
+            margin: 0;
+        }
+        
+        .footer {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 20px 40px;
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        small {
+            color: #9ca3af;
+            font-size: 0.9rem;
+            font-style: italic;
+        }
+        
+        /* اضافه کردن افکت‌های زیبا */
+        .crypto-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.1;
+        }
+        
+        .crypto-symbol {
+            position: absolute;
+            color: #ffd700;
+            font-size: 2rem;
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+        
+        /* ریسپانسیو */
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .container { margin: 10px; }
+            .content, .header, .footer { padding: 20px; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.3rem; }
+            p { font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- پس‌زمینه متحرک کریپتو -->
+    <div class="crypto-bg">
+        <div class="crypto-symbol" style="top: 10%; left: 10%; animation-delay: 0s;">₿</div>
+        <div class="crypto-symbol" style="top: 20%; right: 15%; animation-delay: 1s;">Ξ</div>
+        <div class="crypto-symbol" style="bottom: 30%; left: 20%; animation-delay: 2s;">₿</div>
+        <div class="crypto-symbol" style="bottom: 15%; right: 25%; animation-delay: 3s;">Ξ</div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>سیاست حفظ حریم خصوصی</h1>
+        </div>
+        
+        <div class="content">
+            <h2>درباره این اپ</h2>
+            <p>اپ PCS یک پلتفرم آموزشی برای ارائه اطلاعات و آموزش ارزهای دیجیتال است. هدف ما ارائه محتوای علمی و آموزشی در حوزه بلاک‌چین و ارزهای دیجیتال به زبان فارسی می‌باشد.</p>
+            
+            <h2>جمع‌آوری اطلاعات</h2>
+            <p>این اپ هیچ اطلاعات شخصی از شما جمع‌آوری نمی‌کند. تمام محتوا از طریق وب‌سایت بارگذاری می‌شود و هیچ‌گونه ثبت‌نام یا وارد کردن اطلاعات شخصی مورد نیاز نیست.</p>
+            
+            <h2>استفاده از داده‌ها</h2>
+            <p>تنها ممکن است داده‌های کاربری عمومی و ناشناس مانند آمار بازدید، تعداد دانلودها و الگوهای استفاده عمومی برای بهبود کیفیت محتوا و تجربه کاربری استفاده شود.</p>
+            
+            <h2>امنیت</h2>
+            <p>از آنجا که هیچ اطلاعات شخصی جمع‌آوری، ذخیره یا پردازش نمی‌شود، نگرانی امنیتی خاصی در خصوص حفاظت از داده‌های شخصی وجود ندارد. تمام ارتباطات از طریق پروتکل امن HTTPS انجام می‌شود.</p>
+            
+        </div>
+        
+        <div class="footer">
+            <p><small>آخرین بروزرسانی: ۵ خرداد ۱۴۰۴ (۲۶ می ۲۰۲۵)</small></p>
+        </div>
+    </div>
+</body>
+</html> 

@@ -15,6 +15,7 @@ import supportNotificationService from './SupportNotificationService';
 import channelNotificationService from './ChannelNotificationService';
 import vipNotificationService from './VIPNotificationService';
 import TradeProPage from './TradePro-Service-Page';
+import postsNotificationService from './PostsNotificationService';
 
 
 
@@ -183,6 +184,8 @@ const [showActualZeroTo100Page, setShowActualZeroTo100Page] = useState(false);
 const [unreadChannelPosts, setUnreadChannelPosts] = useState(0);
 const [unreadVIPPosts, setUnreadVIPPosts] = useState(0);
 const [showTradeProPage, setShowTradeProPage] = useState(false);
+const [unreadPostsMessages, setUnreadPostsMessages] = useState(0);
+
 
   const [showPaymentCard, setShowPaymentCard] = useState({
     show: false,
@@ -774,6 +777,22 @@ setAutoplayEnabled(true);
 }, []);
 
 
+useEffect(() => {
+  if (isLoggedIn) {
+    postsNotificationService.start();
+    postsNotificationService.addListener(count => {
+      setUnreadPostsMessages(count);
+    });
+    
+    return () => {
+      postsNotificationService.removeListener(setUnreadPostsMessages);
+      postsNotificationService.stop();
+    };
+  } else {
+    setUnreadPostsMessages(0);
+  }
+}, [isLoggedIn]);
+
 
 // اضافه کردن useEffect برای راه‌اندازی سرویس‌های نوتیفیکیشن
 useEffect(() => {
@@ -867,94 +886,7 @@ useEffect(() => {
   return () => clearInterval(tokenCheckInterval);
 }, []);
 
-  // دریافت قیمت‌های ارز دیجیتال
-  useEffect(() => {
-    // داده‌های استاتیک برای تست
-    const staticData = [
-      { 
-        id: 'bitcoin', 
-        symbol: 'BTC',
-        name: 'Bitcoin',
-        color: 'bg-[#f7931a]',
-        price: 0,
-        change: 2.5
-      },
-      { 
-        id: 'ethereum', 
-        symbol: 'ETH',
-        name: 'Ethereum',
-        color: 'bg-[#627eea]',
-        price: 0,
-        change: 1.8
-      },
-      { 
-        id: 'binancecoin', 
-        symbol: 'BNB',
-        name: 'BNB',
-        color: 'bg-[#F3BA2F]',
-        price: 0,
-        change: -0.5
-      },
-      { 
-        id: 'solana', 
-        symbol: 'SOL',
-        name: 'Solana',
-        color: 'bg-[#9945ff]',
-        price: 0,
-        change: 3.2
-      },
-      { 
-        id: 'ripple', 
-        symbol: 'XRP',
-        name: 'Ripple',
-        color: 'bg-[#23292F]',
-        price:0,
-        change: 1.1
-      },
-      { 
-        id: 'dogecoin', 
-        symbol: 'DOGE',
-        name: 'Dogecoin',
-        color: 'bg-[#C2A633]',
-        price: 0,
-        change: -1.2
-      },
-      { 
-        id: 'cardano', 
-        symbol: 'ADA',
-        name: 'Cardano',
-        color: 'bg-[#0033AD]',
-        price: 0,
-        change: 0.9
-      }
-    ];
 
-   
-    const fetchPrices = async () => {
-      try {
-        const response = await fetch(
-          'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,binancecoin,ripple,dogecoin,cardano&vs_currencies=usd&include_24hr_change=true'
-        );
-        const data = await response.json();
-        //console.log('API Response:', data);
-        
-        const updatedData = staticData.map(crypto => ({
-          ...crypto,
-          price: data[crypto.id]?.usd || crypto.price,
-          change: data[crypto.id]?.usd_24h_change || crypto.change
-        }));
-
-        //console.log('Updated Data:', updatedData);
-
-      } catch (error) {
-        //console.error('Error fetching crypto prices:', error);
-      }
-    };
-
-    fetchPrices();
-    const interval = setInterval(fetchPrices, 30 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   // اضافه کردن یک useEffect جدید برای هندل کردن اسکرول دستی
   useEffect(() => {
@@ -1659,7 +1591,16 @@ const handleSignalStreamClick = async () => {
     <div className={`flex items-center justify-between rounded-full px-6 shadow-lg
       ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`} style={{ paddingTop: '0px', paddingBottom: '0px' }}>
       <NavItem icon={<Home size={24} />} label="خانه" active={true} isDarkMode={isDarkMode}/>
-      <NavItem icon={<MonitorPlay size={24} />} label="پست ها" active={false} isDarkMode={isDarkMode} isLoggedIn={isLoggedIn} />
+<NavItem 
+  icon={<MonitorPlay size={24} />} 
+  label="پست ها" 
+  active={false} 
+  isDarkMode={isDarkMode}
+  isLoggedIn={isLoggedIn}
+  badgeCount={unreadPostsMessages}
+  badgePosition="top-3"
+/>
+
       <NavItem 
   icon={<img src="/center.png" width="48" height="48" alt="center" />} 
   label="آپدیت مارکت" 

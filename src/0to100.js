@@ -44,49 +44,49 @@ const episodes = [
   { 
     id: 0,
     title: "مقدمه پارت اول",
-    duration: "15 دقیقه",
+    duration: "33 دقیقه",
     videoUrl: "https://iamvakilet.ir/0to100/Introduction1_Chapter1.mp4"
   },
   { 
     id: 1, 
     title: "مقدمه پارت دوم",
-    duration: "40 دقیقه",
+    duration: "26 دقیقه",
     videoUrl: "https://iamvakilet.ir/0to100/Introduction2_Chapter1.mp4"
   },
   { 
     id: 2, 
     title: "بلاک و بیتکوین",
-    duration: "35 دقیقه",
+    duration: "22 دقیقه",
     videoUrl: "https://iamvakilet.ir/0to100/Blockchain_Bitcoin_Coins_and_Tokens_Chapter1.mp4"
   },
   { 
     id: 3, 
     title: "هاوینگ و آلت سیزن چیست",
-    duration: "35 دقیقه",
+    duration: "22 دقیقه",
     videoUrl: "https://iamvakilet.ir/0to100/halving_altseason.mp4"
   },
   { 
     id: 4, 
     title: "بولران چیست",
-    duration: "35 دقیقه",
+    duration: "26 دقیقه",
     videoUrl: "https://iamvakilet.ir/0to100/BullRun.mp4"
   },
   { 
     id: 5, 
     title: "ایردراپ چیست",
-    duration: "35 دقیقه",
+    duration: "46 دقیقه",
     videoUrl: "https://iamvakilet.ir/0to100/Airdrop.mp4"
   },
   { 
     id: 6, 
     title: "روشهای درآمد زایی",
-    duration: "40 دقیقه",
+    duration: "28 دقیقه",
     videoUrl: "https://iamvakilet.ir/0to100/Methods_of_Income_Generation_Chapter1.mp4"
   },
   { 
     id: 7, 
     title: "روش های کلاه برداری",
-    duration: "30 دقیقه",
+    duration: "26 دقیقه",
     videoUrl: "https://iamvakilet.ir/0to100/Methods_of_Fraud_Chapter1.mp4"
   },
   { 
@@ -98,69 +98,70 @@ const episodes = [
   { 
     id: 9, 
     title: "ولت متامسک",
-    duration: "40 دقیقه",
+    duration: "28 دقیقه",
     videoUrl: "https://iamvakilet.ir/0to100/Metamask_Wallet_Tutorial.mp4"
   },
   { 
     id: 10, 
     title: "ولت فانتوم و تونکیپر",
-    duration: "40 دقیقه",
+    duration: "25 دقیقه",
     videoUrl: "https://iamvakilet.ir/0to100/Phantom_and_Tonkeeper_Wallet.mp4"
   },
   { 
     id: 11, 
     title: "سایت تریدینگ ویو",
-    duration: "40 دقیقه",
+    duration: "39 دقیقه",
     videoUrl: "https://iamvakilet.ir/0to100/TradingView_Site_Tutorial.mp4"
   },
-  { 
+    { 
     id: 12, 
-    title: "کوین گکو",
-    duration: "40 دقیقه",
-    videoUrl: "https://iamvakilet.ir/0to100/CoinGecko_Site_Tutorial_Chapter2.mp4"
+    title: "سایت دیبانک",
+    duration: "25 دقیقه",
+    videoUrl: "https://iamvakilet.ir/0to100/Dbank_Site_Tutorial.mp4"
   },
   { 
     id: 13, 
-    title: "مانیتورینگ",
-    duration: "40 دقیقه",
-    videoUrl: "https://iamvakilet.ir/0to100/Monitoring_Sites_Tutorial.mp4"
+    title: "کوین گکو",
+    duration: "33 دقیقه",
+    videoUrl: "https://iamvakilet.ir/0to100/CoinGecko_Site_Tutorial_Chapter2.mp4"
   },
   { 
     id: 14, 
-    title: "صرافی البانک",
-    duration: "40 دقیقه",
-    videoUrl: "https://iamvakilet.ir/0to100/Lbank_Exchange_Tutorial.mp4"
+    title: "مانیتورینگ",
+    duration: "29 دقیقه",
+    videoUrl: "https://iamvakilet.ir/0to100/Monitoring_Sites_Tutorial.mp4"
   },
   { 
     id: 15, 
-    title: "دکس تولز",
-    duration: "40 دقیقه",
-    videoUrl: "https://iamvakilet.ir/0to100/DexTools_Tutorial.mp4"
+    title: "صرافی البانک",
+    duration: "109 دقیقه",
+    videoUrl: "https://iamvakilet.ir/0to100/Lbank_Exchange_Tutorial.mp4"
   },
   { 
     id: 16, 
+    title: "دکس تولز",
+    duration: "39 دقیقه",
+    videoUrl: "https://iamvakilet.ir/0to100/DexTools_Tutorial.mp4"
+  },
+  { 
+    id: 17, 
     title: "اصطلاحات دکس",
     duration: "جستجو",
     videoUrl: "https://iamvakilet.ir/0to100/DEX_Market_Terminology.mp4"
   },
   { 
-    id: 17, 
+    id: 18, 
     title: "کندل شناسی",
-    duration: "40 دقیقه",
+    duration: "31 دقیقه",
     videoUrl: "https://iamvakilet.ir/0to100/Candlestick_Analysis.mp4"
   },
   { 
-    id: 18, 
+    id: 19, 
     title: "مونتوم",
-    duration: "40 دقیقه",
+    duration: "44 دقیقه",
     videoUrl: "https://iamvakilet.ir/0to100/Momentum_Analysis.mp4"
   },
-  { 
-    id: 19, 
-    title: "سایت دیبانک",
-    duration: "40 دقیقه",
-    videoUrl: "https://iamvakilet.ir/0to100/Dbank_Site_Tutorial.mp4"
-  },
+
 ];
 
 const ZeroTo100ServicePage = ({ isDarkMode, isOpen, onClose }) => {
