@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
-import CourseApp from './CourseApp';
+import CourseApp from './CourseApp-support.js';
 import AsadPage from './AsadPage';
 import Chat from './vipChanel';
 import StoriesPage from './components/StoriesPage';
@@ -37,6 +37,11 @@ import TradeProPage from './TradePro-Service-Page';
 import TradeProCoursePage from './tradepro';
 import CryptoTermsPage from './CryptoTermsPage';
 import ErrorBoundary from './ErrorBoundary';
+import NewSupportPage from './NewSupportPage';
+import newSupportNotificationService from './NewSupportNotificationService';
+import MimCoinChannel from './MimCoinChannel';
+
+
 
 
 
@@ -233,6 +238,52 @@ function AppRoutes({
         />
       } />
       
+<Route path="/new-support" element={
+  isLoggedIn ? (
+    <>
+      <CourseApp 
+        isDarkMode={isDarkMode} 
+        setIsDarkMode={setIsDarkMode} 
+        products={products} 
+        cryptoPrices={cryptoPrices} 
+        stories={stories} 
+        loading={loading} 
+        sliders={sliders}
+        isLoggedIn={isLoggedIn}    
+        onLogout={handleLogout}     
+      />
+      <NewSupportPage 
+        isDarkMode={isDarkMode} 
+      />
+    </>
+  ) : (
+    <>
+      <CourseApp 
+        isDarkMode={isDarkMode} 
+        setIsDarkMode={setIsDarkMode} 
+        products={products} 
+        cryptoPrices={cryptoPrices} 
+        stories={stories} 
+        loading={loading} 
+        sliders={sliders}
+        isLoggedIn={isLoggedIn}    
+        onLogout={handleLogout}     
+      />
+      <LoginPage 
+        isDarkMode={isDarkMode} 
+        setIsLoggedIn={setIsLoggedIn} 
+      />
+    </>
+  )
+} />
+
+<Route path="/mimcoin" element={<MimCoinChannel isDarkMode={isDarkMode} />} />
+
+
+
+
+
+
 
 <Route path="/tradepro" element={
   <>
@@ -725,6 +776,8 @@ const App = () => {
   const [sliders, setSliders] = useState([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [unreadSupportMessages, setUnreadSupportMessages] = useState(0);
+  const [unreadNewSupportMessages, setUnreadNewSupportMessages] = useState(0);
+
   
 
 useEffect(() => {
@@ -819,6 +872,27 @@ useEffect(() => {
   
   checkTokenValidity();
 }, []);
+
+
+useEffect(() => {
+  if (isLoggedIn) {
+    // راه‌اندازی سرویس نوتیفیکیشن جدید
+    newSupportNotificationService.start();
+    newSupportNotificationService.addListener(count => {
+      setUnreadNewSupportMessages(count);
+    });
+    
+    return () => {
+      newSupportNotificationService.removeListener(setUnreadNewSupportMessages);
+      newSupportNotificationService.stop();
+    };
+  } else {
+    setUnreadNewSupportMessages(0);
+  }
+}, [isLoggedIn]);
+
+
+
 
 useEffect(() => {
   if (isLoggedIn) {

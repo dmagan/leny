@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeftCircle, X } from 'lucide-react';
 import AudioPlayer from './AudioPlayer';
@@ -6,6 +6,7 @@ import VideoPlayer from './components/VideoPlayer';
 import channelNotificationService from './ChannelNotificationService';
 
 
+const globalImageCache = new Set();
 
 // Image Modal Component with Zoom (iOS compatible)
 const ImageModal = ({ isOpen, onClose, imageUrl }) => {
@@ -363,222 +364,273 @@ const ImageModal = ({ isOpen, onClose, imageUrl }) => {
   );
 };
 // Chat Message Component
-const ChatMessage = ({ message, isDarkMode, onVideoClick }) => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [mediaUrl, setMediaUrl] = useState('');
-  const [mediaType, setMediaType] = useState(''); // 'image' یا 'video'
-  const messageRef = useRef(null);
-  
-  const content = message.content?.rendered || '';
-  const title = message.title?.rendered || '';
-  const audioUrl = message.meta?.audio_url;
+const ChatMessage = React.memo(({ message, isDarkMode, onVideoClick }) => {
+ const [isModalOpen, setIsModalOpen] = useState(false);
+ const [mediaUrl, setMediaUrl] = useState('');
+ const [mediaType, setMediaType] = useState(''); // 'image' یا 'video'
+ const messageRef = useRef(null);
 
-  // پردازش محتوا برای اصلاح ویدیو و تصاویر
-useEffect(() => {
-  if (!content || !messageRef.current) return;
+ const content = message.content?.rendered || '';
+ const title = message.title?.rendered || '';
+ const audioUrl = message.meta?.audio_url;
+
+ // پردازش محتوا برای اصلاح ویدیو و تصاویر
+ useEffect(() => {
+   if (!content || !messageRef.current) return;
+   
+   const parser = new DOMParser();
+   const doc = parser.parseFromString(content, 'text/html');
+   
+   // پردازش ویدیوها
+   const videos = doc.querySelectorAll('video');
+   
+   videos.forEach((video, index) => {
+     // بررسی source tags
+     const sources = video.querySelectorAll('source');
+     let videoSrc = video.getAttribute('src');
+     
+     // اگر src مستقیم نداشت، از source tag استفاده کن
+     if (!videoSrc && sources.length > 0) {
+       videoSrc = sources[0].getAttribute('src');
+     }
+     
+     const videoTitle = video.getAttribute('title') || 'ویدیو';
+     
+     if (!videoSrc) {
+       return; // اگر src پیدا نشد، این ویدیو را رد کن
+     }
+     
+     const videoPlaceholder = doc.createElement('div');
+     videoPlaceholder.innerHTML = `
+       <div style="
+         position: relative;
+         width: 100%;
+         max-width: 280px;
+         height: 180px;
+         background: linear-gradient(135deg, #1a1a1a 0%, #333 100%);
+         border-radius: 12px;
+         cursor: pointer;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         border: 2px solid rgba(247, 213, 93, 0.3);
+         margin: 10px ;
+         transition: all 0.3s ease;
+       " 
+       data-video-src="${videoSrc}" 
+       data-video-title="${videoTitle}"
+       class="video-play-trigger">
+         <div style="
+           display: flex;
+           flex-direction: column;
+           align-items: center;
+           color: white;
+           text-align: center;
+         ">
+           <div style="
+             width: 70px;
+             height: 70px;
+             background: rgba(247, 213, 93, 0.9);
+             border-radius: 50%;
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             margin-bottom: 10px;
+             box-shadow: 0 4px 15px rgba(247, 213, 93, 0.3);
+           ">
+             <div style="
+               width: 0;
+               height: 0;
+               border-left: 20px solid white;
+               border-top: 12px solid transparent;
+               border-bottom: 12px solid transparent;
+               margin-left: 4px;
+             "></div>
+           </div>
+           <span style="
+             font-size: 14px; 
+             color: #f7d55d;
+             font-weight: 500;
+           ">کلیک برای پخش ویدیو</span>
+         </div>
+       </div>
+     `;
+     
+     // جایگزینی ویدیو
+     video.parentNode.replaceChild(videoPlaceholder, video);
+   });
+   
+   // پردازش تصاویر
+   // پردازش تصاویر
+const images = doc.querySelectorAll('img');
+images.forEach(img => {
+  img.classList.add('message-image');
+  const originalSrc = img.getAttribute('src');
+  const highQualitySrc = originalSrc ? originalSrc.replace(/-\d+x\d+\./, '.') : originalSrc;
   
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(content, 'text/html');
+  // اضافه کردن lazy loading و caching
+  img.loading = 'lazy';
+  img.decoding = 'async';
   
-  // پردازش ویدیوها
-  const videos = doc.querySelectorAll('video');
+  // حذف cache parameter برای یکسان‌سازی URL
+  // if (originalSrc && !originalSrc.includes('?')) {
+  //   img.src = originalSrc + '?cache=1';
+  // }
   
-  videos.forEach((video, index) => {
-    // بررسی source tags
-    const sources = video.querySelectorAll('source');
-    let videoSrc = video.getAttribute('src');
-    
-    // اگر src مستقیم نداشت، از source tag استفاده کن
-    if (!videoSrc && sources.length > 0) {
-      videoSrc = sources[0].getAttribute('src');
+  img.onclick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (highQualitySrc) {
+      setMediaUrl(highQualitySrc);
+      setMediaType('image');
+      setIsModalOpen(true);
     }
-    
-    const videoTitle = video.getAttribute('title') || 'ویدیو';
-    
-    if (!videoSrc) {
-      return; // اگر src پیدا نشد، این ویدیو را رد کن
-    }
-    
-    const videoPlaceholder = doc.createElement('div');
-    videoPlaceholder.innerHTML = `
-      <div style="
-        position: relative;
-        width: 100%;
-        max-width: 280px;
-        height: 180px;
-        background: linear-gradient(135deg, #1a1a1a 0%, #333 100%);
-        border-radius: 12px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 2px solid rgba(247, 213, 93, 0.3);
-        margin: 10px ;
-        transition: all 0.3s ease;
-      " 
-      data-video-src="${videoSrc}" 
-      data-video-title="${videoTitle}"
-      class="video-play-trigger">
-        <div style="
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          color: white;
-          text-align: center;
-        ">
-          <div style="
-            width: 70px;
-            height: 70px;
-            background: rgba(247, 213, 93, 0.9);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 10px;
-            box-shadow: 0 4px 15px rgba(247, 213, 93, 0.3);
-          ">
-            <div style="
-              width: 0;
-              height: 0;
-              border-left: 20px solid white;
-              border-top: 12px solid transparent;
-              border-bottom: 12px solid transparent;
-              margin-left: 4px;
-            "></div>
-          </div>
-          <span style="
-            font-size: 14px; 
-            color: #f7d55d;
-            font-weight: 500;
-          ">کلیک برای پخش ویدیو</span>
-        </div>
-      </div>
-    `;
-    
-    // جایگزینی ویدیو
-    video.parentNode.replaceChild(videoPlaceholder, video);
-  });
+  };
   
-  // پردازش تصاویر
-  const images = doc.querySelectorAll('img');
-  images.forEach(img => {
-    img.classList.add('message-image');
-    const originalSrc = img.getAttribute('src');
-    const highQualitySrc = originalSrc ? originalSrc.replace(/-\d+x\d+\./, '.') : originalSrc;
-    
-    img.onclick = (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (highQualitySrc) {
-        setMediaUrl(highQualitySrc);
-        setMediaType('image');
-        setIsModalOpen(true);
+  img.classList.add('max-w-full', 'h-auto', 'rounded-xl');
+});
+
+
+// اضافه کردن Intersection Observer برای تصاویر
+const imageObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const img = entry.target;
+      const src = img.getAttribute('data-src');
+      if (src && !globalImageCache.has(src)) {
+        img.src = src;
+        globalImageCache.add(src);
+        imageObserver.unobserve(img);
       }
-    };
-    
-    img.classList.add('max-w-full', 'h-auto', 'rounded-xl');
+    }
   });
-  
-  if (messageRef.current) {
-    messageRef.current.innerHTML = '';
-    Array.from(doc.body.childNodes).forEach(node => {
-      messageRef.current.appendChild(node);
-    });
+}, { threshold: 0.1 });
+
+// اعمال observer به تصاویر - فقط تصاویری که قبلاً لود نشده‌اند
+images.forEach(img => {
+  const originalSrc = img.getAttribute('src');
+  if (originalSrc) {
+    // تمیز کردن URL از cache parameters
+    const cleanSrc = originalSrc.replace('?cache=1', '');
     
-    // اضافه کردن event listener بعد از appendChild
-    const videoTriggers = messageRef.current.querySelectorAll('.video-play-trigger');
-    videoTriggers.forEach(trigger => {
-      trigger.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        const videoSrc = trigger.getAttribute('data-video-src');
-        const videoTitle = trigger.getAttribute('data-video-title');
-        
-        if (videoSrc && onVideoClick) {
-          onVideoClick(videoSrc, videoTitle);
-        }
-      });
-    });
+    if (!globalImageCache.has(cleanSrc)) {
+      // تصویر قبلاً لود نشده، از lazy loading استفاده کن
+      img.setAttribute('data-src', cleanSrc);
+      img.removeAttribute('src');
+      imageObserver.observe(img);
+    } else {
+      // تصویر قبلاً لود شده، مستقیماً نمایش بده
+      img.src = cleanSrc;
+    }
   }
-}, [content, onVideoClick]);
-  const getFormattedDate = (date) => {
-    const d = new Date(date);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  };
-  
-  const getFormattedTime = (date) => {
-    const d = new Date(date);
-    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-  };
+});
 
-  const dateStr = message.date ? getFormattedDate(message.date) : getFormattedDate(new Date());
-  const timeStr = message.date ? getFormattedTime(message.date) : getFormattedTime(new Date());
+// پاک کردن observer در cleanup
 
-  return (
-    <div className="flex w-full justify-start mb-4 select-none" dir="rtl">
-      <div className="message-bubble">
-        {/* نمایش عنوان پست اگر وجود داشته باشد */}
-        {title && (
-          <h3 className="message-title" dangerouslySetInnerHTML={{ __html: title }} />
-        )}
+   if (messageRef.current) {
+     messageRef.current.innerHTML = '';
+     Array.from(doc.body.childNodes).forEach(node => {
+       messageRef.current.appendChild(node);
+     });
+     
+     // اضافه کردن event listener بعد از appendChild
+     const videoTriggers = messageRef.current.querySelectorAll('.video-play-trigger');
+     videoTriggers.forEach(trigger => {
+       trigger.addEventListener('click', (e) => {
+         e.preventDefault();
+         e.stopPropagation();
+         
+         const videoSrc = trigger.getAttribute('data-video-src');
+         const videoTitle = trigger.getAttribute('data-video-title');
+         
+         if (videoSrc && onVideoClick) {
+           onVideoClick(videoSrc, videoTitle);
+         }
+       });
+     });
+   }
+    return () => {
+     imageObserver.disconnect();
+   };
+ }, [content, onVideoClick]);
 
-        {content && (
-          <div 
-            ref={messageRef}
-            className="message-content" 
-          />
-        )}
 
-        {audioUrl && (
-          <AudioPlayer audioUrl={audioUrl} isDarkMode={isDarkMode} />
-        )}
+ const getFormattedDate = (date) => {
+   const d = new Date(date);
+   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+ };
+ 
+ const getFormattedTime = (date) => {
+   const d = new Date(date);
+   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+ };
 
-        <div className="timestamps">
-          <span className="date">{dateStr}</span>
-          <span className="time">{timeStr}</span>
-        </div>
-      </div>
-      
-{/* Media Modal */}
-{isModalOpen && (
-  <>
-    {mediaType === 'image' && (
-      <ImageModal 
-        isOpen={isModalOpen && mediaType === 'image'} 
-        onClose={() => setIsModalOpen(false)} 
-        imageUrl={mediaUrl} 
-      />
-    )}
-    
-    {mediaType === 'video' && (
-      <div 
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90" 
-        onClick={() => setIsModalOpen(false)}
-      >
-        <button 
-          className="absolute top-4 right-4 text-white p-2 rounded-full hover:bg-gray-800"
-          onClick={() => setIsModalOpen(false)}
-        >
-          <X size={24} />
-        </button>
-        
-        <video 
-          src={mediaUrl} 
-          controls
-          preload="none"
-          loading="lazy"
-          className="max-h-[90vh] max-w-[90vw]"
-          onClick={(e) => e.stopPropagation()}
-        />
-      </div>
-    )}
-  </>
-)}
-    </div>
-  );
-};
+ const dateStr = message.date ? getFormattedDate(message.date) : getFormattedDate(new Date());
+ const timeStr = message.date ? getFormattedTime(message.date) : getFormattedTime(new Date());
 
+ return (
+   <div className="flex w-full justify-start mb-4 select-none" dir="rtl">
+     <div className="message-bubble">
+       {/* نمایش عنوان پست اگر وجود داشته باشد */}
+       {title && (
+         <h3 className="message-title" dangerouslySetInnerHTML={{ __html: title }} />
+       )}
+
+       {content && (
+         <div 
+           ref={messageRef}
+           className="message-content" 
+         />
+       )}
+
+       {audioUrl && (
+         <AudioPlayer audioUrl={audioUrl} isDarkMode={isDarkMode} />
+       )}
+
+       <div className="timestamps">
+         <span className="date">{dateStr}</span>
+         <span className="time">{timeStr}</span>
+       </div>
+     </div>
+     
+     {/* Media Modal */}
+     {isModalOpen && (
+       <>
+         {mediaType === 'image' && (
+           <ImageModal 
+             isOpen={isModalOpen && mediaType === 'image'} 
+             onClose={() => setIsModalOpen(false)} 
+             imageUrl={mediaUrl} 
+           />
+         )}
+         
+         {mediaType === 'video' && (
+           <div 
+             className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90" 
+             onClick={() => setIsModalOpen(false)}
+           >
+             <button 
+               className="absolute top-4 right-4 text-white p-2 rounded-full hover:bg-gray-800"
+               onClick={() => setIsModalOpen(false)}
+             >
+               <X size={24} />
+             </button>
+             
+             <video 
+               src={mediaUrl} 
+               controls
+               preload="none"
+               loading="lazy"
+               className="max-h-[90vh] max-w-[90vw]"
+               onClick={(e) => e.stopPropagation()}
+             />
+           </div>
+         )}
+       </>
+     )}
+   </div>
+ );
+});
 const PublicChannel = ({ isDarkMode, isOpen = true, onClose }) => {
   const navigate = useNavigate();
   const messagesEndRef = useRef(null);
@@ -595,14 +647,13 @@ const [lastLoadedPostId, setLastLoadedPostId] = useState(null);
 const [showVideoPlayer, setShowVideoPlayer] = useState(false);
 const [currentVideo, setCurrentVideo] = useState({ url: '', title: '' });
 
+
+
   
   // اضافه کردن انیمیشن
   const [showCard, setShowCard] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
   // اضافه کردن state‌های مربوط به pull-to-refresh
-const [isPulling, setIsPulling] = useState(false);
-const [pullDistance, setPullDistance] = useState(0);
-const touchStartY = useRef(0);
 
   
 
@@ -778,101 +829,6 @@ useEffect(() => {
 }, []);
 
 
-useEffect(() => {
-  if (!containerRef.current) return;
-  
-  const container = containerRef.current;
-  let touchStartPos = 0;
-  
-  const handleTouchStart = (e) => {
-    // فقط وقتی دقیقاً در بالای صفحه هستیم این افکت را فعال می‌کنیم
-    if (container.scrollTop <= 1) { // مقدار کوچک برای هندل کردن انواع مختلف مرورگرها
-      touchStartPos = e.touches[0].clientY;
-      touchStartY.current = e.touches[0].clientY;
-      // مهم: ما اینجا isPulling را "امکان" فعال شدن می‌دهیم
-      // اما هنوز فعالش نمی‌کنیم تا در handleTouchMove تأیید شود
-      setIsPulling(true); 
-    }
-  };
-  
-  const handleTouchMove = (e) => {
-    // اگر هنوز امکان pulling فعال نشده، کاری نمی‌کنیم
-    if (!isPulling) return;
-    
-    // اگر اسکرول از بالا دور شده، pull-to-refresh را متوقف می‌کنیم
-    if (container.scrollTop > 1) {
-      setPullDistance(0);
-      setIsPulling(false);
-      return;
-    }
-    
-    const touchY = e.touches[0].clientY;
-    const distance = touchY - touchStartPos;
-    
-    // فقط اگر به پایین می‌کشیم (distance مثبت)
-    if (distance > 0) {
-      // حداکثر کشیدن تا 350 پیکسل
-      const pullDist = Math.min(distance * 0.25, 350);
-      setPullDistance(pullDist);
-    } else {
-      // اگر به بالا می‌کشیم، pull-to-refresh را غیرفعال می‌کنیم
-      setPullDistance(0);
-      setIsPulling(false);
-    }
-  };
-  
- const handleTouchEnd = () => {
-  if (!isPulling) return;
-  
-  // اگر به اندازه کافی کشیده شده و در حال بارگذاری نیستیم
-  if (pullDistance > 120 && !loading && hasMore) {
-    // انیمیشن نمایشی قبل از شروع بارگذاری
-    setPullDistance(60);
-    
-    setTimeout(() => {
-      // شروع بارگذاری
-      setPage(prev => prev + 1);
-      fetchPosts(page + 1);
-      
-      // ریست کردن تدریجی
-      setTimeout(() => {
-        setPullDistance(30);
-        setTimeout(() => {
-          setPullDistance(0);
-          setIsPulling(false);
-        }, 200);
-      }, 400);
-    }, 300);
-    
-    // ذخیره زمان بارگذاری برای استفاده در useEffect اسکرول
-    window.lastRefreshTime = Date.now();
-  } else {
-    // ریست کردن با انیمیشن نرم‌تر
-    const currentPull = pullDistance;
-    if (currentPull > 50) {
-      setPullDistance(currentPull * 0.6);
-      setTimeout(() => {
-        setPullDistance(0);
-        setIsPulling(false);
-      }, 200);
-    } else {
-      setPullDistance(0);
-      setIsPulling(false);
-    }
-  }
-};
-  
-  container.addEventListener('touchstart', handleTouchStart);
-  container.addEventListener('touchmove', handleTouchMove);
-  container.addEventListener('touchend', handleTouchEnd);
-  
-  return () => {
-    container.removeEventListener('touchstart', handleTouchStart);
-    container.removeEventListener('touchmove', handleTouchMove);
-    container.removeEventListener('touchend', handleTouchEnd);
-  };
-}, [isPulling, pullDistance, loading, hasMore, page]);
-
 
 
 
@@ -974,63 +930,11 @@ useEffect(() => {
             <div className="px-4">
 
 
-{/* Pull-to-refresh indicator - با z-index بالاتر و حرکت نرم‌تر */}
-<div 
-  className="w-full flex justify-center items-start overflow-visible sticky top-0 z-20"
-  style={{ 
-    height: `0px`,
-    opacity: pullDistance / 120
-  }}
->
-<div
-  // این div فقط یک دایره خواهد بود، بدون تغییر شکل
-  className="relative"
-  style={{ 
-    width: '40px',
-    height: '40px',
-    border: '2px solid white',
-    borderRadius: '50%',
-    // فقط پایین بردن دایره با pullDistance - بدون تغییر شکل
-    transform: `translateY(${Math.min(pullDistance * 0.7, 100)}px)`,
-    transformOrigin: 'center top',
-    transition: 'transform 0.3s ease' // حرکت نرم‌تر با زمان transition بیشتر
-  }}
-> 
-    {/* فلش یا آیکن لودینگ */}
-    {pullDistance < 120 ? (
-      <svg 
-        className="absolute inset-0 m-auto"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="white"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        style={{ width: '16px', height: '16px' }}
-      >
-        <path d="M12 5v14M5 12l7 7 7-7"/>
-      </svg>
-    ) : (
-      <div className="absolute inset-0 m-auto w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-    )}
-  </div>
-</div>
 
 
 
-{/* اضافه کردن استایل‌های animations */}
-<style jsx>
-{`
-  @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.7; transform: scale(1.2); }
-  }
-`}
-</style>
+
+
 
 
             {(loading && page > 1) && (
@@ -1044,13 +948,25 @@ useEffect(() => {
 
               <div className="flex-grow pt-2">
   {hasMore && !loading && posts.length > 0 && (
-    <div className={`text-center py-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-      برای مشاهده پست‌های قبلی، صفحه را به پایین بکشید
-    </div>
-  )}
+  <div className="text-center py-4">
+    <button
+      onClick={() => {
+        setPage(prev => prev + 1);
+        fetchPosts(page + 1);
+      }}
+      className={`px-6 py-3 rounded-full border-2 transition-all duration-200 ${
+        isDarkMode 
+          ? 'border-yellow-500 text-yellow-400 hover:bg-yellow-500 hover:text-gray-900' 
+          : 'border-yellow-600 text-yellow-600 hover:bg-yellow-600 hover:text-white'
+      }`}
+    >
+      برای مشاهده پست‌های قبلی اینجا کلیک کنید
+    </button>
+  </div>
+)}
   
   {posts.map((post, index) => (
-    <React.Fragment key={post.id}>
+  <React.Fragment key={`post-${post.id}-${post.date}`}>
      {lastLoadedPostId === post.id && (
   <div 
     dir="rtl"
@@ -1071,6 +987,7 @@ useEffect(() => {
       <ChatMessage 
   message={post}
   isDarkMode={isDarkMode}
+  // imageCache={globalImageCache} را حذف کنید
   onVideoClick={(url, title) => {
     setCurrentVideo({ url, title });
     setShowVideoPlayer(true);
@@ -1162,6 +1079,21 @@ useEffect(() => {
     -moz-user-select: none;
     -ms-user-select: none;
   }
+
+  /* بهبود کارایی تصاویر */
+.message-image {
+  will-change: auto;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+/* کش کردن تصاویر */
+.message-bubble img {
+  content-visibility: auto;
+  contain-intrinsic-size: 300px 200px;
+}
   
   /* استایل برای عنوان پست */
   .message-bubble .message-title {

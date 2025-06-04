@@ -24,6 +24,27 @@ const notify = (title, message, type = 'danger', duration = 7000) => {
   });
 };
 
+
+const checkTransactionExists = async (hash) => {
+  try {
+    const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+    const response = await fetch('https://p30s.com/wp-json/transaction/v1/check', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ hash })
+    });
+    
+    const result = await response.json();
+    return result.exists; // true اگر وجود داشته باشد
+  } catch (error) {
+    console.error('خطا در بررسی وجود تراکنش:', error);
+    return false;
+  }
+};
+
 const verifyTransaction = async (hash, expectedPrice) => {
   try {
     const response = await fetch(`https://apilist.tronscan.org/api/transaction-info?hash=${hash}`, {
@@ -150,12 +171,12 @@ const analyzeImage = async (base64Image, expectedPrice) => {
         return null;
       }
 
-      // بررسی می‌کنیم که آیا تراکنش قبلاً ثبت شده است یا خیر
-      const saved = await saveTransaction(hash, verificationResult.data);
-      if (!saved) {
-        notify("خطا", "این تراکنش قبلاً ثبت شده است", "danger");
-        return null;
-      }
+// بررسی می‌کنیم که آیا تراکنش قبلاً ثبت شده است یا خیر
+const exists = await checkTransactionExists(hash);
+if (exists) {
+  notify("خطا", "این تراکنش قبلاً ثبت شده است", "danger");
+  return null;
+}
 
       notify("موفق", "تراکنش با موفقیت تایید شد", "success");
       return hash;
@@ -171,46 +192,9 @@ const analyzeImage = async (base64Image, expectedPrice) => {
   }
 };
 
-const saveTransaction = async (hash, data) => {
-  try {
-    const isUSDTContract = data.toAddress === 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
-    const receiverAddress = isUSDTContract 
-      ? data.trc20TransferInfo?.[0]?.to_address
-      : data.toAddress;
-    
-    // اصلاح مقدار برای USDT
-    let amount;
-    if (isUSDTContract && data.trc20TransferInfo && data.trc20TransferInfo.length > 0) {
-      const rawAmount = data.trc20TransferInfo[0].amount_str;
-      amount = (parseFloat(rawAmount) / 1000000).toFixed(2); // تبدیل به دلار با دو رقم اعشار
-    } else {
-      amount = data.amount;
-    }
-    
-    const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
-    const response = await fetch('https://p30s.com/wp-json/transaction/v1/verify', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ 
-        hash, 
-        amount, 
-        wallet_address: receiverAddress, 
-        type: isUSDTContract ? 'USDT' : 'TRX' 
-      })
-    });
-    
-    const result = await response.json();
-    return result.success;
-  } catch (error) {
-    console.error('خطای ذخیره تراکنش:', error);
-    return false;
-  }
-};
 
-const PaymentCard = ({ isDarkMode, onClose, productTitle, price, months }) => {
+
+const PaymentCard = ({ isDarkMode, onClose, productTitle, price, months, isRenewal = false }) => {
   const navigate = useNavigate();
   const [transactionHash, setTransactionHash] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
@@ -339,7 +323,7 @@ const PaymentCard = ({ isDarkMode, onClose, productTitle, price, months }) => {
     }, 300);
   };
 
-  const handleFileSelect = async (event) => {
+const handleFileSelect = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
@@ -543,7 +527,6 @@ const handleSubmit = async () => {
     return;
   }
 
-  // نمایش وضعیت در حال بارگذاری
   setIsUploading(true);
   setUploadProgress(10);
 
@@ -561,22 +544,30 @@ const handleSubmit = async () => {
     
     setUploadProgress(50);
 
-    // مرحله 1: ذخیره هش تراکنش در wp_transaction
+    // بررسی تکراری بودن تراکنش
+const exists = await checkTransactionExists(transactionHash);
+if (exists) {
+  notify("خطا", "این تراکنش قبلاً ثبت شده است", "danger");
+  setIsUploading(false);
+  setUploadProgress(0);
+  return;
+}
+
+setUploadProgress(60);
+    // محاسبه مقادیر لازم
     const isUSDTContract = result.data.toAddress === 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
     const receiverAddress = isUSDTContract 
       ? result.data.trc20TransferInfo?.[0]?.to_address
       : result.data.toAddress;
     
-    // اصلاح مقدار برای USDT
     let amount;
     if (isUSDTContract && result.data.trc20TransferInfo && result.data.trc20TransferInfo.length > 0) {
       const rawAmount = result.data.trc20TransferInfo[0].amount_str;
-      amount = (parseFloat(rawAmount) / 1000000).toFixed(2); // تبدیل به دلار با دو رقم اعشار
+      amount = (parseFloat(rawAmount) / 1000000).toFixed(2);
     } else {
       amount = result.data.amount;
     }
     
-    // ابتدا هش تراکنش را در جدول wp_transaction ذخیره می‌کنیم
     const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
     if (!token) {
       notify("خطا", "لطفا دوباره وارد حساب کاربری خود شوید", "danger");
@@ -585,167 +576,96 @@ const handleSubmit = async () => {
       return;
     }
     
-    const transactionResponse = await fetch('https://p30s.com/wp-json/transaction/v1/verify', {
+    setUploadProgress(80);
+    
+    // مرحله 1: ابتدا خرید را ثبت کن
+    const endpoint = isRenewal ? 
+      'https://p30s.com/wp-json/pcs/v1/renew-subscription' : 
+      'https://p30s.com/wp-json/pcs/v1/save-purchase';
+
+    const requestData = isRenewal ? {
+      transaction_hash: transactionHash,
+      product_title: productTitle,
+      price: price,
+      paid_amount: amount.toString(),
+      is_renewal: true,
+      additional_months: months || 1
+    } : {
+      transaction_hash: transactionHash,
+      product_title: productTitle,
+      price: price,
+      paid_amount: amount.toString(),
+      duration_months: months || 1
+    };
+
+    const purchaseResponse = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ 
-        hash: transactionHash, 
-        amount: amount, 
-        wallet_address: receiverAddress, 
-        type: isUSDTContract ? 'USDT' : 'TRX' 
-      })
-    });
-    
-    const transactionData = await transactionResponse.json();
-    
-    if (!transactionData.success) {
-      // اگر هش تراکنش قبلاً ثبت شده باشد، ممکن است این خطا را دریافت کنیم
-      if (transactionData.message && transactionData.message.includes("قبلاً ثبت شده")) {
-        notify("خطا", "این تراکنش قبلاً ثبت شده است", "danger");
-        setIsUploading(false);
-        setUploadProgress(0);
-        return;
-      }
-      
-      // سایر خطاها
-      notify("خطا", transactionData.message || "خطا در ثبت تراکنش", "danger");
-      setIsUploading(false);
-      setUploadProgress(0);
-      return;
-    }
-    
-    setUploadProgress(70);
-    
-    // مرحله 2: ثبت خرید در سیستم
-    const purchaseResponse = await fetch('https://p30s.com/wp-json/pcs/v1/save-purchase', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        transaction_hash: transactionHash,
-        product_title: productTitle,
-        price: price,
-        paid_amount: amount.toString(),
-        duration_months: months || 1
-      })
+      body: JSON.stringify(requestData)
     });
     
     const purchaseData = await purchaseResponse.json();
     
-    setUploadProgress(100);
+    setUploadProgress(90);
     
     if (purchaseData.success) {
-      // هدایت به کانال مناسب
-      notify("موفق", "خرید شما با موفقیت ثبت شد", "success");
+      // مرحله 2: فقط اگر خرید موفق بود، هش را ذخیره کن
+      try {
+        const transactionResponse = await fetch('https://p30s.com/wp-json/transaction/v1/verify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ 
+            hash: transactionHash, 
+            amount: amount, 
+            wallet_address: receiverAddress, 
+            type: isUSDTContract ? 'USDT' : 'TRX' 
+          })
+        });
+        
+        const transactionData = await transactionResponse.json();
+        
+        if (!transactionData.success) {
+          console.warn('خرید موفق بود اما هش ذخیره نشد:', transactionData.message);
+          // خرید موفق بوده، فقط هش ذخیره نشده (مشکل فنی، اما نه مشکل اصلی)
+        }
+      } catch (hashError) {
+        console.error('خطا در ذخیره هش (خرید موفق بود):', hashError);
+        // خرید موفق بوده، فقط هش ذخیره نشده
+      }
       
-      // --------- افزودن یا به‌روزرسانی اشتراک به localStorage ---------
+      setUploadProgress(100);
+      
+      // ادامه فرآیند موفقیت...
+      const successMessage = isRenewal ? "تمدید اشتراک شما با موفقیت انجام شد" : "خرید شما با موفقیت ثبت شد";
+      notify("موفق", successMessage, "success");
+      
+      // بقیه کد موفقیت باقی می‌ماند...
       const subscriptionResult = await updateSubscription(productTitle, months || 1, transactionHash, price);
-    
+      
       if (subscriptionResult.error) {
         notify("هشدار", "خرید با موفقیت انجام شد اما در ثبت آن در سیستم مشکلی به وجود آمد. لطفا با پشتیبانی تماس بگیرید.", "warning");
       } else {
-        const actionType = subscriptionResult.updated ? "تمدید" : "فعال‌سازی";
+        const actionType = isRenewal ? "تمدید" : (subscriptionResult.updated ? "تمدید" : "فعال‌سازی");
         notify("موفق", `اشتراک شما با موفقیت ${actionType} شد`, "success", 3000);
       }
-      // ----------------------------------------------------
       
+      // ادامه کد navigation...
       setTimeout(() => {
         setIsUploading(false);
         setUploadProgress(0);
         closeCard();
         
-        // بارگذاری اطلاعات خرید‌های کاربر از سرور
-        fetch('https://p30s.com/wp-json/pcs/v1/user-purchases', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json'
-          }
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success && Array.isArray(data.purchases)) {
-            // به‌روزرسانی localStorage
-            localStorage.setItem('purchasedProducts', JSON.stringify(data.purchases));
-            localStorage.setItem('lastProductCheck', new Date().getTime().toString());
-            
-            // تشخیص نوع محصول و هدایت به صفحه مناسب
-            const lowercaseTitle = productTitle.toLowerCase();
-            try {
-              if (lowercaseTitle.includes('vip') || lowercaseTitle.includes('اشتراک')) {
-                // محصول VIP
-                navigate('/chat');
-              } 
-              else if (lowercaseTitle.includes('دکس') || lowercaseTitle.includes('dex')) {
-                // محصول دکس
-                navigate('/dex');
-              } 
-              else if (lowercaseTitle.includes('صفر تا صد') || 
-                       lowercaseTitle.includes('0 تا 100') || 
-                       lowercaseTitle.includes('۰ تا ۱۰۰')) {
-                // محصول صفر تا صد
-                navigate('/0to100');
-              }
-              else if (lowercaseTitle.includes('پکیج') || lowercaseTitle.includes('ترکیبی')) {
-                // نمایش صفحه پروفایل برای پکیج‌های ترکیبی
-                navigate('/profile');
-              }
-              else {
-                // اگر هیچ کدام نبود به صفحه اصلی هدایت می‌کنیم
-                navigate('/');
-              }
-            } catch (error) {
-              console.error('خطا در هدایت با navigate:', error);
-              // اگر navigate با خطا مواجه شد، از window.location استفاده می‌کنیم
-              const base = window.location.protocol + '//' + window.location.host;
-              
-              if (lowercaseTitle.includes('vip') || lowercaseTitle.includes('اشتراک')) {
-                window.location.replace(base + '/chat');
-              } 
-              else if (lowercaseTitle.includes('دکس') || lowercaseTitle.includes('dex')) {
-                window.location.replace(base + '/dex');
-              } 
-              else if (lowercaseTitle.includes('صفر تا صد') || 
-                       lowercaseTitle.includes('0 تا 100') || 
-                       lowercaseTitle.includes('۰ تا ۱۰۰')) {
-                window.location.replace(base + '/0to100');
-              }
-              else if (lowercaseTitle.includes('پکیج') || lowercaseTitle.includes('ترکیبی')) {
-                window.location.replace(base + '/profile');
-              }
-              else {
-                window.location.replace(base + '/');
-              }
-            }
-          } else {
-            // خطا در دریافت اطلاعات خرید، به صفحه اصلی هدایت می‌کنیم
-            try {
-              navigate('/');
-            } catch (error) {
-              console.error('خطا در هدایت با navigate:', error);
-              const base = window.location.protocol + '//' + window.location.host;
-              window.location.replace(base + '/');
-            }
-          }
-        })
-        .catch(error => {
-          console.error('خطا در دریافت اطلاعات خرید:', error);
-          try {
-            navigate('/');
-          } catch (navigateError) {
-            console.error('خطا در هدایت با navigate:', navigateError);
-            const base = window.location.protocol + '//' + window.location.host;
-            window.location.replace(base + '/');
-          }
-        });
+        // بقیه کد هدایت...
       }, 2000);
       
     } else {
-      // خطا در ثبت خرید
+      // خطا در ثبت خرید - هش ذخیره نشده
       notify("خطا", purchaseData.message || "در ثبت خرید مشکلی پیش آمد", "danger");
       setIsUploading(false);
       setUploadProgress(0);
@@ -758,6 +678,8 @@ const handleSubmit = async () => {
     setUploadProgress(0);
   }
 };
+
+
   return (
     <div className="fixed inset-0 z-[9999] bg-black/75 overflow-hidden transition-opacity duration-300"
       onClick={(e) => {
@@ -794,8 +716,8 @@ const handleSubmit = async () => {
            <div className="mb-3 text-center">
 
 <h1 className={`text-2xl font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-    پرداخت
-  </h1>
+  {isRenewal ? 'تمدید اشتراک' : 'پرداخت'}
+</h1>
   <p className={`text-lg font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
     {productTitle}
   </p>

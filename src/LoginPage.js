@@ -1014,14 +1014,14 @@ const setupTokenRefresh = (token, isPersistent) => {
               </>
             ) : (
               <>
-                <div className="mb-8 text-center pt-4">
-                  <div className="w-16 h-16 bg-[#f7d55d] rounded-full mx-auto mb-6 flex items-center justify-center">
+                <div className="mb-2 text-center ">
+                  <div className="w-16 h-16 bg-[#f7d55d] rounded-full mx-auto mb-2 flex items-center justify-center">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
                       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                       <circle cx="12" cy="7" r="4" />
                     </svg>
                   </div>
-                  <h1 className={`text-2xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  <h1 className={`text-2xl font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                     ورود یا ثبت‌نام
                   </h1>
                   <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
@@ -1029,7 +1029,7 @@ const setupTokenRefresh = (token, isPersistent) => {
                   </p>
                 </div>
 
-                <div className={`p-[3px] rounded-full flex mb-6 relative ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+                <div className={`p-[3px] rounded-full flex mb-4 relative ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
                   <div
                     className={`absolute inset-[3px] w-[calc(50%-3px)] rounded-full transition-transform duration-300 ease-out ${isDarkMode ? 'bg-gray-700' : 'bg-white'} ${isLogin ? 'translate-x-0' : 'translate-x-full'}`}
                   />
@@ -1047,7 +1047,7 @@ const setupTokenRefresh = (token, isPersistent) => {
                   </button>
                 </div>
 
-                <div className="space-y-4 px-1">
+                <div className="space-y-2 px-1">
                   {isLogin ? (
                     <>
                       {renderInput('email', 'ایمیل خود را وارد کنید', 'email', false, null, {
@@ -1093,7 +1093,7 @@ const setupTokenRefresh = (token, isPersistent) => {
                       {renderInput('password', 'رمز عبور', 'password', true, setShowPassword)}
                       {renderInput('confirmPassword', 'تکرار رمز عبور', 'password', true, setShowPassword)} 
 {!isLogin && (
-  <div className="pt-4 pb-2">
+  <div className="pt-1">
     <label className={`flex items-start gap-3 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
       <input
         type="checkbox"
@@ -1123,7 +1123,7 @@ const setupTokenRefresh = (token, isPersistent) => {
                 <button
                   onClick={handleSubmit}
                   disabled={isLoading}
-                  className={`w-full mt-6 bg-[#f7d55d] text-gray-900 rounded-xl py-3 text-sm font-medium transition-colors relative ${isLoading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-[#e5c44c]'}`}
+                  className={`w-full mt-3 bg-[#f7d55d] text-gray-900 rounded-xl py-3 text-sm font-medium transition-colors relative ${isLoading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-[#e5c44c]'}`}
                 >
                   {isLoading ? (
                     <>

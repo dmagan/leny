@@ -343,7 +343,7 @@ const handlePurchase = (subscription) => {
     dir="rtl"
     onClick={hasVIPSubscription 
       ? () => navigate('/chat') 
-      : () => handlePurchase({ title: "اشتراک VIP شش ماهه", price: "149", months: 6 })
+: () => handlePurchase({ title: "اشتراک VIP شش ماهه", price: PRODUCT_PRICES.VIP.SIX_MONTHS, months: 6 })
     }
     className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-4 rounded-xl transition-colors shadow-lg text-center flex items-center justify-center"
   >
