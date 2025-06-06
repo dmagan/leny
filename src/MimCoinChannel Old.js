@@ -770,7 +770,7 @@ useEffect(() => {
               if (mimCoinSubscription) {
                 const remainingDays = mimCoinSubscription.remainingDays;
                 
-                if (typeof remainingDays === 'number' && remainingDays <= 7) {
+                if (typeof remainingDays === 'number' && remainingDays <= 97) {
                   if (remainingDays <= 0) {
                     setSubscriptionWarning({
                       days: 0,

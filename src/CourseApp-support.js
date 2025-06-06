@@ -19,6 +19,8 @@ import postsNotificationService from './PostsNotificationService';
 import TicketAnswer from './TicketAnswer';
 import MimCoinServicesPage from './MimCoin-Services-Page';
 import MimCoinChannel from './MimCoinChannel';
+import newSupportNotificationService from './NewSupportNotificationService';
+
 
 
 
@@ -169,7 +171,6 @@ const CourseApp = ({  // این قسمت رو جایگزین کنید
   isLoggedIn,
   onLogout,
   unreadSupportMessages,
-  unreadNewSupportMessages
 }) => {
 
   const navigate = useNavigate();
@@ -194,7 +195,7 @@ const [isAdmin, setIsAdmin] = useState(false);
 const [showTicketAnswer, setShowTicketAnswer] = useState(false);
 const [showMimCoinPage, setShowMimCoinPage] = useState(false);
 const [showMimCoinChannel, setShowMimCoinChannel] = useState(false);
-
+const [unreadNewSupportMessages, setUnreadNewSupportMessages] = useState(0);
 
 
   const [showPaymentCard, setShowPaymentCard] = useState({
@@ -634,96 +635,119 @@ const handleTradeProClick = () => {
   navigate('/tradepro');
 };
 
-const handleMimCoinClick = () => {
+const handleMimCoinClick = async () => {
   const userInfo = localStorage.getItem('userInfo') || sessionStorage.getItem('userInfo');
   if (!userInfo) {
     navigate('/login');
     return;
   }
 
+  // مرحله ۱: بررسی localStorage
   const purchasedProducts = localStorage.getItem('purchasedProducts');
-  if (!purchasedProducts) {
-    Store.addNotification({
-      title: (
-        <div dir="rtl" style={{ textAlign: 'right', paddingRight: '15px' }}>
-          اطلاعیه
-        </div>
-      ),
-      message: (
-        <div dir="rtl" style={{ textAlign: 'right' }}>
-          شما هنوز کانال میم کوین باز را خریداری نکرده‌اید
-        </div>
-      ),
-      type: "danger",
-      insert: "top",
-      container: "center",
-      animationIn: ["animate__animated", "animate__flipInX"],
-      animationOut: ["animate__animated", "animate__flipOutX"],
-      dismiss: { duration: 3000, showIcon: true, pauseOnHover: true }
+  
+  if (purchasedProducts) {
+    const products = JSON.parse(purchasedProducts);
+    
+    const mimCoinProduct = products.find(p => {
+      const title = p.title?.toLowerCase() || '';
+      const isActive = p.status === 'active';
+      
+      const isMimCoin = (
+        title.includes('میم کوین') ||
+        title.includes('mim coin') ||
+        title.includes('mimcoin') ||
+        title.includes('کانال میم کوین') ||
+        title.includes('میم‌کوین') ||
+        title.includes('میم')
+      );
+      
+      return isMimCoin && isActive;
     });
-    setTimeout(() => {
-      setShowMimCoinPage(true);
-    }, 2000);
-    return;
+
+    if (mimCoinProduct) {
+      console.log('✅ محصول میم کوین در localStorage یافت شد');
+      setShowMimCoinChannel(true);
+      return;
+    }
   }
 
-  const products = JSON.parse(purchasedProducts);
+  // مرحله ۲: اگر در localStorage نبود، از سایت چک کن
+  console.log('🔍 چک کردن سایت برای محصول میم کوین...');
   
-  // دیباگ برای بررسی محصولات
-  console.log('🔍 محصولات موجود:', products);
-  console.log('🔍 در حال جستجو برای میم کوین...');
-  
-  // جستجوی بهبود یافته برای یافتن محصول میم کوین
-  const mimCoinProduct = products.find(p => {
-    const title = p.title?.toLowerCase() || '';
-    const isActive = p.status === 'active';
-    
-    console.log(`🔍 بررسی محصول: "${p.title}", وضعیت: "${p.status}"`);
-    
-    const isMimCoin = (
-      title.includes('میم کوین') ||
-      title.includes('mim coin') ||
-      title.includes('mimcoin') ||
-      title.includes('کانال میم کوین') ||
-      title.includes('میم‌کوین') ||
-      title.includes('میم') // در صورتی که فقط "میم" در نام باشد
-    );
-    
-    console.log(`🔍 آیا میم کوین است؟ ${isMimCoin}, آیا فعال است؟ ${isActive}`);
-    
-    return isMimCoin && isActive;
+  try {
+    const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+    const response = await fetch('https://p30s.com/wp-json/pcs/v1/user-purchases', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      
+      if (data.success && data.purchases) {
+        // بروزرسانی localStorage با اطلاعات جدید سایت
+        const formattedPurchases = data.purchases.map(purchase => ({
+          title: purchase.title,
+          status: purchase.status,
+          date: purchase.date,
+          isVIP: purchase.isVIP || false
+        }));
+        
+        localStorage.setItem('purchasedProducts', JSON.stringify(formattedPurchases));
+        console.log('✅ localStorage بروزرسانی شد با اطلاعات سایت');
+
+        // حالا دوباره چک کن
+        const mimCoinProduct = formattedPurchases.find(p => {
+          const title = p.title?.toLowerCase() || '';
+          const isActive = p.status === 'active';
+          
+          const isMimCoin = (
+            title.includes('میم کوین') ||
+            title.includes('mim coin') ||
+            title.includes('mimcoin') ||
+            title.includes('کانال میم کوین') ||
+            title.includes('میم‌کوین') ||
+            title.includes('میم')
+          );
+          
+          return isMimCoin && isActive;
+        });
+
+        if (mimCoinProduct) {
+          console.log('✅ محصول میم کوین در سایت یافت شد');
+          setShowMimCoinChannel(true);
+          return;
+        }
+      }
+    }
+  } catch (error) {
+    console.error('خطا در چک کردن سایت:', error);
+  }
+
+  // مرحله ۳: اگر در هیچ کدام نبود، پیام خطا
+  console.log('❌ محصول میم کوین در هیچ کدام یافت نشد');
+  Store.addNotification({
+    title: (
+      <div dir="rtl" style={{ textAlign: 'right', paddingRight: '15px' }}>اطلاعیه</div>
+    ),
+    message: (
+      <div dir="rtl" style={{ textAlign: 'right' }}>
+        شما هنوز کانال میم کوین باز را خریداری نکرده‌اید. به صورت خودکار به صفحه مورد نظر هدایت می شوید
+      </div>
+    ),
+    type: "danger",
+    insert: "top",
+    container: "center",
+    animationIn: ["animate__animated", "animate__flipInX"],
+    animationOut: ["animate__animated", "animate__flipOutX"],
+    dismiss: { duration: 5000, showIcon: true, pauseOnHover: true },
   });
 
-  console.log('🔍 نتیجه جستجو:', mimCoinProduct);
-
-  if (!mimCoinProduct) {
-    console.log('❌ محصول میم کوین یافت نشد');
-    Store.addNotification({
-      title: (
-        <div dir="rtl" style={{ textAlign: 'right', paddingRight: '15px' }}>اطلاعیه </div>
-      ),
-      message: (
-        <div dir="rtl" style={{ textAlign: 'right' }}>
-          شما هنوز کانال میم کوین باز را خریداری نکرده‌اید. به صورت خودکار به صفحه مورد نظر هدایت می شوید
-        </div>
-      ),
-      type: "danger",
-      insert: "top",
-      container: "center",
-      animationIn: ["animate__animated", "animate__flipInX"],
-      animationOut: ["animate__animated", "animate__flipOutX"],
-      dismiss: { duration: 5000, showIcon: true, pauseOnHover: true },
-    });
-
-    setTimeout(() => {
-      setShowMimCoinPage(true);
-    }, 2000);
-    return;
-  }
-
-  console.log('✅ محصول میم کوین یافت شد، کانال باز می‌شود');
-  // اگر محصول خریداری شده باشد، کانال میم کوین را نمایش می‌دهد
-  setShowMimCoinChannel(true);
+  setTimeout(() => {
+    setShowMimCoinPage(true);
+  }, 2000);
 };
 
   const handleSliderWithPaymentClick = (productName, productPrice) => {
@@ -1186,6 +1210,22 @@ useEffect(() => {
   };
 
   checkUserAccess();
+}, [isLoggedIn]);
+
+useEffect(() => {
+  if (isLoggedIn) {
+    newSupportNotificationService.start();
+    newSupportNotificationService.addListener(count => {
+      setUnreadNewSupportMessages(count);
+    });
+    
+    return () => {
+      newSupportNotificationService.removeListener(setUnreadNewSupportMessages);
+      newSupportNotificationService.stop();
+    };
+  } else {
+    setUnreadNewSupportMessages(0);
+  }
 }, [isLoggedIn]);
 
 const handleSignalStreamClick = async () => {
@@ -1720,29 +1760,6 @@ const handleSignalStreamClick = async () => {
 </div>
 
 
-
-{/* پشتیبانی جدید */}
-<div onClick={() => navigate('/new-support')} className={`p-4 rounded-2xl flex items-center gap-3 border-2 ${isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900'}`}>
-  <div className="relative">
-    <div className="w-16 h-16 text-green-500">
-      <Headphones size={32} />
-    </div>
-    {unreadNewSupportMessages > 0 && (
-      <div className="absolute -top-2 -right-2 w-6 h-6 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full animate__animated animate__heartBeat animate__infinite">
-        {unreadNewSupportMessages > 9 ? '9+' : unreadNewSupportMessages}
-      </div>
-    )}
-  </div>
-  <div>
-    <h3 className={`font-medium text-base ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-      پشتیبانی جدید (تست)
-    </h3>
-    <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-      سیستم پشتیبانی بهبود یافته
-    </p>
-  </div>
-</div>
-
 {isAdmin && (
   <div onClick={() => setShowTicketAnswer(true)} className={`p-4 rounded-2xl flex items-center gap-3 border-2 ${isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900'}`}>    <div className="relative">
       <div className="w-16 h-16 text-green-500">
@@ -1863,14 +1880,14 @@ const handleSignalStreamClick = async () => {
         onLogout={onLogout}
       />     
       <NavItem 
-        icon={<Headphones size={24} />} 
-        label="پشتیبانی" 
-        active={false} 
-        isDarkMode={isDarkMode} 
-        isLoggedIn={isLoggedIn} 
-        badgeCount={unreadSupportMessages}
-        badgePosition="top-0" // موقعیت بادج پشتیبانی - بالاتر از آپدیت مارکت
-      />
+  icon={<Headphones size={24} />} 
+  label="پشتیبانی" 
+  active={false} 
+  isDarkMode={isDarkMode} 
+  isLoggedIn={isLoggedIn} 
+  badgeCount={unreadNewSupportMessages}
+  badgePosition="top-0"
+/>
     </div>
   </div>
 </div>
@@ -2026,7 +2043,7 @@ const handleClick = () => {
     }
   } else if (label === "پشتیبانی") {
     if (isLoggedIn) {
-      navigate('/support');
+      navigate('/new-support');
     } else {
       navigate('/login');
     }

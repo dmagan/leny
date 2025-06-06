@@ -39,23 +39,17 @@ const ChatMessage = ({ message, isDarkMode }) => {
         }`}
       >
         <div
-          className={`text-sm message-content ${
-            message.isAdmin
-              ? isDarkMode
-                ? 'text-white'
-                : 'text-gray-800'
-              : message.isPending
-              ? isDarkMode
-                ? 'text-yellow-200'
-                : 'text-yellow-800'
-              : message.isFailed
-              ? isDarkMode
-                ? 'text-red-200'
-                : 'text-red-800'
-              : 'text-gray-900'
-          }`}
-          dangerouslySetInnerHTML={{ __html: message.content }}
-        />
+  className={`text-sm message-content ${
+    message.isAdmin
+      ? isDarkMode
+        ? 'text-white'
+        : 'text-gray-800'
+      : 'text-gray-900'
+  }`}
+  dir="rtl"
+  style={{ textAlign: 'right', direction: 'rtl' }}
+  dangerouslySetInnerHTML={{ __html: message.content }}
+/>
         <div className="flex justify-end items-center gap-2 mt-2">
           <span
             className={`text-xs ${

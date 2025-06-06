@@ -632,6 +632,52 @@ const handleSubmit = async () => {
   setUploadProgress(10);
 
   try {
+    // بررسی تراکنش
+    setUploadProgress(30);
+const result = paymentMethod === 'tron' 
+  ? await verifyTransaction(transactionHash, parseFloat(price))
+  : await verifySolanaTransaction(transactionHash, parseFloat(price));
+
+    if (!result.success) {
+      notify("خطا", result.message || "تراکنش معتبر نیست", "danger");
+      setIsUploading(false);
+      setUploadProgress(0);
+      return;
+    }
+    
+    setUploadProgress(50);
+
+    // بررسی تکراری بودن تراکنش
+const exists = await checkTransactionExists(transactionHash);
+if (exists) {
+  notify("خطا", "این تراکنش قبلاً ثبت شده است", "danger");
+  setIsUploading(false);
+  setUploadProgress(0);
+  return;
+}
+
+setUploadProgress(60);
+    // محاسبه مقادیر لازم براساس نوع شبکه
+let amount, receiverAddress;
+
+if (paymentMethod === 'tron') {
+  const isUSDTContract = result.data.toAddress === 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
+  receiverAddress = isUSDTContract 
+    ? result.data.trc20TransferInfo?.[0]?.to_address
+    : result.data.toAddress;
+  
+  if (isUSDTContract && result.data.trc20TransferInfo && result.data.trc20TransferInfo.length > 0) {
+    const rawAmount = result.data.trc20TransferInfo[0].amount_str;
+    amount = (parseFloat(rawAmount) / 1000000).toFixed(2);
+  } else {
+    amount = result.data.amount;
+  }
+} else {
+  // برای Solana
+  receiverAddress = "H8Ms4Ls4FxFiSpDsNwALxsDQtoboH4TvYJ5NPLDkWvyN";
+  amount = parseFloat(price).toFixed(2); // در صورت موفقیت تراکنش، مبلغ درست پرداخت شده
+}
+    
     const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
     if (!token) {
       notify("خطا", "لطفا دوباره وارد حساب کاربری خود شوید", "danger");
@@ -640,176 +686,101 @@ const handleSubmit = async () => {
       return;
     }
     
-    // بررسی تکراری بودن هش برای هر دو نوع پرداخت
-    setUploadProgress(20);
-    const hashCheckResponse = await fetch('https://p30s.com/wp-json/transaction/v1/check', {
+    setUploadProgress(80);
+    
+    // مرحله 1: ابتدا خرید را ثبت کن
+    const endpoint = isRenewal ? 
+      'https://p30s.com/wp-json/pcs/v1/renew-subscription' : 
+      'https://p30s.com/wp-json/pcs/v1/save-purchase';
+
+    const requestData = isRenewal ? {
+      transaction_hash: transactionHash,
+      product_title: productTitle,
+      price: price,
+      paid_amount: amount.toString(),
+      is_renewal: true,
+      additional_months: months || 1
+    } : {
+      transaction_hash: transactionHash,
+      product_title: productTitle,
+      price: price,
+      paid_amount: amount.toString(),
+      duration_months: months || 1
+    };
+
+    const purchaseResponse = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ hash: transactionHash })
+      body: JSON.stringify(requestData)
     });
     
-    const hashCheckData = await hashCheckResponse.json();
+    const purchaseData = await purchaseResponse.json();
     
-    if (hashCheckData.exists) {
-      notify("خطا", "این هش تراکنش قبلاً ثبت شده است", "danger");
-      setIsUploading(false);
-      setUploadProgress(0);
-      return;
-    }
+    setUploadProgress(90);
     
-    setUploadProgress(40);
-
-    if (paymentMethod === 'solana') {
-      // برای سولانا: ارسال درخواست برای تایید دستی
-      const response = await fetch('https://p30s.com/wp-json/pcs/v1/submit-solana-payment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          transaction_hash: transactionHash,
-          product_title: productTitle,
-          price: price,
-          duration_months: months || 1
-        })
-      });
-      
-      const data = await response.json();
+    if (purchaseData.success) {
+      // مرحله 2: فقط اگر خرید موفق بود، هش را ذخیره کن
+      try {
+        const transactionResponse = await fetch('https://p30s.com/wp-json/transaction/v1/verify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+body: JSON.stringify({ 
+  hash: transactionHash, 
+  amount: amount, 
+  wallet_address: receiverAddress, 
+  type: paymentMethod === 'tron' ? 
+    (result.data.toAddress === 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t' ? 'USDT' : 'TRX') : 
+    'SOLANA'
+})
+        });
+        
+        const transactionData = await transactionResponse.json();
+        
+        if (!transactionData.success) {
+          console.warn('خرید موفق بود اما هش ذخیره نشد:', transactionData.message);
+          // خرید موفق بوده، فقط هش ذخیره نشده (مشکل فنی، اما نه مشکل اصلی)
+        }
+      } catch (hashError) {
+        console.error('خطا در ذخیره هش (خرید موفق بود):', hashError);
+        // خرید موفق بوده، فقط هش ذخیره نشده
+      }
       
       setUploadProgress(100);
       
-      if (data.success) {
-        notify("موفق", "درخواست پرداخت شما ثبت شد و در انتظار تایید است. تا ۲۴ ساعت آینده نتیجه به اطلاع شما خواهد رسید.", "success", 6000);
-        
-        setTimeout(() => {
-          setIsUploading(false);
-          setUploadProgress(0);
-          closeCard();
-        }, 3000);
+      // ادامه فرآیند موفقیت...
+      const successMessage = isRenewal ? "تمدید اشتراک شما با موفقیت انجام شد" : "خرید شما با موفقیت ثبت شد";
+      notify("موفق", successMessage, "success");
+      
+      // بقیه کد موفقیت باقی می‌ماند...
+      const subscriptionResult = await updateSubscription(productTitle, months || 1, transactionHash, price);
+      
+      if (subscriptionResult.error) {
+        notify("هشدار", "خرید با موفقیت انجام شد اما در ثبت آن در سیستم مشکلی به وجود آمد. لطفا با پشتیبانی تماس بگیرید.", "warning");
       } else {
-        notify("خطا", data.message || "در ثبت درخواست مشکلی پیش آمد", "danger");
+        const actionType = isRenewal ? "تمدید" : (subscriptionResult.updated ? "تمدید" : "فعال‌سازی");
+        notify("موفق", `اشتراک شما با موفقیت ${actionType} شد`, "success", 3000);
+      }
+      
+      // ادامه کد navigation...
+      setTimeout(() => {
         setIsUploading(false);
         setUploadProgress(0);
-      }
+        closeCard();
+        
+        // بقیه کد هدایت...
+      }, 2000);
       
     } else {
-      // برای ترون: پردازش قبلی (تایید خودکار)
-      setUploadProgress(60);
-      const result = await verifyTransaction(transactionHash, parseFloat(price));
-
-      if (!result.success) {
-        notify("خطا", result.message || "تراکنش معتبر نیست", "danger");
-        setIsUploading(false);
-        setUploadProgress(0);
-        return;
-      }
-      
-      setUploadProgress(80);
-      
-      // محاسبه مقادیر لازم براساس نوع شبکه
-      let amount, receiverAddress;
-      const isUSDTContract = result.data.toAddress === 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
-      receiverAddress = isUSDTContract 
-        ? result.data.trc20TransferInfo?.[0]?.to_address
-        : result.data.toAddress;
-      
-      if (isUSDTContract && result.data.trc20TransferInfo && result.data.trc20TransferInfo.length > 0) {
-        const rawAmount = result.data.trc20TransferInfo[0].amount_str;
-        amount = (parseFloat(rawAmount) / 1000000).toFixed(2);
-      } else {
-        amount = result.data.amount;
-      }
-      
-      setUploadProgress(90);
-      
-      // مرحله 1: ابتدا خرید را ثبت کن
-      const endpoint = isRenewal ? 
-        'https://p30s.com/wp-json/pcs/v1/renew-subscription' : 
-        'https://p30s.com/wp-json/pcs/v1/save-purchase';
-
-      const requestData = isRenewal ? {
-        transaction_hash: transactionHash,
-        product_title: productTitle,
-        price: price,
-        paid_amount: amount.toString(),
-        is_renewal: true,
-        additional_months: months || 1
-      } : {
-        transaction_hash: transactionHash,
-        product_title: productTitle,
-        price: price,
-        paid_amount: amount.toString(),
-        duration_months: months || 1
-      };
-
-      const purchaseResponse = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(requestData)
-      });
-      
-      const purchaseData = await purchaseResponse.json();
-      
-      setUploadProgress(95);
-      
-      if (purchaseData.success) {
-        // مرحله 2: فقط اگر خرید موفق بود، هش را ذخیره کن
-        try {
-          const transactionResponse = await fetch('https://p30s.com/wp-json/transaction/v1/verify', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ 
-              hash: transactionHash, 
-              amount: amount, 
-              wallet_address: receiverAddress, 
-              type: isUSDTContract ? 'USDT' : 'TRX'
-            })
-          });
-          
-          const transactionData = await transactionResponse.json();
-          
-          if (!transactionData.success) {
-            console.warn('خرید موفق بود اما هش ذخیره نشد:', transactionData.message);
-          }
-        } catch (hashError) {
-          console.error('خطا در ذخیره هش (خرید موفق بود):', hashError);
-        }
-        
-        setUploadProgress(100);
-        
-        const successMessage = isRenewal ? "تمدید اشتراک شما با موفقیت انجام شد" : "خرید شما با موفقیت ثبت شد";
-        notify("موفق", successMessage, "success");
-        
-        const subscriptionResult = await updateSubscription(productTitle, months || 1, transactionHash, price);
-        
-        if (subscriptionResult.error) {
-          notify("هشدار", "خرید با موفقیت انجام شد اما در ثبت آن در سیستم مشکلی به وجود آمد. لطفا با پشتیبانی تماس بگیرید.", "warning");
-        } else {
-          const actionType = isRenewal ? "تمدید" : (subscriptionResult.updated ? "تمدید" : "فعال‌سازی");
-          notify("موفق", `اشتراک شما با موفقیت ${actionType} شد`, "success", 3000);
-        }
-        
-        setTimeout(() => {
-          setIsUploading(false);
-          setUploadProgress(0);
-          closeCard();
-        }, 2000);
-        
-      } else {
-        notify("خطا", purchaseData.message || "در ثبت خرید مشکلی پیش آمد", "danger");
-        setIsUploading(false);
-        setUploadProgress(0);
-      }
+      // خطا در ثبت خرید - هش ذخیره نشده
+      notify("خطا", purchaseData.message || "در ثبت خرید مشکلی پیش آمد", "danger");
+      setIsUploading(false);
+      setUploadProgress(0);
     }
     
   } catch (error) {
@@ -895,57 +866,51 @@ const handleSubmit = async () => {
                     روش پرداخت را انتخاب کنید:
                   </p>
                   <div className="flex flex-col gap-3 mb-6">
-                   <button
-  onClick={() => setPaymentMethod('tron')}
-  className={`w-full py-4 px-4 rounded-xl transition-all duration-200 ${
-    paymentMethod === 'tron'
-      ? 'bg-[#f7d55d] text-gray-900 font-medium'
-      : isDarkMode 
-        ? 'bg-gray-800 text-gray-300 border border-gray-700'
-        : 'bg-gray-100 text-gray-600 border border-gray-200'
-  }`}
->
-  <div className="flex items-center justify-center gap-3">
-    <img 
-      src="/tron-trx-logo.png" 
-      alt="Tron Logo" 
-      className="w-8 h-8"
-    />
-    <div className="text-center">
-      <div className="font-bold text-lg">TRON (TRC20)</div>
-      <div className="text-sm opacity-80">USDT</div>
-<div className="text-sm mt-1 opacity-90 font-black" dir="rtl">
-        فعال‌سازی سرویس بلافاصله پس از پرداخت
-      </div>
-    </div>
-  </div>
-</button>
-
-<button
-  onClick={() => setPaymentMethod('solana')}
-  className={`w-full py-4 px-4 rounded-xl transition-all duration-200 ${
-    paymentMethod === 'solana'
-      ? 'bg-[#f7d55d] text-gray-900 font-medium'
-      : isDarkMode 
-        ? 'bg-gray-800 text-gray-300 border border-gray-700'
-        : 'bg-gray-100 text-gray-600 border border-gray-200'
-  }`}
->
-  <div className="flex items-center justify-center gap-3">
-    <img 
-      src="/solana-sol-logo.png" 
-      alt="Solana Logo" 
-      className="w-8 h-8"
-    />
-    <div className="text-center">
-      <div className="font-bold text-lg">SOLANA</div>
-      <div className="text-sm opacity-80">USDT / SOL</div>
-<div className="text-xs mt-1 opacity-90 font-black" dir="rtl">
-        فعال‌سازی سرویس تا ۲۴ ساعت آینده (پس از بررسی)
-      </div>
-    </div>
-  </div>
-</button>
+                    <button
+                      onClick={() => setPaymentMethod('tron')}
+                      className={`w-full py-4 px-4 rounded-xl transition-all duration-200 ${
+                        paymentMethod === 'tron'
+                          ? 'bg-[#f7d55d] text-gray-900 font-medium'
+                          : isDarkMode 
+                            ? 'bg-gray-800 text-gray-300 border border-gray-700'
+                            : 'bg-gray-100 text-gray-600 border border-gray-200'
+                      }`}
+                    >
+                      <div className="flex items-center justify-center gap-3">
+                        <img 
+                          src="/tron-trx-logo.png" 
+                          alt="Tron Logo" 
+                          className="w-8 h-8"
+                        />
+                        <div className="text-center">
+                          <div className="font-bold text-lg">TRON (TRC20)</div>
+                          <div className="text-sm opacity-80">USDT</div>
+                        </div>
+                      </div>
+                    </button>
+                    
+                    <button
+                      onClick={() => setPaymentMethod('solana')}
+                      className={`w-full py-4 px-4 rounded-xl transition-all duration-200 ${
+                        paymentMethod === 'solana'
+                          ? 'bg-[#f7d55d] text-gray-900 font-medium'
+                          : isDarkMode 
+                            ? 'bg-gray-800 text-gray-300 border border-gray-700'
+                            : 'bg-gray-100 text-gray-600 border border-gray-200'
+                      }`}
+                    >
+                      <div className="flex items-center justify-center gap-3">
+                        <img 
+                          src="/solana-sol-logo.png" 
+                          alt="Solana Logo" 
+                          className="w-8 h-8"
+                        />
+                        <div className="text-center">
+                          <div className="font-bold text-lg">SOLANA</div>
+                          <div className="text-sm opacity-80">USDT / SOL</div>
+                        </div>
+                      </div>
+                    </button>
                   </div>
                 </div>
 

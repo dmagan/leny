@@ -1091,7 +1091,7 @@ useEffect(() => {
         id: 'ethereum', 
         symbol: 'ETH',
         name: 'Ethereum',
-        color: 'bg-[#6§27eea]',
+        color: 'bg-[#627eea]',
         price: 2200,
         change: 1.8
       },
