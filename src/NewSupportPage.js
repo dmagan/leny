@@ -38,8 +38,8 @@ const ChatMessage = ({ message, isDarkMode }) => {
             : 'bg-[#f7d55d]'
         }`}
       >
-        <div
-  className={`text-sm message-content ${
+      <div
+  className={`text-sm message-content break-words whitespace-pre-wrap ${
     message.isAdmin
       ? isDarkMode
         ? 'text-white'
@@ -47,7 +47,13 @@ const ChatMessage = ({ message, isDarkMode }) => {
       : 'text-gray-900'
   }`}
   dir="rtl"
-  style={{ textAlign: 'right', direction: 'rtl' }}
+  style={{ 
+    textAlign: 'right', 
+    direction: 'rtl',
+    wordBreak: 'break-word',
+    overflowWrap: 'break-word',
+    whiteSpace: 'pre-wrap'
+  }}
   dangerouslySetInnerHTML={{ __html: message.content }}
 />
         <div className="flex justify-end items-center gap-2 mt-2">
@@ -239,7 +245,6 @@ const NewSupportPage = ({ isDarkMode }) => {
           return;
         }
       } catch (error) {
-        console.error('Error initializing support service:', error);
         setLoading(false);
       }
     };
@@ -327,7 +332,6 @@ const NewSupportPage = ({ isDarkMode }) => {
         dismiss: { duration: 2000 }
       });
     } catch (error) {
-      console.error('Error manual syncing:', error);
       
       Store.addNotification({
         title: "خطا",
@@ -394,7 +398,6 @@ const NewSupportPage = ({ isDarkMode }) => {
         });
       }
     } catch (error) {
-      console.error('Error sending message:', error);
       
       // علامت‌گذاری پیام به عنوان ناموفق
       setPendingMessages(prev => {
@@ -466,7 +469,6 @@ const NewSupportPage = ({ isDarkMode }) => {
         });
       }
     } catch (error) {
-      console.error('Error creating ticket:', error);
     }
   };
 
@@ -562,26 +564,56 @@ const NewSupportPage = ({ isDarkMode }) => {
                   <MessageSkeleton isDarkMode={isDarkMode} />
                 </>
               ) : messages.length === 0 ? (
-                <div className={`flex flex-col items-center justify-center h-full ${
-                  isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                }`}>
-                  <svg
-                    className="w-16 h-16 mb-4 opacity-50"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1}
-                      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                    />
-                  </svg>
-                  <p className="text-center">
-                    {currentTicket ? 'هنوز پیامی ارسال نشده است' : 'اولین پیام خود را ارسال کنید'}
-                  </p>
-                </div>
+  <div className="p-4">
+    {/* پیام خوش‌آمدگویی Local */}
+    <div className="flex w-full justify-start mb-4">
+      <div className={`max-w-[80%] rounded-2xl p-4 ${
+        isDarkMode ? 'bg-gray-700' : 'bg-gray-100'
+      }`}>
+        <div className={`text-sm ${
+          isDarkMode ? 'text-white' : 'text-gray-800'
+        }`} dir="rtl" style={{ textAlign: 'right', direction: 'rtl' }}>
+          سلام و خوش آمدید! 👋<br/>
+          این اولین تیکت پشتیبانی شما است. می‌توانید سوالات و درخواست‌های خود را اینجا مطرح کنید.<br/>
+          تیم پشتیبانی ما در اسرع وقت پاسخ خواهد داد. 🙏
+        </div>
+        <div className="flex justify-end items-center gap-2 mt-2">
+          <span className={`text-xs ${
+            isDarkMode ? 'text-gray-400' : 'text-gray-500'
+          }`}>
+            {new Date().toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit', hour12: false })}
+          </span>
+          <span className={`text-xs ${
+            isDarkMode ? 'text-gray-400' : 'text-gray-500'
+          }`}>
+            {new Date().toLocaleDateString('fa-IR', { year: 'numeric', month: '2-digit', day: '2-digit' })}
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    {/* متن راهنما */}
+    <div className={`flex flex-col items-center justify-center mt-8 ${
+      isDarkMode ? 'text-gray-400' : 'text-gray-500'
+    }`}>
+      <svg
+        className="w-12 h-12 mb-3 opacity-50"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1}
+          d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+        />
+      </svg>
+      <p className="text-center text-sm">
+        پیام خود را در قسمت پایین بنویسید...
+      </p>
+    </div>
+  </div>
               ) : (
                 <>
                   {messages.map((msg) => (

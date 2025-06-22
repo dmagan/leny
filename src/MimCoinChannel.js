@@ -790,7 +790,6 @@ useEffect(() => {
             }
           }
         } catch (apiError) {
-          console.log('API call failed, falling back to localStorage');
         }
       }
       
@@ -824,7 +823,6 @@ useEffect(() => {
         }
       }
     } catch (error) {
-      console.error('Error checking subscription expiry:', error);
     }
   };
 

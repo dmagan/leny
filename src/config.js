@@ -4,7 +4,7 @@ export const PRODUCT_PRICES = {
   ZERO_TO_100: '199',
   DEX_ZERO_TO_100_PACKAGE: '349',
   TRADE_PRO: '750',
-  MEM_COIN: '199',
+  MEM_COIN: '15',
   
   // قیمت‌های VIP با دوره‌های مختلف
   VIP: {
@@ -22,7 +22,8 @@ export const ADMIN_CONFIG = {
   allowedEmails: [
     'alimagani@gmail.com',    // gmail با g کوچک
     'shahan@gmail.com',       // gmail با g کوچک
-    
+    'tradingwitherfan@gmail.com', 
+    'mindsetasad@gmail.com', 
   ],
   // نقش‌های مجاز
   adminRoles: ['administrator', 'admin', 'super_admin']

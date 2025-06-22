@@ -12,7 +12,7 @@ import SignalStreamServicePage from './SignalStream-Service-Page';
 import PaymentCard from './PaymentCard';
 import { PRODUCT_PRICES,ADMIN_CONFIG } from './config';
 import supportNotificationService from './SupportNotificationService';
-import channelNotificationService from './ChannelNotificationService';
+import channelNotificationService from './ChannelNotificationService';    
 import vipNotificationService from './VIPNotificationService';
 import TradeProPage from './TradePro-Service-Page';
 import postsNotificationService from './PostsNotificationService';
@@ -665,15 +665,12 @@ const handleMimCoinClick = async () => {
     });
 
     if (mimCoinProduct) {
-      console.log('✅ محصول میم کوین در localStorage یافت شد');
       setShowMimCoinChannel(true);
       return;
     }
   }
 
-  // مرحله ۲: اگر در localStorage نبود، از سایت چک کن
-  console.log('🔍 چک کردن سایت برای محصول میم کوین...');
-  
+  // مرحله ۲: اگر در localStorage نبود، از سایت چک کن  
   try {
     const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
     const response = await fetch('https://p30s.com/wp-json/pcs/v1/user-purchases', {
@@ -696,7 +693,6 @@ const handleMimCoinClick = async () => {
         }));
         
         localStorage.setItem('purchasedProducts', JSON.stringify(formattedPurchases));
-        console.log('✅ localStorage بروزرسانی شد با اطلاعات سایت');
 
         // حالا دوباره چک کن
         const mimCoinProduct = formattedPurchases.find(p => {
@@ -716,18 +712,15 @@ const handleMimCoinClick = async () => {
         });
 
         if (mimCoinProduct) {
-          console.log('✅ محصول میم کوین در سایت یافت شد');
           setShowMimCoinChannel(true);
           return;
         }
       }
     }
   } catch (error) {
-    console.error('خطا در چک کردن سایت:', error);
   }
 
   // مرحله ۳: اگر در هیچ کدام نبود، پیام خطا
-  console.log('❌ محصول میم کوین در هیچ کدام یافت نشد');
   Store.addNotification({
     title: (
       <div dir="rtl" style={{ textAlign: 'right', paddingRight: '15px' }}>اطلاعیه</div>
@@ -1181,30 +1174,19 @@ useEffect(() => {
           }
         }
       } catch (apiError) {
-        console.log('API call failed, using localStorage data');
       }
       
-      // دیباگ کامل
-      console.log('=== Admin Check Debug ===');
-      console.log('User Email from storage:', userInfo.user_email || userInfo.email);
-      console.log('Final User Email:', userEmail);
-      console.log('User Roles:', userRoles);
-      console.log('Allowed Emails:', ADMIN_CONFIG.allowedEmails);
-      console.log('========================');
+
       
       const isAdminRole = userRoles.some(role => ADMIN_CONFIG.adminRoles.includes(role));
       const isAllowedEmail = ADMIN_CONFIG.allowedEmails.some(email => 
         email.toLowerCase() === userEmail.toLowerCase()
       );
-      
-      console.log('Is Admin Role:', isAdminRole);
-      console.log('Is Allowed Email:', isAllowedEmail);
-      console.log('Final Result:', isAdminRole || isAllowedEmail);
+
       
       setIsAdmin(isAdminRole || isAllowedEmail);
       
     } catch (error) {
-      console.error('Error checking user access:', error);
       setIsAdmin(false);
     }
   };
@@ -1852,7 +1834,7 @@ const handleSignalStreamClick = async () => {
       <NavItem icon={<Home size={24} />} label="خانه" active={true} isDarkMode={isDarkMode}/>
 <NavItem 
   icon={<MonitorPlay size={24} />} 
-  label="پست ها" 
+  label="آموزشی" 
   active={false} 
   isDarkMode={isDarkMode}
   isLoggedIn={isLoggedIn}
@@ -2027,7 +2009,7 @@ const handleClick = () => {
     } else {
       navigate('/login');
     }
-  } else if (label === "پست ها") {
+  } else if (label === "آموزشی") {
     if (isLoggedIn) {
       navigate('/chanel-posts');
     } else {
