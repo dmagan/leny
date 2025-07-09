@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
-import CourseApp from './CourseApp-support.js';
+import CourseApp from './CourseApp-Leny.js';
 import AsadPage from './AsadPage';
 import Chat from './vipChanel';
 import StoriesPage from './components/StoriesPage';
@@ -40,6 +40,8 @@ import ErrorBoundary from './ErrorBoundary';
 import NewSupportPage from './NewSupportPage';
 import newSupportNotificationService from './NewSupportNotificationService';
 import MimCoinChannel from './MimCoinChannel';
+import SimpleSmsLogin from './SimpleSmsLogin';
+
 
 
 
@@ -768,7 +770,7 @@ const App = () => {
   // All states
   const [showDesktopWarning, setShowDesktopWarning] = useState(true);
   const [showIOSPrompt, setShowIOSPrompt] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(true);
+const [isDarkMode, setIsDarkMode] = useState(false);
   const [products, setProducts] = useState([]);
   const [cryptoPrices, setCryptoPrices] = useState([]);
   const [stories, setStories] = useState([]);
@@ -777,6 +779,7 @@ const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [unreadSupportMessages, setUnreadSupportMessages] = useState(0);
   const [unreadNewSupportMessages, setUnreadNewSupportMessages] = useState(0);
+  const [showSmsLogin, setShowSmsLogin] = useState(true); // شروع با  OTP
 
   
 
@@ -1024,6 +1027,19 @@ useEffect(() => {
     setIsLoggedIn(false);
   };
 
+  const handleSmsLoginSuccess = (phoneNumber, code) => {
+  console.log('SMS Login successful:', phoneNumber, code);
+  setShowSmsLogin(false);
+  setIsLoggedIn(true);
+  
+  // ذخیره اطلاعات کاربر
+  localStorage.setItem('userToken', 'SMS_LOGIN_TOKEN');
+  localStorage.setItem('userInfo', JSON.stringify({
+    phoneNumber: phoneNumber,
+    loginMethod: 'sms'
+  }));
+};
+
   useEffect(() => {
     const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
     if (token) {
@@ -1234,55 +1250,64 @@ useEffect(() => {
   }, []);
 
  return (
- <ErrorBoundary isDarkMode={isDarkMode}>
-   <div>
-     <ReactNotifications />
-     {/** اضافه کردن Toaster در بالای BrowserRouter */}
-     <Toaster 
-       position="top-center" 
-       containerStyle={{ zIndex: 11000 }} 
-     />
+<ErrorBoundary isDarkMode={isDarkMode}>
+  <div>
+    {showSmsLogin ? (
+      <SimpleSmsLogin 
+        isDarkMode={isDarkMode} 
+        onSuccess={handleSmsLoginSuccess}
+      />
+    ) : (
+      <>
+        <ReactNotifications />
+        {/** اضافه کردن Toaster در بالای BrowserRouter */}
+        <Toaster 
+          position="top-center" 
+          containerStyle={{ zIndex: 11000 }} 
+        />
 
-     {/* اضافه کردن کامپوننت راهنمای iOS */}
-     {showIOSPrompt && (
-       <IOSInstallPrompt 
-         isDarkMode={isDarkMode} 
-         onClose={() => setShowIOSPrompt(false)} 
-       />
-     )}
+        {/* اضافه کردن کامپوننت راهنمای iOS */}
+        {showIOSPrompt && (
+          <IOSInstallPrompt 
+            isDarkMode={isDarkMode} 
+            onClose={() => setShowIOSPrompt(false)} 
+          />
+        )}
 
-     {/* اضافه کردن هشدار دسکتاپ */}
-     {showDesktopWarning && (
-       <DesktopWarning 
-         isDarkMode={isDarkMode} 
-       />
-     )}
+        {/* اضافه کردن هشدار دسکتاپ */}
+        {showDesktopWarning && (
+          <DesktopWarning 
+            isDarkMode={isDarkMode} 
+          />
+        )}
 
-     <BrowserRouter>
-       <OrientationLock isDarkMode={isDarkMode}>
-         {loading ? (
-           <CustomLoading />
-         ) : (
-           <AppRoutes 
-             isDarkMode={isDarkMode} 
-             setIsDarkMode={setIsDarkMode}
-             products={products}
-             cryptoPrices={cryptoPrices}
-             stories={stories}
-             loading={loading}
-             sliders={sliders}
-             isLoggedIn={isLoggedIn}
-             handleLogout={handleLogout}
-             setIsLoggedIn={setIsLoggedIn}
-             unreadSupportMessages={unreadSupportMessages}
-           />
-         )}
-       </OrientationLock>
-     </BrowserRouter>
-   </div>
- </ErrorBoundary>
+        <BrowserRouter>
+          <OrientationLock isDarkMode={isDarkMode}>
+            {loading ? (
+              <CustomLoading />
+            ) : (
+              <AppRoutes 
+                isDarkMode={isDarkMode} 
+                setIsDarkMode={setIsDarkMode}
+                products={products}
+                cryptoPrices={cryptoPrices}
+                stories={stories}
+                loading={loading}
+                sliders={sliders}
+                isLoggedIn={isLoggedIn}
+                handleLogout={handleLogout}
+                setIsLoggedIn={setIsLoggedIn}
+                unreadSupportMessages={unreadSupportMessages}
+              />
+            )}
+          </OrientationLock>
+        </BrowserRouter>
+      </>
+    )}
+  </div>
+</ErrorBoundary>
 );
-  
+
 };
 
 export default App;
