@@ -30,7 +30,7 @@ const SimpleSmsLogin = ({ isDarkMode, onSuccess }) => {
   // ارسال SMS
   const sendSMS = async (code, phoneNumber) => {
     try {
-      const response = await fetch('https://p30s.com/wp-json/sms/v1/send-otp-public', {
+      const response = await fetch('https://lenytoys.ir/wp-json/sms/v1/send-otp-public', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json'
@@ -75,18 +75,20 @@ const SimpleSmsLogin = ({ isDarkMode, onSuccess }) => {
     try {
       const code = generateOTP();
       setGeneratedCode(code);
-      
-      const result = await sendSMS(code, phoneNumber);
-      
-      if (result.success) {
-        setStep('otp');
-        setCountdown(120); // 2 دقیقه
-        
-        // فوکوس روی اولین input
-        setTimeout(() => {
-          inputRefs.current[0]?.focus();
-        }, 100);
-      } else {
+  const result = await sendSMS(code, phoneNumber);
+
+if (result.success) {
+  setStep('otp');
+  setCountdown(120); // 2 دقیقه
+  
+  // راه‌اندازی خواندن خودکار SMS
+  setupAutoOTPDetection();
+  
+  // فوکوس روی اولین input
+  setTimeout(() => {
+    inputRefs.current[0]?.focus();
+  }, 100);
+}else {
         setError('خطا در ارسال پیامک. لطفا دوباره تلاش کنید.');
       }
     } catch (err) {
@@ -95,6 +97,28 @@ const SimpleSmsLogin = ({ isDarkMode, onSuccess }) => {
       setIsLoading(false);
     }
   };
+
+  // راه‌اندازی خواندن خودکار OTP از SMS
+const setupAutoOTPDetection = () => {
+  if ('OTPCredential' in window) {
+    navigator.credentials.get({
+      otp: { transport: ['sms'] }
+    }).then(otp => {
+      if (otp && otp.code) {
+        console.log('Auto OTP detected:', otp.code);
+        // خودکار وارد کردن کد
+        const otpDigits = otp.code.split('');
+        setOtpCode(otpDigits);
+        // خودکار تأیید
+        setTimeout(() => {
+          handleOTPSubmit(otp.code);
+        }, 500);
+      }
+    }).catch(err => {
+      console.log('Auto OTP detection failed:', err);
+    });
+  }
+};
 
   // مرحله 2: وارد کردن کد OTP
   const handleOTPChange = (index, value) => {

@@ -57,7 +57,7 @@ supportNotificationService.checkForNewMessages = async function() {
     if (!token) return;
     
     // استفاده از API صحیح wpas-api به جای awesome-support
-    const ticketsResponse = await fetch('https://p30s.com/wp-json/wpas-api/v1/tickets', {
+    const ticketsResponse = await fetch('https://lenytoys.ir/wp-json/wpas-api/v1/tickets', {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -79,7 +79,7 @@ supportNotificationService.checkForNewMessages = async function() {
     for (const ticket of tickets) {
       try {
         // دریافت پاسخ‌های هر تیکت
-        const repliesResponse = await fetch(`https://p30s.com/wp-json/wpas-api/v1/tickets/${ticket.id}/replies`, {
+        const repliesResponse = await fetch(`https://lenytoys.ir/wp-json/wpas-api/v1/tickets/${ticket.id}/replies`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -155,7 +155,7 @@ window.authenticatedFetch = async (url, options = {}) => {
         const userInfo = JSON.parse(localStorage.getItem('userInfo') || sessionStorage.getItem('userInfo') || '{}');
         console.log('توکن نامعتبر است، در حال تمدید خودکار در authenticatedFetch...');
         
-        const loginResponse = await fetch('https://p30s.com/wp-json/jwt-auth/v1/token', {
+        const loginResponse = await fetch('https://lenytoys.ir/wp-json/jwt-auth/v1/token', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -815,7 +815,7 @@ useEffect(() => {
     }
     
     try {
-      const response = await fetch('https://p30s.com/wp-json/jwt-auth/v1/token/validate', {
+      const response = await fetch('https://lenytoys.ir/wp-json/jwt-auth/v1/token/validate', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -831,7 +831,7 @@ useEffect(() => {
         
         if (userInfo.user_email && userPassword) {
           // تلاش برای لاگین مجدد با اطلاعات ذخیره شده
-          const loginResponse = await fetch('https://p30s.com/wp-json/jwt-auth/v1/token', {
+          const loginResponse = await fetch('https://lenytoys.ir/wp-json/jwt-auth/v1/token', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -934,7 +934,7 @@ useEffect(() => {
         if (now > tokenExpiration - 7 * 24 * 60 * 60 * 1000) { // اگر کمتر از 7 روز مانده
           try {
             // ابتدا بررسی کنیم که آیا توکن فعلی هنوز معتبر است
-            const validationResponse = await fetch('https://p30s.com/wp-json/jwt-auth/v1/token/validate', {
+            const validationResponse = await fetch('https://lenytoys.ir/wp-json/jwt-auth/v1/token/validate', {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${token}`
@@ -948,7 +948,7 @@ useEffect(() => {
               // تمدید توکن با لاگین مجدد
               if (userInfo.user_email) {
                 console.log('در حال تمدید خودکار توکن در استارت اپ...');
-                const response = await fetch('https://p30s.com/wp-json/jwt-auth/v1/token', {
+                const response = await fetch('https://lenytoys.ir/wp-json/jwt-auth/v1/token', {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json'
@@ -988,7 +988,7 @@ useEffect(() => {
         if (!token) return;
         
         console.log("Reloading user subscriptions...");
-        const response = await fetch('https://p30s.com/wp-json/pcs/v1/user-purchases', {
+        const response = await fetch('https://lenytoys.ir/wp-json/pcs/v1/user-purchases', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Accept': 'application/json'
@@ -1067,7 +1067,7 @@ useEffect(() => {
         const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
         if (!token) return;
         
-        const response = await fetch('https://p30s.com/wp-json/pcs/v1/user-purchases', {
+        const response = await fetch('https://lenytoys.ir/wp-json/pcs/v1/user-purchases', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Accept': 'application/json'
@@ -1184,7 +1184,7 @@ useEffect(() => {
     const fetchSliders = async () => {
       try {
         const auth = btoa('ck_20b3c33ef902d4ccd94fc1230c940a85be290e0a:cs_e8a85df738324996fd3608154ab5bf0ccc6ded99');
-        const response = await fetch('https://p30s.com/wp-json/wp/v2/slider?_embed', {
+        const response = await fetch('https://lenytoys.ir/wp-json/wp/v2/slider?_embed', {
           headers: {
             'Authorization': `Basic ${auth}`
           }
@@ -1207,7 +1207,7 @@ useEffect(() => {
     const fetchProducts = async () => {
       try {
         const auth = btoa('ck_20b3c33ef902d4ccd94fc1230c940a85be290e0a:cs_e8a85df738324996fd3608154ab5bf0ccc6ded99');
-        const response = await fetch('https://p30s.com/wp-json/wc/v3/products?per_page=10', {
+        const response = await fetch('https://lenytoys.ir/wp-json/wc/v3/products?per_page=10', {
           headers: {
             'Authorization': `Basic ${auth}`
           }
@@ -1232,7 +1232,7 @@ useEffect(() => {
     const fetchStories = async () => {
       try {
         const auth = btoa('ck_20b3c33ef902d4ccd94fc1230c940a85be290e0a:cs_e8a85df738324996fd3608154ab5bf0ccc6ded99');
-        const response = await fetch('https://p30s.com/wp-json/wp/v2/story_highlights?_embed', {
+        const response = await fetch('https://lenytoys.ir/wp-json/wp/v2/story_highlights?_embed', {
           headers: {
             'Authorization': `Basic ${auth}`
           }
