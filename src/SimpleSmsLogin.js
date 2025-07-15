@@ -153,23 +153,43 @@ const setupAutoOTPDetection = () => {
   };
 
   // تأیید کد OTP
-  const handleOTPSubmit = (codeToCheck = null) => {
-    const enteredCode = codeToCheck || otpCode.join('');
-    
-    if (enteredCode.length !== 6) {
-      setError('لطفا کد 6 رقمی را کامل وارد کنید');
-      return;
-    }
+  const handleOTPSubmit = async (codeToCheck = null) => {
+  const enteredCode = codeToCheck || otpCode.join('');
+  
+  if (enteredCode.length !== 6) {
+    setError('لطفا کد 6 رقمی را کامل وارد کنید');
+    return;
+  }
 
-    if (enteredCode === generatedCode) {
-      // کد درست است، برنامه اجرا شود
-      onSuccess(phoneNumber, enteredCode);
-    } else {
-      setError('کد وارد شده اشتباه است. لطفا دوباره تلاش کنید.');
-      setOtpCode(['', '', '', '', '', '']);
-      inputRefs.current[0]?.focus();
+  if (enteredCode === generatedCode) {
+    setIsLoading(true);
+    try {
+      // ثبت‌نام/لاگین خودکار
+      const response = await fetch('https://lenytoys.ir/wp-json/sms/v1/register-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phoneNumber: phoneNumber })
+      });
+      
+      const data = await response.json();
+      if (data.success && data.token) {
+        localStorage.setItem('userToken', data.token);
+        localStorage.setItem('userInfo', JSON.stringify(data.user));
+        onSuccess(phoneNumber, enteredCode, data);
+      } else {
+        setError('خطا در ثبت‌نام. لطفا دوباره تلاش کنید.');
+      }
+    } catch (error) {
+      setError('خطا در اتصال به سرور.');
+    } finally {
+      setIsLoading(false);
     }
-  };
+  } else {
+    setError('کد وارد شده اشتباه است. لطفا دوباره تلاش کنید.');
+    setOtpCode(['', '', '', '', '', '']);
+    inputRefs.current[0]?.focus();
+  }
+};
 
   // ارسال مجدد کد
   const handleResendOTP = () => {

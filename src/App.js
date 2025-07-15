@@ -779,7 +779,8 @@ const [isDarkMode, setIsDarkMode] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [unreadSupportMessages, setUnreadSupportMessages] = useState(0);
   const [unreadNewSupportMessages, setUnreadNewSupportMessages] = useState(0);
-  const [showSmsLogin, setShowSmsLogin] = useState(true); // شروع با  OTP
+const [showSmsLogin, setShowSmsLogin] = useState(false);// شروع با  OTP
+
 
   
 
@@ -1027,17 +1028,16 @@ useEffect(() => {
     setIsLoggedIn(false);
   };
 
-  const handleSmsLoginSuccess = (phoneNumber, code) => {
+const handleSmsLoginSuccess = (phoneNumber, code, userData) => {
   console.log('SMS Login successful:', phoneNumber, code);
   setShowSmsLogin(false);
   setIsLoggedIn(true);
   
-  // ذخیره اطلاعات کاربر
-  localStorage.setItem('userToken', 'SMS_LOGIN_TOKEN');
-  localStorage.setItem('userInfo', JSON.stringify({
-    phoneNumber: phoneNumber,
-    loginMethod: 'sms'
-  }));
+  // userData از SimpleSmsLogin می‌آید و شامل token و user info است
+  if (userData && userData.token) {
+    localStorage.setItem('userToken', userData.token);
+    localStorage.setItem('userInfo', JSON.stringify(userData.user));
+  }
 };
 
   useEffect(() => {

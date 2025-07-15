@@ -20,6 +20,8 @@
   import MimCoinServicesPage from './MimCoin-Services-Page';
   import MimCoinChannel from './MimCoinChannel';
   import newSupportNotificationService from './NewSupportNotificationService';
+  import SimpleSmsLogin from './SimpleSmsLogin';
+
 
 
 
@@ -132,6 +134,8 @@
   const [showMimCoinPage, setShowMimCoinPage] = useState(false);
   const [showMimCoinChannel, setShowMimCoinChannel] = useState(false);
   const [unreadNewSupportMessages, setUnreadNewSupportMessages] = useState(0);
+  const [showSmsLogin, setShowSmsLogin] = useState(false);
+
 
 
     const [showPaymentCard, setShowPaymentCard] = useState({
@@ -146,25 +150,28 @@
 
 
     const services = [
-      {
-        id: 1,
-        name: "قصه",
-        imageSrc: "/Services/story.jpg",
-      },
+   
           {
         id: 7,
     name: "کارتن",
-      imageSrc: "/Services/cartoon.jpg",
+          backgroundImage: "/Services/cartoon-bg.jpg",
+
       },
+
+       {
+    id: 1,
+    name: "قصه",
+    backgroundImage: "/Services/story-bg.jpg",  // این خط را اضافه کنید
+  },
       {
         id: 2,
         name: "شعر",
-        imageSrc: "/Services/lyric.jpg",
+          backgroundImage: "/Services/song-bg.jpg",
       },
       {
         id: 3,
         name: "فروشگاه ",
-        imageSrc: "/Services/shop.jpg",
+          backgroundImage: "/Services/shop-bg.jpg",
       },
       /*    {
         id: 4,
@@ -679,6 +686,37 @@
     }, 2000);
   };
 
+const handleSmsSuccess = async (phoneNumber, code, userData) => {
+  // به‌روزرسانی وضعیت لاگین - ⚠️ این مهم است
+  // setIsLoggedIn(true); // فعلاً کامنت کنید چون prop نیست
+  
+  // بستن modal SMS Login
+  setShowSmsLogin(false);
+  
+  // نمایش پیام موفقیت
+  Store.addNotification({
+    title: (
+      <div dir="rtl" style={{ textAlign: 'right', paddingRight: '15px' }}>
+        موفقیت
+      </div>
+    ),
+    message: (
+      <div dir="rtl" style={{ textAlign: 'right' }}>
+        ثبت‌نام با موفقیت انجام شد. خوش آمدید!
+      </div>
+    ),
+    type: "success",
+    insert: "top",
+    container: "center",
+    animationIn: ["animate__animated", "animate__flipInX"],
+    animationOut: ["animate__animated", "animate__flipOutX"],
+    dismiss: { duration: 3000, showIcon: true, pauseOnHover: true }
+  });
+  
+  // رفرش صفحه برای به‌روزرسانی وضعیت لاگین
+  window.location.reload();
+};
+
     const handleSliderWithPaymentClick = (productName, productPrice) => {
     // بررسی وضعیت ورود کاربر
     const userToken = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
@@ -840,6 +878,22 @@
   localStorage.removeItem('sliderAutoplayEnabled');
   setAutoplayEnabled(false);
   }, []);
+
+  // بررسی وضعیت لاگین هنگام لود صفحه
+useEffect(() => {
+  const checkLoginStatus = () => {
+    const token = localStorage.getItem('userToken');
+    const userInfo = localStorage.getItem('userInfo');
+    
+    if (token && userInfo) {
+      // کاربر قبلاً لاگین کرده - اما نمی‌توانیم setIsLoggedIn را فراخوانی کنیم
+      // چون prop نیست، پس صفحه را رفرش می‌کنیم
+      console.log('کاربر لاگین است');
+    }
+  };
+  
+  checkLoginStatus();
+}, []);
 
 
   useEffect(() => {
@@ -1362,63 +1416,7 @@
     {/* Services روی gradient */}
   <div className="absolute bottom-[-100px] left-0 right-0 p-4 z-10">
 
-    <h2
-    className={`text-2xl font-black mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}
-    dir="rtl"
-    style={{
-      
-    }}
-  >
-
-  </h2>
-
-
-    <div className="relative">
-      <div 
-        ref={sliderRef}
-  className="flex overflow-x-auto -space-x-1 -mx-4 px-1 scrollbar-hide snap-x snap-mandatory mb-4"
-
-
-        style={{
-          scrollSnapType: 'x mandatory',  
-          scrollBehavior: 'smooth',
-          WebkitOverflowScrolling: 'touch'
-        }}
-        onScroll={(e) => {
-          const index = Math.round(e.target.scrollLeft / (280 + 16));
-          setCurrentIndex(index);
-        }}
-      >
-  {services.map((service, index) => (
-    <div 
-      key={service.id} 
-  className={`flex-shrink-0 w-36  rounded-2xl ${isDarkMode ? '' : ''}`}
-
-      onClick={() => handleServiceClick(service)}
-      style={{ cursor: 'pointer' }}
-    >
-      <div className="flex flex-col items-center">
-        <div className="rounded-2xl p-2 bg-gray-0 w-full aspect-square">
-         <img
-  src={service.imageSrc}
-  alt={service.name}
-  className="w-full h-full rounded-xl object-cover object-center"
-/>
-        </div>
-        <div className="w-full space-y-2">
-          <h3 className={`font-medium text-sm text-center line-clamp-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-            {service.name}
-          </h3>
-        </div>
-      </div>
-    </div>
-  ))}
-            </div>
-            
-
-            {/* Courses */}
-
-          </div>
+   
         </div>
       
   </div>
@@ -1428,14 +1426,42 @@
     {/* باقی کد Services */}
   </div>
 
-  {/* Services */}
 
 
+{/* Services - موقعیت جدید */}
+<div className="px-4 mb-32 -mt-16 relative z-2">
+  <div className="grid grid-cols-1 gap-4 mb-4">
+    {services.map((service, index) => (
+      <div 
+        key={service.id} 
+        className={`w-full rounded-2xl border-2 border-gray-100  shadow-lx p-12`}
+        style={{ 
+          backgroundImage: `url(${service.backgroundImage})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          cursor: 'pointer'
+        }}  
+        onClick={() => handleServiceClick(service)}
+      >
+<div className="flex flex-row items-center">
+  <div className="w-full space-y-2">
+<h3 className={`text-right line-clamp-2 ${
+  service.id === 1 ? 'text-3xl text-white font-bold ' :          // قصه
+  service.id === 7 ? 'text-3xl text-black font-bold' :  // کارتن
+  service.id === 2 ? 'text-3xl text-white font-bold ' :          // شعر
+  service.id === 3 ? 'text-3xl text-black font-bold' :       // فروشگاه
+  (isDarkMode ? 'text-white' : 'text-gray-900')
+}`}>
+  {service.name}
+</h3>  </div>
+</div>
+      </div>
+    ))}
+  </div>
+</div>
 
-  {/* Services */}
 
-
-      {/* Sliders Section */}
   {/* Sliders Section */}
 <div className="px-4 mb-32">
     <div className="relative">
@@ -1493,8 +1519,6 @@
     </div>
   </div>
 
-      {/*--------------------------- */}
-      {/* Social Media Boxes */}
 
 
       
@@ -1672,6 +1696,16 @@
     />
   )}
 
+  {/* SimpleSmsLogin */}
+{showSmsLogin && (
+  <div className="fixed inset-0 z-50">
+    <SimpleSmsLogin
+      isDarkMode={isDarkMode}
+      onSuccess={handleSmsSuccess}
+    />
+  </div>
+)}
+
 
 
 
@@ -1685,17 +1719,17 @@
     const navigate = useNavigate();
 
   const handleClick = () => {
-    if (isProfile) {
-      if (isLoggedIn) {
-        navigate('/profile');
-      } else {
-        navigate('/login');
-      }
-    } else if (label === "آپدیت مارکت") {
+   if (isProfile) {
+  if (isLoggedIn) {
+    navigate('/profile');
+  } else {
+navigate('/login');
+  }
+}else if (label === "آپدیت مارکت") {
       if (isLoggedIn) {
         navigate('/chanel-public');
       } else {
-        navigate('/login');
+navigate('/login');
       }
     } else if (label === "آموزشی") {
       if (isLoggedIn) {
