@@ -1,4 +1,4 @@
-    import React, { useState, useEffect, useRef } from 'react';
+ import React, { useState, useEffect, useRef } from 'react';
 import { Menu, Play, Home, PlayCircle, Calendar, UserX, UserCheck, Headphones, Megaphone , MonitorPlay, Gauge, CirclePlus} from 'lucide-react';
     import { Toaster, toast } from 'react-hot-toast';
     import { useNavigate } from 'react-router-dom';
@@ -138,6 +138,7 @@ import { Menu, Play, Home, PlayCircle, Calendar, UserX, UserCheck, Headphones, M
     const [unreadNewSupportMessages, setUnreadNewSupportMessages] = useState(0);
     const [showSmsLogin, setShowSmsLogin] = useState(false);
     const [showBallRegistration, setShowBallRegistration] = useState(false);
+    const [userBallCount, setUserBallCount] = useState(377); // عدد پیش‌فرض  
 
 
 
@@ -690,6 +691,36 @@ import { Menu, Play, Home, PlayCircle, Calendar, UserX, UserCheck, Headphones, M
       }, 2000);
     };
 
+// دریافت تعداد توپ‌های کاربر
+const fetchUserBallCount = async () => {
+  try {
+    const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+    if (!token) {
+      setUserBallCount(377); // اگر لاگین نیست، عدد پیش‌فرض
+      return;
+    }
+
+    const response = await fetch('https://lenytoys.ir/wp-json/ball-codes/v1/user-codes', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.success) {
+        setUserBallCount(data.total_count || 0);
+      }
+    } else {
+      setUserBallCount(377); // در صورت خطا، عدد پیش‌فرض
+    }
+  } catch (error) {
+    console.error('خطا در دریافت تعداد توپ‌ها:', error);
+    setUserBallCount(377); // در صورت خطا، عدد پیش‌فرض
+  }
+};
+
   const handleSmsSuccess = async (phoneNumber, code, userData) => {
     // به‌روزرسانی وضعیت لاگین - ⚠️ این مهم است
     // setIsLoggedIn(true); // فعلاً کامنت کنید چون prop نیست
@@ -1188,6 +1219,13 @@ import { Menu, Play, Home, PlayCircle, Calendar, UserX, UserCheck, Headphones, M
       checkUserAccess();
     }, [isLoggedIn]);
 
+
+// دریافت تعداد توپ‌ها هنگام لود صفحه
+useEffect(() => {
+  fetchUserBallCount();
+}, [isLoggedIn]); // وقتی وضعیت لاگین تغییر کرد، دوباره بگیر
+
+
     useEffect(() => {
       if (isLoggedIn) {
         newSupportNotificationService.start();
@@ -1399,7 +1437,7 @@ import { Menu, Play, Home, PlayCircle, Calendar, UserX, UserCheck, Headphones, M
 <div className="absolute inset-0 flex flex-col items-center mt-32 z-10">
 {/* دکمه ثبت توپ جدید */}
 <button 
-  onClick={() => setShowBallRegistration(true)}
+onClick={() => setShowBallRegistration(true)}
   className="mb-12 px-12 py-3 text-white font-bold text-lg rounded-xl shadow-lg transition-colors duration-200 flex items-center gap-2"
   style={{ backgroundColor: '#144f70' }}
 >
@@ -1413,22 +1451,23 @@ import { Menu, Play, Home, PlayCircle, Calendar, UserX, UserCheck, Headphones, M
 
     
 {/* تصویر Leny در پایین سمت راست */}
-<div className="absolute bottom-40 right-0 w-56 h-48 z-10">
-  
+<div 
+  className="absolute bottom-40 right-0 w-56 h-48 z-10 cursor-pointer"
+  onClick={() => setShowBallRegistration(true)}
+>
   <img 
     src="/LenyBall.png" 
     alt="Leny" 
     className="w-full h-full object-contain"
   />
   {/* Badge قرمز با عدد دستی */}
-<div 
-  className="absolute top-4 right-4 w-12 h-12 flex items-center justify-center bg-red-500 text-white text-xl font-bold rounded-full border-2 border-white"
-  style={{ fontFamily: 'Impact, sans-serif' }}
->
-  123
+  <div 
+    className="absolute top-4 right-4 w-12 h-12 flex items-center justify-center bg-red-500 text-white text-2xl font-bold rounded-full border-2 border-white"
+    style={{ fontFamily: 'Impact, sans-serif' }}
+  >
+  {userBallCount}
+  </div>
 </div>
-</div>
-    
 
 
 
@@ -1637,6 +1676,7 @@ import { Menu, Play, Home, PlayCircle, Calendar, UserX, UserCheck, Headphones, M
   <BallRegistrationPage
     isDarkMode={isDarkMode}
     onClose={() => setShowBallRegistration(false)}
+    onBallRegistered={fetchUserBallCount}
   />
 )}
 
