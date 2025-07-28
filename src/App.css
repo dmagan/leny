@@ -90,3 +90,143 @@
   animation: ptr-spin 1s linear infinite;
 } 
 
+/* به انتهای فایل App.css یا index.css اضافه کنید */
+
+/* انیمیشن برای badge تعداد توپ‌ها */
+.ball-count-badge {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* استایل برای دکمه‌های جنسیت */
+.gender-button {
+  transition: all 0.3s ease;
+}
+
+.gender-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.gender-button.selected {
+  transform: scale(1.02);
+  box-shadow: 0 0 0 2px #f7d55d, 0 4px 12px rgba(247, 213, 93, 0.3);
+}
+
+/* استایل برای فیلدهای فرم */
+.profile-input {
+  transition: all 0.3s ease;
+}
+
+.profile-input:focus {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(247, 213, 93, 0.2);
+}
+
+/* استایل برای آیکون پروفایل کامل */
+.profile-complete-icon {
+  animation: bounceIn 0.6s ease-out;
+}
+
+@keyframes bounceIn {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* استایل برای نمایش اطلاعات کاربر */
+.user-info-item {
+  padding: 8px 12px;
+  border-radius: 20px;
+  background: rgba(247, 213, 93, 0.1);
+  border: 1px solid rgba(247, 213, 93, 0.3);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* استایل برای دکمه ویرایش */
+.edit-profile-btn {
+  background: linear-gradient(135deg, #f7d55d 0%, #e5c44c 100%);
+  transition: all 0.3s ease;
+}
+
+.edit-profile-btn:hover {
+  background: linear-gradient(135deg, #e5c44c 0%, #d4b23a 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(247, 213, 93, 0.4);
+}
+
+/* انیمیشن برای تعداد توپ‌ها */
+.ball-count-animation {
+  animation: countUp 0.8s ease-out;
+}
+
+@keyframes countUp {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* کلاس‌های کمکی */
+.fade-in {
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-up {
+  animation: slideUp 0.4s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

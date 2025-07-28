@@ -41,6 +41,8 @@ import NewSupportPage from './NewSupportPage';
 import newSupportNotificationService from './NewSupportNotificationService';
 import MimCoinChannel from './MimCoinChannel';
 import SimpleSmsLogin from './SimpleSmsLogin';
+import ProfileFormPage from './ProfileFormPage';
+
 
 
 
@@ -547,6 +549,7 @@ function AppRoutes({
         </>
       } />
       
+      
 
       <Route path="/dex" element={
   <>
@@ -768,8 +771,8 @@ function AppRoutes({
 
 const App = () => {
   // All states
-  const [showDesktopWarning, setShowDesktopWarning] = useState(true);
-  const [showIOSPrompt, setShowIOSPrompt] = useState(false);
+const [showDesktopWarning, setShowDesktopWarning] = useState(false);
+const [showIOSPrompt, setShowIOSPrompt] = useState(false);
 const [isDarkMode, setIsDarkMode] = useState(false);
   const [products, setProducts] = useState([]);
   const [cryptoPrices, setCryptoPrices] = useState([]);
@@ -781,18 +784,37 @@ const [isDarkMode, setIsDarkMode] = useState(false);
   const [unreadNewSupportMessages, setUnreadNewSupportMessages] = useState(0);
 const [showSmsLogin, setShowSmsLogin] = useState(false);// شروع با  OTP
 
-
+// 👈 دقیقاً اینجا useEffect جدید را اضافه کنید:
+useEffect(() => {
+  const checkInitialLoginStatus = () => {
+    const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+    const userInfo = localStorage.getItem('userInfo') || sessionStorage.getItem('userInfo');
+    
+    console.log('چک کردن وضعیت لاگین در ابتدای اپ:', { token: !!token, userInfo: !!userInfo });
+    
+    if (token && userInfo) {
+      setIsLoggedIn(true);
+      setShowSmsLogin(false);
+      console.log('کاربر قبلاً لاگین کرده');
+    } else {
+      setIsLoggedIn(false);
+      setShowSmsLogin(true);
+      console.log('کاربر لاگین نیست، نمایش صفحه OTP');
+    }
+  };
   
+  // تاخیر کوتاه برای اطمینان از لود شدن کامل اپ
+  setTimeout(checkInitialLoginStatus, 1000);
+}, []); // فقط یک بار در ابتدای اپ اجرا شود
+
 
 useEffect(() => {
-  // فقط یک بار در لود اولیه چک می‌کنیم
+  // فقط چک کردن iOS prompt
   const checkIOSPrompt = () => {
     if (shouldShowInstallPrompt()) {
-      // یک تاخیر کوتاه برای اطمینان از لود شدن صفحه قبل از نمایش راهنما
       const timer = setTimeout(() => {
         setShowIOSPrompt(true);
       }, 2000);
-      
       return timer;
     }
     return null;
@@ -1020,24 +1042,39 @@ useEffect(() => {
   }
 }, [isLoggedIn]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('userToken');
-    localStorage.removeItem('userInfo');
-    sessionStorage.removeItem('userToken');
-    sessionStorage.removeItem('userInfo');  
-    setIsLoggedIn(false);
-  };
+const handleLogout = () => {
+  // پاک کردن همه اطلاعات ذخیره شده
+  localStorage.removeItem('userToken');
+  localStorage.removeItem('userInfo');
+  localStorage.removeItem('userPhone');
+  localStorage.removeItem('userPassword');
+  sessionStorage.removeItem('userToken');
+  sessionStorage.removeItem('userInfo');
+  
+  // تنظیم state ها
+  setIsLoggedIn(false);
+  setShowSmsLogin(true);
+  
+  console.log('کاربر از سیستم خارج شد، نمایش صفحه OTP');
+};
 
 const handleSmsLoginSuccess = (phoneNumber, code, userData) => {
   console.log('SMS Login successful:', phoneNumber, code);
-  setShowSmsLogin(false);
-  setIsLoggedIn(true);
   
-  // userData از SimpleSmsLogin می‌آید و شامل token و user info است
+  // ذخیره اطلاعات در localStorage برای ماندگاری
   if (userData && userData.token) {
     localStorage.setItem('userToken', userData.token);
-    localStorage.setItem('userInfo', JSON.stringify(userData.user));
+    localStorage.setItem('userInfo', JSON.stringify(userData.user || userData));
+    localStorage.setItem('userPhone', phoneNumber);
+    
+    console.log('اطلاعات کاربر در localStorage ذخیره شد');
   }
+  
+  // تنظیم state ها
+  setIsLoggedIn(true);
+  setShowSmsLogin(false);
+  
+  console.log('ورود موفقیت آمیز، پنهان کردن صفحه OTP');
 };
 
   useEffect(() => {

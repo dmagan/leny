@@ -1,18 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, LogOut, Package, ShoppingCart, User } from 'lucide-react';
-import ProductSkeleton from './ProductSkeleton';
-import VIPPage from './VIP-Service-Page';
+import { X, LogOut, User, Edit, UserCheck } from 'lucide-react';
+import ProfileFormPage from './ProfileFormPage';
 
 const formatDate = (date) => 
   date.toLocaleDateString('en-GB', {
-    day:   'numeric',
+    day: 'numeric',
     month: 'long',
-    year:  'numeric'
+    year: 'numeric'
   });
 
 const ProfilePage = ({ isDarkMode, setIsLoggedIn, onLogout }) => {
-  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const [showCard, setShowCard] = useState(false);
   const [userInfo, setUserInfo] = useState(null);
@@ -20,7 +18,64 @@ const ProfilePage = ({ isDarkMode, setIsLoggedIn, onLogout }) => {
   const isDragging = useRef(false);
   const startY = useRef(0);
   const [isLandscape, setIsLandscape] = useState(window.innerHeight < window.innerWidth);
-  const [purchasedProducts, setPurchasedProducts] = useState([]);
+  const [userBallCount, setUserBallCount] = useState(0);
+  const [showProfileForm, setShowProfileForm] = useState(false);
+
+  // دریافت تعداد توپ‌های کاربر
+  const fetchUserBallCount = async () => {
+    try {
+      const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+      if (!token) {
+        setUserBallCount(0);
+        return;
+      }
+
+      const response = await fetch('https://lenytoys.ir/wp-json/ball-codes/v1/user-codes', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setUserBallCount(data.total_count || 0);
+        } else {
+          setUserBallCount(0);
+        }
+      } else {
+        setUserBallCount(0);
+      }
+    } catch (error) {
+      console.error('خطا در دریافت تعداد توپ‌ها:', error);
+      setUserBallCount(0);
+    }
+  };
+
+  // بررسی اینکه آیا پروفایل کامل شده یا نه
+  const isProfileComplete = () => {
+    return userInfo?.first_name && userInfo?.last_name && userInfo?.age && userInfo?.gender;
+  };
+
+  // نمایش نام کامل
+  const getDisplayName = () => {
+    if (isProfileComplete()) {
+      return `${userInfo.first_name} ${userInfo.last_name}`;
+    }
+    return userInfo?.user_display_name || userInfo?.user_email || 'کاربر';
+  };
+
+  // نمایش جنسیت
+  const getGenderDisplay = () => {
+    if (!userInfo?.gender) return '';
+    return userInfo.gender === 'male' ? '👦 پسر' : '👧 دختر';
+  };
+
+  const handleProfileComplete = (updatedUserInfo) => {
+    setUserInfo(updatedUserInfo);
+    setShowProfileForm(false);
+  };
 
   useEffect(() => {
     const storedInfo = localStorage.getItem('userInfo') || sessionStorage.getItem('userInfo');
@@ -37,10 +92,10 @@ const ProfilePage = ({ isDarkMode, setIsLoggedIn, onLogout }) => {
       setShowCard(true);
     }, 100);
   }, []);
-  
+
   useEffect(() => {
     if (userInfo?.user_email) {
-      loadPurchasedProducts();
+      fetchUserBallCount();
     }
   }, [userInfo]);
 
@@ -101,16 +156,6 @@ const ProfilePage = ({ isDarkMode, setIsLoggedIn, onLogout }) => {
     };
   }, [isLandscape]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (isLoading) {
-        setIsLoading(false);
-      }
-    }, 5000);
-    
-    return () => clearTimeout(timer);
-  }, [isLoading]);
-
   const closeCard = () => {
     setShowCard(false);
     setTimeout(() => {
@@ -136,347 +181,131 @@ const ProfilePage = ({ isDarkMode, setIsLoggedIn, onLogout }) => {
     navigate('/');
   };
 
-  // تابع loadPurchasedProducts بهبود یافته
-  const loadPurchasedProducts = async () => {
-    try {
-      setIsLoading(true);
-      
-      if (!userInfo?.user_email) {
-        setPurchasedProducts([]);
-        setIsLoading(false);
-        return;
-      }
-
-      const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
-      if (!token) {
-        setPurchasedProducts([]);
-        setIsLoading(false);
-        return;
-      }
-      
-      try {
-        const response = await fetch('https://p30s.com/wp-json/pcs/v1/user-purchases', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json'
-          }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          
-          if (data.success && Array.isArray(data.purchases)) {
-            // گروه‌بندی اشتراک‌ها براساس نوع 
-            const groupedSubscriptions = {};
-            
-            data.purchases.forEach(purchase => {
-  let subscriptionType = 'other';
-  if (purchase.isVIP) subscriptionType = 'vip';
-  else if (purchase.title && purchase.title.includes('دکس')) subscriptionType = 'dex';
-  else if (purchase.title && (purchase.title.includes('صفر تا صد') || purchase.title.includes('0 تا 100'))) 
-    subscriptionType = 'zero-to-100';
-  else if (purchase.title && (purchase.title.includes('سیگنال') || purchase.title.includes('Signal'))) 
-    subscriptionType = 'signal';
-  // اضافه کردن شرط برای دوره ترید حرفه‌ای
-  else if (purchase.title && purchase.title.includes('ترید حرفه‌ای'))
-    subscriptionType = 'trade-pro';
-    
-  if (!groupedSubscriptions[subscriptionType]) {
-    groupedSubscriptions[subscriptionType] = [];
-  }
-  groupedSubscriptions[subscriptionType].push(purchase);
-});
-            
-            // استخراج آخرین اشتراک فعال از هر گروه
-            const activeSubscriptions = [];
-            
-            Object.keys(groupedSubscriptions).forEach(type => {
-              const typeSubscriptions = groupedSubscriptions[type];
-              
-              typeSubscriptions.sort((a, b) => {
-                const dateA = new Date(a.date || a.purchase_date || a.lastUpdated || a.createdAt);
-                const dateB = new Date(b.date || b.purchase_date || b.lastUpdated || b.createdAt);
-                return dateB - dateA;  
-              });
-              
-              const activeSubscription = typeSubscriptions.find(sub => sub.status === 'active');
-              if (activeSubscription) {
-                activeSubscriptions.push(activeSubscription);
-              } else if (typeSubscriptions.length > 0) {
-                activeSubscriptions.push(typeSubscriptions[0]);
-              }
-            });
-            
-            // تبدیل به فرمت مورد نیاز برای نمایش
-            const products = activeSubscriptions.map(purchase => {
-              let title = purchase.title;
-              if (purchase.isVIP) {
-                const baseTitle = title
-                  .replace(/^اشتراک\s*/, '')
-                  .replace(/VIP\s*/g, '')
-                  .trim();
-                title = `اشتراک VIP ${baseTitle}`;
-              }
-              
-              const productData = {
-                id: purchase.id,
-                title: title,
-                date: new Date(purchase.date || purchase.purchase_date || purchase.lastUpdated || purchase.createdAt),
-                status: purchase.status,
-                remainingDays: purchase.remainingDays,
-                isVIP: purchase.isVIP,
-                isDex: purchase.title && purchase.title.includes('دکس'),
-                lastUpdated: purchase.lastUpdated,
-                transactionHash: purchase.transactionHash
-              };
-              
-              return {
-                ...productData,
-                icon: productData.isVIP ? <ShoppingCart className="w-6 h-6" /> : <Package className="w-6 h-6" />
-              };
-            });
-            
-            const productsForCache = products.map(({ icon, ...rest }) => rest);
-            localStorage.setItem('purchasedProducts', JSON.stringify(productsForCache));
-            localStorage.setItem('lastProductCheck', new Date().getTime().toString());
-            sessionStorage.setItem('purchasedProducts', JSON.stringify(productsForCache));
-            sessionStorage.setItem('lastProductCheck', new Date().getTime().toString());
-            
-            setPurchasedProducts(products);
-            return;
-          }
-        }
-        
-        throw new Error('API پاسخ مناسب نداد');
-        
-      } catch (apiError) {
-        console.warn('خطا در استفاده از API اصلی، استفاده از داده‌های کش شده...', apiError);
-        
-        const cachedData = localStorage.getItem('purchasedProducts');
-        if (cachedData) {
-          try {
-            const parsedProducts = JSON.parse(cachedData);
-            
-            const groupedSubscriptions = {};
-            
-           // در بخش catch که از کش استفاده می‌کند:
-parsedProducts.forEach(product => {
-  let subscriptionType = 'other';
-  if (product.isVIP) subscriptionType = 'vip';
-  else if (product.title && product.title.includes('دکس')) subscriptionType = 'dex';
-  else if (product.title && (product.title.includes('صفر تا صد') || product.title.includes('0 تا 100'))) 
-    subscriptionType = 'zero-to-100';
-  else if (product.title && (product.title.includes('سیگنال') || product.title.includes('Signal'))) 
-    subscriptionType = 'signal';
-  // اضافه کردن شرط برای دوره ترید حرفه‌ای
-  else if (product.title && product.title.includes('ترید حرفه‌ای'))
-    subscriptionType = 'trade-pro';
-    
-  if (!groupedSubscriptions[subscriptionType]) {
-    groupedSubscriptions[subscriptionType] = [];
-  }
-  groupedSubscriptions[subscriptionType].push(product);
-});
-            
-            const activeSubscriptions = [];
-            
-            Object.keys(groupedSubscriptions).forEach(type => {
-              const typeSubscriptions = groupedSubscriptions[type];
-              
-              typeSubscriptions.sort((a, b) => {
-                const dateA = new Date(a.date || a.purchase_date || a.lastUpdated || a.createdAt);
-                const dateB = new Date(b.date || b.purchase_date || b.lastUpdated || b.createdAt);
-                return dateB - dateA;
-              });
-              
-              const activeSubscription = typeSubscriptions.find(sub => sub.status === 'active');
-              if (activeSubscription) {
-                activeSubscriptions.push(activeSubscription);
-              } else if (typeSubscriptions.length > 0) {
-                activeSubscriptions.push(typeSubscriptions[0]);
-              }
-            });
-            
-            const productsWithIcons = activeSubscriptions.map(product => ({
-              ...product,
-              date: new Date(product.date || product.purchase_date || product.lastUpdated || product.createdAt),
-              icon: product.isVIP ? <ShoppingCart className="w-6 h-6" /> : <Package className="w-6 h-6" />
-            }));
-            
-            setPurchasedProducts(productsWithIcons);
-          } catch (cacheError) {
-            console.error('Error parsing cached data:', cacheError);
-            setPurchasedProducts([]);
-          }
-        } else {
-          setPurchasedProducts([]);
-        }
-      }
-    } catch (error) {
-      console.error('Error loading purchased products:', error);
-      setPurchasedProducts([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-const handleRenewal = (product) => {
-  setShowCard(false);
-  
-  sessionStorage.setItem('renewProduct', JSON.stringify({
-    id: product.id,
-    title: product.title,
-    isVIP: product.isVIP,
-    isDex: product.title.includes('دکس'),
-    isTradePro: product.title.includes('ترید حرفه‌ای')
-  }));
-  
-  setTimeout(() => {
-    if (product.isVIP) {
-      navigate('/vip-services', { state: { renewal: true } });
-    } else if (product.title.includes('دکس')) {
-      navigate('/dex-services', { state: { renewal: true } });
-    } else if (product.title.includes('صفر تا صد') || product.title.includes('0 تا 100')) {
-      navigate('/0to100-services', { state: { renewal: true } });
-    } else if (product.title.includes('سیگنال') || product.title.includes('Signal')) {
-      navigate('/signal-stream', { state: { renewal: true } });
-    } else if (product.title.includes('ترید حرفه‌ای')) {
-      navigate('/tradepro', { state: { renewal: true } });
-    } else {
-      navigate('/products', { state: { renewal: true } });
-    }
-  }, 300);
-};
-
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 overflow-hidden transition-opacity duration-300"
-    onClick={(e) => {
-      if (e.target === e.currentTarget) {
-        closeCard();
-      }
-    }}
-      style={{ 
-        opacity: showCard ? 1 : 0,
-        pointerEvents: showCard ? 'auto' : 'none'
-      }}>
-      <div 
-        ref={cardRef}
-        className={`fixed bottom-0 left-0 right-0 w-full ${
-          isDarkMode ? 'bg-[#0d1822]' : 'bg-white'
-        } rounded-t-3xl shadow-lg transition-transform duration-300 ease-out ${
-          isLandscape ? 'h-screen overflow-y-auto' : 'max-h-[92vh] overflow-hidden'
-        }`}
+    <>
+      <div className="fixed inset-0 z-50 bg-black/75 overflow-hidden transition-opacity duration-300"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          closeCard();
+        }
+      }}
         style={{ 
-          transform: `translateY(${showCard ? '0' : '100%'})`,
-          touchAction: isLandscape ? 'auto' : 'none',
-        }}
-      >
-        <div className="pt-2 relative">
-          <div className="w-24 h-1 bg-gray-300 rounded-full mx-auto" />
-          
-          <button 
-            onClick={closeCard}
-            className="absolute top-4 right-4 z-50 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100"
-          >
-            <X size={20} className="text-gray-600" />
-          </button>
-        </div>
-  
-        <div className="scrollable-content h-full overflow-y-auto pb-safe">
-          <div className="px-6 pb-8 pt-4">
-            <div className="mb-2 text-center pt-4">
-              <div className="w-16 h-16 bg-[#f7d55d] rounded-full mx-auto mb-2 flex items-center justify-center">
-
-                <User className="w-8 h-8 text-white" />
-              </div>
-               <h1 className={`text-2xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-   {userInfo?.user_display_name || 'کاربر'}
- </h1>
- {userInfo?.user_registered && (
-   <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-     {new Date(userInfo.user_registered).toLocaleDateString('fa-IR')} — {formatDate(new Date(userInfo.user_registered))}
-   </p>
- )}
-            </div>
-  
-  <div className="space-y-2 text-right" dir="rtl">
-              <h2 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-4 `}>
-                اشتراک‌های شما
-              </h2>
-              
-              {isLoading ? (
-                <>
-                  <ProductSkeleton isDarkMode={isDarkMode} />
-                  <ProductSkeleton isDarkMode={isDarkMode} />
-                  <ProductSkeleton isDarkMode={isDarkMode} />
-                </>
-              ) : purchasedProducts.length > 0 ? (
-                purchasedProducts.map(product => (
-                  <div key={product.id} className={`p-2 rounded-xl border ${isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900'}`}>
-
-                    <div className="flex flex-col gap-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <h3 className="font-medium text-base">{product.title}</h3>
-                          <div className="flex items-center justify-between mt-1">
-                            <div className="flex flex-col">
-                              <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                {new Date(product.date).toLocaleDateString('fa-IR')} — {formatDate(new Date(product.date))}
-                              </p>
-                              {product.status === 'active' && (
-  <p className="text-sm text-yellow-500">
-    {product.title.includes('دکس تریدینگ') || 
-     product.title.includes('صفر تا صد') || 
-     product.title.includes('0 تا 100') || 
-     product.title.includes('۰ تا ۱۰۰') || 
-     product.title.includes('ترید حرفه‌ای') || 
-     product.remainingDays === 'unlimited' ? 
-      'دسترسی نامحدود' : 
-      `روزهای باقیمانده: ${product.remainingDays}`
-    }
-  </p>
-)}  
-                            </div>
-                            <span className={`text-sm ${product.status === 'active' ? 'text-green-500' : 'text-red-500'}`}>
-                              {product.status === 'active' ? 'فعال' : 'منقضی شده'}
-                            </span>
-                          </div>
-                        </div>
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                          product.status === 'active' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'
-                        }`}>
-                          {product.icon}
-                        </div>
-                      </div>
-                      {product.status !== 'active' && (
-                       <button 
-                       onClick={() => handleRenewal(product)} 
-                       className="w-full bg-[#f7d55d] text-gray-900 py-3 rounded-xl text-sm"
-                     >
-                       تمدید اشتراک
-                     </button>
-                      )}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className={`text-center p-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  هیچ اشتراکی یافت نشد
+          opacity: showCard ? 1 : 0,
+          pointerEvents: showCard ? 'auto' : 'none'
+        }}>
+        <div 
+          ref={cardRef}
+          className={`fixed bottom-0 left-0 right-0 w-full ${
+            isDarkMode ? 'bg-[#0d1822]' : 'bg-white'
+          } rounded-t-3xl shadow-lg transition-transform duration-300 ease-out ${
+            isLandscape ? 'h-screen overflow-y-auto' : 'max-h-[92vh] overflow-hidden'
+          }`}
+          style={{ 
+            transform: `translateY(${showCard ? '0' : '100%'})`,
+            touchAction: isLandscape ? 'auto' : 'none',
+          }}
+        >
+          <div className="pt-2 relative">
+            <div className="w-24 h-1 bg-gray-300 rounded-full mx-auto" />
+            
+            <button 
+              onClick={closeCard}
+              className="absolute top-4 right-4 z-50 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100"
+            >
+              <X size={20} className="text-gray-600" />
+            </button>
+          </div>
+    
+          <div className="scrollable-content h-full overflow-y-auto pb-safe">
+            <div className="px-6 pb-8 pt-4">
+              <div className="mb-2 text-center pt-4">
+                <div className="w-16 h-16 bg-[#f7d55d] rounded-full mx-auto mb-2 flex items-center justify-center">
+                  {isProfileComplete() ? (
+                    <UserCheck className="w-8 h-8 text-white" />
+                  ) : (
+                    <User className="w-8 h-8 text-white" />
+                  )}
                 </div>
-              )}
-  
-              <button
-                onClick={handleLogout}
-                className="w-full mt-6 bg-red-500 text-white rounded-xl py-3 text-sm font-medium hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
-              >
-                <LogOut className="w-4 h-4" />
-                خروج از حساب کاربری
-              </button>
+                
+                <h1 className={`text-2xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  {getDisplayName()}
+                </h1>
+                
+                {/* نمایش اطلاعات بر اساس تکمیل پروفایل */}
+                {isProfileComplete() ? (
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-center gap-4 text-sm">
+                      <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                        {userInfo.age} ساله
+                      </span>
+                      <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                        {getGenderDisplay()}
+                      </span>
+                    </div>
+                    <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      {userInfo.user_email}
+                    </p>
+                    <p className={`text-sm font-medium ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'} mt-2`}>
+                      تعداد توپ‌های ثبت شده: {userBallCount}
+                    </p>
+                    <button
+                      onClick={() => setShowProfileForm(true)}
+                      className={`mt-2 px-4 py-2 rounded-lg text-sm flex items-center gap-2 mx-auto ${
+                        isDarkMode 
+                          ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      } transition-colors`}
+                    >
+                      <Edit size={16} />
+                      ویرایش پروفایل
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      {userInfo?.user_email}
+                    </p>
+                    {userInfo?.user_registered && (
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        {new Date(userInfo.user_registered).toLocaleDateString('fa-IR')} — {formatDate(new Date(userInfo.user_registered))}
+                      </p>
+                    )}
+                    <p className={`text-sm font-medium ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'} mt-2`}>
+                      تعداد توپ‌های ثبت شده: {userBallCount}
+                    </p>
+                    <button
+                      onClick={() => setShowProfileForm(true)}
+                      className="mt-3 px-6 py-2 bg-[#f7d55d] text-gray-900 rounded-lg text-sm font-medium hover:bg-[#e5c44c] transition-colors flex items-center gap-2 mx-auto"
+                    >
+                      <User size={16} />
+                      تکمیل پروفایل
+                    </button>
+                  </div>
+                )}
+    
+                <button
+                  onClick={handleLogout}
+                  className="w-full mt-6 bg-red-500 text-white rounded-xl py-3 text-sm font-medium hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
+                >
+                  <LogOut className="w-4 h-4" />
+                  خروج از حساب کاربری
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* ProfileFormPage */}
+      {showProfileForm && (
+        <ProfileFormPage
+          isDarkMode={isDarkMode}
+          userInfo={userInfo}
+          onClose={() => setShowProfileForm(false)}
+          onProfileComplete={handleProfileComplete}
+        />
+      )}
+    </>
   );
 };
 

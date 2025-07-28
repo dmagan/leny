@@ -121,24 +121,19 @@ import { Menu, Play, Home, PlayCircle, Calendar, UserX, UserCheck, Headphones, M
       const [currentIndex, setCurrentIndex] = useState(0);
       const [currentSlide, setCurrentSlide] = useState(0); // برای ردیابی اسلاید فعلی
       const [autoplayEnabled, setAutoplayEnabled] = useState(false); // افزودن state جدید
-      const [showVIPPage, setShowVIPPage] = useState(false);
-      const [showDexPage, setShowDexPage] = useState(false);
       const [showZeroTo100Page, setShowZeroTo100Page] = useState(false);
       const [showSignalStreamPage, setShowSignalStreamPage] = useState(false);
       const [isUIDLoading, setIsUIDLoading] = useState(false);
     const [showActualZeroTo100Page, setShowActualZeroTo100Page] = useState(false);
     const [unreadChannelPosts, setUnreadChannelPosts] = useState(0);
     const [unreadVIPPosts, setUnreadVIPPosts] = useState(0);
-    const [showTradeProPage, setShowTradeProPage] = useState(false);
     const [unreadPostsMessages, setUnreadPostsMessages] = useState(0);
     const [isAdmin, setIsAdmin] = useState(false);
     const [showTicketAnswer, setShowTicketAnswer] = useState(false);
-    const [showMimCoinPage, setShowMimCoinPage] = useState(false);
-    const [showMimCoinChannel, setShowMimCoinChannel] = useState(false);
     const [unreadNewSupportMessages, setUnreadNewSupportMessages] = useState(0);
     const [showSmsLogin, setShowSmsLogin] = useState(false);
     const [showBallRegistration, setShowBallRegistration] = useState(false);
-    const [userBallCount, setUserBallCount] = useState(377); // عدد پیش‌فرض  
+const [userBallCount, setUserBallCount] = useState(0);
 
 
 
@@ -199,13 +194,17 @@ import { Menu, Play, Home, PlayCircle, Calendar, UserX, UserCheck, Headphones, M
       ];
 
       const handleServiceClick = (service) => {
-        if (service.id === 1) { // VIP
-          setShowVIPPage(true); // نمایش صفحه VIP
-        } else if (service.id === 2) { // دکس ترید
-          setShowDexPage(true);
-        } else if (service.id === 3) { // آموزش صفر تا صد
-          setShowZeroTo100Page(true);
-        } else if (service.id === 4) { // پکیج
+  if (service.id === 1) { // قصه
+    // کد مربوط به قصه
+    console.log('قصه کلیک شد');
+  } else if (service.id === 2) { // شعر
+    // کد مربوط به شعر
+    console.log('شعر کلیک شد');
+  } else if (service.id === 3) { // فروشگاه
+    navigate('/products');
+  } else if (service.id === 7) { // کارتن
+    console.log('کارتن کلیک شد');
+  }else if (service.id === 4) { // پکیج
           // بررسی وضعیت ورود کاربر
           const userToken = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
           
@@ -278,425 +277,31 @@ import { Menu, Play, Home, PlayCircle, Calendar, UserX, UserCheck, Headphones, M
           });
         }
         else if (service.id === 5) { // ترید حرفه‌ای
-        setShowTradeProPage(true); // استفاده از تابع handleTradeProClick
-      } else if (service.id === 7) { 
-        setShowMimCoinPage(true);
-      }
+  console.log('ترید حرفه‌ای کلیک شد');
+  // یا می‌توانید به صفحه‌ای هدایت کنید:
+  // navigate('/trade-pro');
+} else if (service.id === 7) { // کارتن
+  console.log('کارتن کلیک شد');
+  // یا می‌توانید به صفحه‌ای هدایت کنید:
+  // navigate('/cartoon');
+}
       };
 
-    const handleVIPClick = async () => {
-      const userInfo = localStorage.getItem('userInfo') || sessionStorage.getItem('userInfo');
-      if (!userInfo) {
-        navigate('/login');
-        return;
-      }
-
-      try {
-        // بررسی مستقیم localStorage برای محصول اشتراک
-        const purchasedProductsStr = localStorage.getItem('purchasedProducts');
-        
-        if (purchasedProductsStr) {
-          try {
-            const purchasedProducts = JSON.parse(purchasedProductsStr);
-            
-            // بررسی برای یافتن اشتراک فعال - شامل هرگونه اشتراک فعال
-            const subscriptionProduct = purchasedProducts.find(p => 
-              (p.isVIP === true || 
-              (p.title && typeof p.title === 'string' && 
-                (p.title.includes('VIP') || p.title.includes('اشتراک')))
-              ) && 
-              p.status === 'active'
-            );
-            
-            
-            if (subscriptionProduct) {
-              // اگر اشتراک فعال پیدا شد، به کانال VIP هدایت می‌شود
-              vipNotificationService.markAllAsRead(); // علامت‌گذاری همه پیام‌ها به عنوان خوانده شده
-              navigate('/chat');
-              return;
-            }
-          } catch (parseError) {
-          }
-        }
-        
-        // اگر در localStorage پیدا نشد، از API بررسی می‌کنیم
-        const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
-        const response = await fetch('https://lenytoys.ir/wp-json/pcs/v1/check-vip-status', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json'
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error('خطا در بررسی وضعیت VIP');
-        }
-        
-        const data = await response.json();
-        
-        if (data.success && data.has_vip) {
-          // کاربر VIP است، به کانال VIP هدایت شود
-          vipNotificationService.markAllAsRead(); // علامت‌گذاری همه پیام‌ها به عنوان خوانده شده
-          navigate('/chat');
-        } else {
-          // کاربر VIP نیست، نمایش پیام مناسب
-          if (data.vip_details && data.vip_details.length > 0) {
-            // اشتراک VIP منقضی شده است
-            Store.addNotification({
-              title: (
-                <div dir="rtl" style={{ textAlign: 'right', paddingRight: '15px' }}>
-                  خطا
-                </div>
-              ),
-              message: (
-                <div dir="rtl" style={{ textAlign: 'right' }}>
-                  زمان اشتراک VIP شما به پایان رسیده است
-                </div>
-              ),
-              type: "warning",
-              insert: "top",
-              container: "center",
-              animationIn: ["animate__animated", "animate__flipInX"],
-              animationOut: ["animate__animated", "animate__flipOutX"],
-              dismiss: { duration: 4000, showIcon: true, pauseOnHover: true }
-            });
-          } else {
-            // اشتراک VIP خریداری نشده است
-            Store.addNotification({
-              title: (
-                <div dir="rtl" style={{ textAlign: 'right', paddingRight: '15px' }}>
-                  خطا
-                </div>
-              ),
-              message: (
-                <div dir="rtl" style={{ textAlign: 'right' }}>
-                  شما هنوز اشتراک VIP را خریداری نکرده‌اید. به‌صورت خودکار به صفحه خرید هدایت می‌شوید
-                </div>
-              ),
-              type: "danger",
-              insert: "top",
-              container: "center",
-              animationIn: ["animate__animated", "animate__flipInX"],
-              animationOut: ["animate__animated", "animate__flipOutX"],
-              dismiss: { duration: 5000, showIcon: true, pauseOnHover: true }
-            });
-          }
-          
-          // نمایش صفحه خرید VIP
-          setTimeout(() => {
-            setShowVIPPage(true);
-          }, 2000);
-        }
-      } catch (error) {
-        
-        // دوباره localStorage را بررسی می‌کنیم
-        const purchasedProductsStr = localStorage.getItem('purchasedProducts');
-        
-        if (purchasedProductsStr) {
-          try {
-            const purchasedProducts = JSON.parse(purchasedProductsStr);
-            
-            // بررسی برای یافتن اشتراک فعال - شامل هرگونه اشتراک فعال
-            const subscriptionProduct = purchasedProducts.find(p => 
-              (p.isVIP === true || 
-              (p.title && typeof p.title === 'string' && 
-                (p.title.includes('VIP') || p.title.includes('اشتراک')))
-              ) && 
-              p.status === 'active'
-            );
-            
-            if (subscriptionProduct) {
-              // اگر اشتراک فعال پیدا شد، به کانال VIP هدایت می‌شود
-              vipNotificationService.markAllAsRead(); // علامت‌گذاری همه پیام‌ها به عنوان خوانده شده
-              navigate('/chat');
-              return;
-            }
-          } catch (parseError) {
-          }
-        }
-        
-        // اگر در localStorage هم محصول فعال پیدا نشد، پیام خطا نمایش داده می‌شود
-        Store.addNotification({
-          title: (
-            <div dir="rtl" style={{ textAlign: 'right', paddingRight: '15px' }}>
-              خطا
-            </div>
-          ),
-          message: (
-            <div dir="rtl" style={{ textAlign: 'right' }}>
-              خطا در بررسی وضعیت اشتراک. به‌صورت خودکار به صفحه خرید هدایت می‌شوید
-            </div>
-          ),
-          type: "danger",
-          insert: "top",
-          container: "center",
-          animationIn: ["animate__animated", "animate__flipInX"],
-          animationOut: ["animate__animated", "animate__flipOutX"],
-          dismiss: { duration: 5000, showIcon: true, pauseOnHover: true }
-        });
-        
-        // نمایش صفحه VIP
-        setTimeout(() => {
-          setShowVIPPage(true);
-        }, 2000);
-      }
-    };
 
 
 
 
 
-      const handleDexClick = () => {
-        const userInfo = localStorage.getItem('userInfo') || sessionStorage.getItem('userInfo');
-        if (!userInfo) {
-          navigate('/login');
-          return;
-        }
-      
-        const purchasedProducts = localStorage.getItem('purchasedProducts');
-        if (!purchasedProducts) {
-          // نمایش پیام مناسب و هدایت به صفحه Dex
-          Store.addNotification({
-            title: (
-              <div dir="rtl" style={{ textAlign: 'right', paddingRight: '15px' }}>
-                اطلاعیه
-              </div>
-            ),
-            message: (
-              <div dir="rtl" style={{ textAlign: 'right' }}>
-                شما هنوز آموزش دکس تریدینگ را خریداری نکرده‌اید
-              </div>
-            ),
-            type: "danger",
-            insert: "top",
-            container: "center",
-            animationIn: ["animate__animated", "animate__flipInX"],
-            animationOut: ["animate__animated", "animate__flipOutX"],
-            dismiss: { duration: 3000, showIcon: true, pauseOnHover: true }
-          });
-          setTimeout(() => {
-            setShowDexPage(true);
-          }, 2000);
-          return;
-        }
-      
-        const products = JSON.parse(purchasedProducts);
-        // بررسی اینکه آیا محصول دکس تریدینگ خریداری شده است
-        const dexProduct = products.find(p => 
-          p.title && p.title.includes('دکس') && p.status === 'active'
-        );
-      
-        if (!dexProduct) {
-          Store.addNotification({
-            title: (
-              <div dir="rtl" style={{ textAlign: 'right' , paddingRight: '15px' }}>اطلاعیه </div>
-            ),
-            message: (
-                    <div dir="rtl" style={{ textAlign: 'right' }}>
-                      شما هنوز آموزش دکس تریدینگ را خریداری نکرده‌اید . به صورت خودکار به صغحه مورد نظر هدایت می شوید
-                    </div>
-                  ),
-            type: "danger",
-            insert: "top",
-            container: "center",
-            animationIn: ["animate__animated", "animate__flipInX"],
-            animationOut: ["animate__animated", "animate__flipOutX"],
-            dismiss: { duration: 5000, showIcon: true, pauseOnHover: true },
-        
-          });
-      
-          setTimeout(() => {
-            setShowDexPage(true);
-          }, 2000);
-          return;
-        }
-      
-        // اگر محصول خریداری شده باشد، به صفحه دکس تریدینگ هدایت می‌شود
-        navigate('/dex');
-      };
 
-    const handleTradeProClick = () => {
-      const userInfo = localStorage.getItem('userInfo') || sessionStorage.getItem('userInfo');
-      if (!userInfo) {
-        navigate('/login');
-        return;
-      }
+ 
 
-      const purchasedProducts = localStorage.getItem('purchasedProducts');
-      if (!purchasedProducts) {
-        // نمایش پیام مناسب و هدایت به صفحه ترید حرفه‌ای
-        Store.addNotification({
-          title: (
-            <div dir="rtl" style={{ textAlign: 'right', paddingRight: '15px' }}>
-              اطلاعیه
-            </div>
-          ),
-          message: (
-            <div dir="rtl" style={{ textAlign: 'right' }}>
-              شما هنوز آموزش ترید حرفه‌ای را خریداری نکرده‌اید
-            </div>
-          ),
-          type: "danger",
-          insert: "top",
-          container: "center",
-          animationIn: ["animate__animated", "animate__flipInX"],
-          animationOut: ["animate__animated", "animate__flipOutX"],
-          dismiss: { duration: 3000, showIcon: true, pauseOnHover: true }
-        });
-        setTimeout(() => {
-          setShowTradeProPage(true);
-        }, 2000);
-        return;
-      }
-
-      const products = JSON.parse(purchasedProducts);
-      // بررسی اینکه آیا محصول ترید حرفه‌ای خریداری شده است
-      const tradeProProduct = products.find(p => 
-        p.title && p.title.includes('ترید حرفه‌ای') && p.status === 'active'
-      );
-
-      if (!tradeProProduct) {
-        Store.addNotification({
-          title: (
-            <div dir="rtl" style={{ textAlign: 'right', paddingRight: '15px' }}>اطلاعیه </div>
-          ),
-          message: (
-            <div dir="rtl" style={{ textAlign: 'right' }}>
-              شما هنوز آموزش ترید حرفه‌ای را خریداری نکرده‌اید. به صورت خودکار به صفحه مورد نظر هدایت می شوید
-            </div>
-          ),
-          type: "danger",
-          insert: "top",
-          container: "center",
-          animationIn: ["animate__animated", "animate__flipInX"],
-          animationOut: ["animate__animated", "animate__flipOutX"],
-          dismiss: { duration: 5000, showIcon: true, pauseOnHover: true },
-        });
-
-        setTimeout(() => {
-          setShowTradeProPage(true);
-        }, 2000);
-        return;
-      }
-
-      // اگر محصول خریداری شده باشد، به صفحه ترید حرفه‌ای هدایت می‌شود
-      navigate('/tradepro');
-    };
-
-    const handleMimCoinClick = async () => {
-      const userInfo = localStorage.getItem('userInfo') || sessionStorage.getItem('userInfo');
-      if (!userInfo) {
-        navigate('/login');
-        return;
-      }
-
-      // مرحله ۱: بررسی localStorage
-      const purchasedProducts = localStorage.getItem('purchasedProducts');
-      
-      if (purchasedProducts) {
-        const products = JSON.parse(purchasedProducts);
-        
-        const mimCoinProduct = products.find(p => {
-          const title = p.title?.toLowerCase() || '';
-          const isActive = p.status === 'active';
-          
-          const isMimCoin = (
-            title.includes('میم کوین') ||
-            title.includes('mim coin') ||
-            title.includes('mimcoin') ||
-            title.includes('کانال میم کوین') ||
-            title.includes('میم‌کوین') ||
-            title.includes('میم')
-          );
-          
-          return isMimCoin && isActive;
-        });
-
-        if (mimCoinProduct) {
-          setShowMimCoinChannel(true);
-          return;
-        }
-      }
-
-      // مرحله ۲: اگر در localStorage نبود، از سایت چک کن  
-      try {
-        const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
-        const response = await fetch('https://lenytoys.ir/wp-json/pcs/v1/user-purchases', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json'
-          }
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          
-          if (data.success && data.purchases) {
-            // بروزرسانی localStorage با اطلاعات جدید سایت
-            const formattedPurchases = data.purchases.map(purchase => ({
-              title: purchase.title,
-              status: purchase.status,
-              date: purchase.date,
-              isVIP: purchase.isVIP || false
-            }));
-            
-            localStorage.setItem('purchasedProducts', JSON.stringify(formattedPurchases));
-
-            // حالا دوباره چک کن
-            const mimCoinProduct = formattedPurchases.find(p => {
-              const title = p.title?.toLowerCase() || '';
-              const isActive = p.status === 'active';
-              
-              const isMimCoin = (
-                title.includes('میم کوین') ||
-                title.includes('mim coin') ||
-                title.includes('mimcoin') ||
-                title.includes('کانال میم کوین') ||
-                title.includes('میم‌کوین') ||
-                title.includes('میم')
-              );
-              
-              return isMimCoin && isActive;
-            });
-
-            if (mimCoinProduct) {
-              setShowMimCoinChannel(true);
-              return;
-            }
-          }
-        }
-      } catch (error) {
-      }
-
-      // مرحله ۳: اگر در هیچ کدام نبود، پیام خطا
-      Store.addNotification({
-        title: (
-          <div dir="rtl" style={{ textAlign: 'right', paddingRight: '15px' }}>اطلاعیه</div>
-        ),
-        message: (
-          <div dir="rtl" style={{ textAlign: 'right' }}>
-            شما هنوز کانال میم کوین باز را خریداری نکرده‌اید. به صورت خودکار به صفحه مورد نظر هدایت می شوید
-          </div>
-        ),
-        type: "danger",
-        insert: "top",
-        container: "center",
-        animationIn: ["animate__animated", "animate__flipInX"],
-        animationOut: ["animate__animated", "animate__flipOutX"],
-        dismiss: { duration: 5000, showIcon: true, pauseOnHover: true },
-      });
-
-      setTimeout(() => {
-        setShowMimCoinPage(true);
-      }, 2000);
-    };
 
 // دریافت تعداد توپ‌های کاربر
 const fetchUserBallCount = async () => {
   try {
     const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
     if (!token) {
-      setUserBallCount(377); // اگر لاگین نیست، عدد پیش‌فرض
+      setUserBallCount(0);
       return;
     }
 
@@ -710,14 +315,17 @@ const fetchUserBallCount = async () => {
     if (response.ok) {
       const data = await response.json();
       if (data.success) {
-        setUserBallCount(data.total_count || 0);
+console.log('API Response:', data);
+setUserBallCount(data.user_specific_count || data.total_count || 0);
+      } else {
+        setUserBallCount(0);
       }
     } else {
-      setUserBallCount(377); // در صورت خطا، عدد پیش‌فرض
+      setUserBallCount(0);
     }
   } catch (error) {
     console.error('خطا در دریافت تعداد توپ‌ها:', error);
-    setUserBallCount(377); // در صورت خطا، عدد پیش‌فرض
+    setUserBallCount(0);
   }
 };
 
@@ -1182,24 +790,25 @@ const fetchUserBallCount = async () => {
           let userRoles = [];
 
           // سپس سعی کن از API هم بگیری (اختیاری)
-          try {
-            const response = await fetch('https://lenytoys.ir/wp-json/wp/v2/users/me', {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Accept': 'application/json'
-              }
-            });
-
-            if (response.ok) {
-              const userData = await response.json();
-              userRoles = userData.roles || [];
-              // اگر API ایمیل داشت، از اون استفاده کن، وگرنه از localStorage
-              if (userData.email) {
-                userEmail = userData.email;
-              }
-            }
-          } catch (apiError) {
-          }
+   // فعلاً کد API کامنت شده تا خطای CORS نداشته باشیم
+// try {
+//   const response = await fetch('https://lenytoys.ir/wp-json/wp/v2/users/me', {
+//     headers: {
+//       'Authorization': `Bearer ${token}`,
+//       'Accept': 'application/json'
+//     }
+//   });
+//   
+//   if (response.ok) {
+//     const userData = await response.json();
+//     userRoles = userData.roles || [];
+//     if (userData.email) {
+//       userEmail = userData.email;
+//     }
+//   }
+// } catch (apiError) {
+//   console.log('API call skipped due to CORS');
+// }
           
 
           
@@ -1222,8 +831,12 @@ const fetchUserBallCount = async () => {
 
 // دریافت تعداد توپ‌ها هنگام لود صفحه
 useEffect(() => {
-  fetchUserBallCount();
-}, [isLoggedIn]); // وقتی وضعیت لاگین تغییر کرد، دوباره بگیر
+  if (isLoggedIn) {
+    fetchUserBallCount();
+  } else {
+    setUserBallCount(0);
+  }
+}, [isLoggedIn]);
 
 
     useEffect(() => {
@@ -1582,7 +1195,7 @@ onClick={() => setShowBallRegistration(true)}
           </div>
         ))}
         </div>
-        {/* Navigation & Control */}
+        {/* Navigation & Control */}س
       
       </div>
     </div>
@@ -1601,7 +1214,6 @@ onClick={() => setShowBallRegistration(true)}
             isDarkMode={isDarkMode}
             isLoggedIn={isLoggedIn}
             onLogout={onLogout} 
-            badgeCount={unreadChannelPosts}
             badgePosition="top-3"
             isCenterIcon={true}
           />
@@ -1680,14 +1292,7 @@ onClick={() => setShowBallRegistration(true)}
   />
 )}
 
-          {/* اضافه کردن VIPPage */}
-          {showVIPPage && (
-            <VIPPage
-              isDarkMode={isDarkMode}
-              isOpen={showVIPPage}
-              onClose={() => setShowVIPPage(false)}
-            />
-          )}
+
 
           {/* اضافه کردن ZeroTo100ServicePage */}
     {showZeroTo100Page && (
@@ -1708,15 +1313,7 @@ onClick={() => setShowBallRegistration(true)}
       />
     )}
           
-          {/* اضافه کردن DexServicesPage */}
-    {showDexPage && (
-      <DexServicesPage
-        isDarkMode={isDarkMode}
-        isOpen={showDexPage}
-        onClose={() => setShowDexPage(false)}
-        
-      />
-    )}
+
 
     {/* اضافه کردن SignalStreamServicePage */}
     {showSignalStreamPage && (
@@ -1727,14 +1324,7 @@ onClick={() => setShowBallRegistration(true)}
       />
     )}
 
-    {/* TradeProPage */}
-    {showTradeProPage && (
-      <TradeProPage
-        isDarkMode={isDarkMode}
-        isOpen={showTradeProPage}
-        onClose={() => setShowTradeProPage(false)}
-      />
-    )}
+
 
 
 
@@ -1757,22 +1347,8 @@ onClick={() => setShowBallRegistration(true)}
       />
     )}
 
-    {/* MimCoinServicesPage */}
-    {showMimCoinPage && (
-      <MimCoinServicesPage
-        isDarkMode={isDarkMode}
-        isOpen={showMimCoinPage}
-        onClose={() => setShowMimCoinPage(false)}
-      />
-    )}
-    {/* MimCoinChannel - این بخش جدید است */}
-    {showMimCoinChannel && (
-      <MimCoinChannel
-        isDarkMode={isDarkMode}
-        isOpen={showMimCoinChannel}
-        onClose={() => setShowMimCoinChannel(false)}
-      />
-    )}
+
+
 
     {/* SimpleSmsLogin */}
   {showSmsLogin && (

@@ -426,18 +426,7 @@ maxLength="9"
               )}
             </button>
 
-            {/* راهنمای استفاده */}
-            <div className={`mt-4 p-4 rounded-xl ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-              <h3 className={`font-medium mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                راهنمای استفاده:
-              </h3>
-              <ul className={`text-sm space-y-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-<li>• کد 9 رقمی توپ را دقیقاً همانطور که روی توپ نوشته شده وارد کنید</li>
-                <li>• هر کد فقط یک بار قابل ثبت است</li>
-                <li>• پس از ثبت موفق، امتیاز به حساب شما اضافه می‌شود</li>
-              </ul>
-            </div>
-
+     
           </div>
         </div>
       </div>

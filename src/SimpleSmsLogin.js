@@ -152,6 +152,22 @@ const setupAutoOTPDetection = () => {
     }
   };
 
+  // پردازش paste
+const handlePaste = (e) => {
+  e.preventDefault();
+  const pastedData = e.clipboardData.getData('text');
+  
+  if (/^\d{6}$/.test(pastedData)) {
+    const otpDigits = pastedData.split('');
+    setOtpCode(otpDigits);
+    
+    // خودکار تأیید
+    setTimeout(() => {
+      handleOTPSubmit(pastedData);
+    }, 100);
+  }
+};
+
   // تأیید کد OTP
   const handleOTPSubmit = async (codeToCheck = null) => {
   const enteredCode = codeToCheck || otpCode.join('');
@@ -291,20 +307,21 @@ const setupAutoOTPDetection = () => {
             <div className="flex justify-center space-x-3 rtl:space-x-reverse">
               {otpCode.map((digit, index) => (
                 <input
-                  key={index}
-                  ref={el => inputRefs.current[index] = el}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength="1"
-                  value={digit}
-                  onChange={(e) => handleOTPChange(index, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(index, e)}
-                  className={`w-12 h-12 text-center text-2xl font-bold rounded-xl border-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    isDarkMode 
-                      ? 'bg-gray-700 border-gray-600 text-white' 
-                      : 'bg-white border-gray-300 text-gray-900'
-                  }`}
-                />
+  key={index}
+  ref={el => inputRefs.current[index] = el}
+  type="text"
+  inputMode="numeric"
+  maxLength="1"
+  value={digit}
+  onChange={(e) => handleOTPChange(index, e.target.value)}
+  onKeyDown={(e) => handleKeyDown(index, e)}
+  onPaste={handlePaste}
+  className={`w-12 h-12 text-center text-2xl font-bold rounded-xl border-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+    isDarkMode 
+      ? 'bg-gray-700 border-gray-600 text-white' 
+      : 'bg-white border-gray-300 text-gray-900'
+  }`}
+/>
               ))}
             </div>
 

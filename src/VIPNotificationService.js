@@ -135,7 +135,7 @@ class VIPNotificationService {
       }
       
       // اگر در localStorage نبود، از API بررسی می‌کنیم
-      const response = await fetch('https://p30s.com/wp-json/pcs/v1/check-vip-status', {
+const response = await fetch('https://lenytoys.ir/wp-json/pcs/v1/check-vip-status', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Accept': 'application/json'
