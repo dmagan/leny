@@ -53,6 +53,34 @@ const ProfilePage = ({ isDarkMode, setIsLoggedIn, onLogout }) => {
     }
   };
 
+  // دریافت اطلاعات پروفایل از سرور
+const fetchUserProfileFromServer = async () => {
+  try {
+    const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+    if (!token) return;
+
+    const response = await fetch('https://lenytoys.ir/wp-json/profile/v1/get', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      if (result.success) {
+        const updatedUserInfo = { ...userInfo, ...result.data };
+        setUserInfo(updatedUserInfo);
+        
+        const storage = localStorage.getItem('userInfo') ? localStorage : sessionStorage;
+        storage.setItem('userInfo', JSON.stringify(updatedUserInfo));
+      }
+    }
+  } catch (error) {
+    console.error('خطا در دریافت اطلاعات پروفایل:', error);
+  }
+};
+
   // بررسی اینکه آیا پروفایل کامل شده یا نه
   const isProfileComplete = () => {
     return userInfo?.first_name && userInfo?.last_name && userInfo?.age && userInfo?.gender;
@@ -71,6 +99,20 @@ const ProfilePage = ({ isDarkMode, setIsLoggedIn, onLogout }) => {
     if (!userInfo?.gender) return '';
     return userInfo.gender === 'male' ? '👦 پسر' : '👧 دختر';
   };
+
+  // استخراج شماره موبایل از ایمیل
+const getPhoneNumber = () => {
+  if (userInfo?.user_email) {
+    const email = userInfo.user_email;
+    // اگر ایمیل شامل @lenytoys.ir باشد، قسمت قبل از @ را برگردان
+    if (email.includes('@lenytoys.ir') || email.includes('@lenytoy.ir')) {
+      return email.split('@')[0];
+    }
+    // اگر شماره موبایل جداگانه ذخیره شده باشد
+    return userInfo.phone_number || email;
+  }
+  return '';
+};
 
   const handleProfileComplete = (updatedUserInfo) => {
     setUserInfo(updatedUserInfo);
@@ -93,11 +135,12 @@ const ProfilePage = ({ isDarkMode, setIsLoggedIn, onLogout }) => {
     }, 100);
   }, []);
 
-  useEffect(() => {
-    if (userInfo?.user_email) {
-      fetchUserBallCount();
-    }
-  }, [userInfo]);
+ useEffect(() => {
+  if (userInfo?.user_email) {
+    fetchUserBallCount();
+    fetchUserProfileFromServer();
+  }
+}, [userInfo]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -243,8 +286,8 @@ const ProfilePage = ({ isDarkMode, setIsLoggedIn, onLogout }) => {
                       </span>
                     </div>
                     <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                      {userInfo.user_email}
-                    </p>
+  {getPhoneNumber()}
+</p>
                     <p className={`text-sm font-medium ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'} mt-2`}>
                       تعداد توپ‌های ثبت شده: {userBallCount}
                     </p>
@@ -263,8 +306,8 @@ const ProfilePage = ({ isDarkMode, setIsLoggedIn, onLogout }) => {
                 ) : (
                   <div className="space-y-2">
                     <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                      {userInfo?.user_email}
-                    </p>
+  {getPhoneNumber()}
+</p>
                     {userInfo?.user_registered && (
                       <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                         {new Date(userInfo.user_registered).toLocaleDateString('fa-IR')} — {formatDate(new Date(userInfo.user_registered))}

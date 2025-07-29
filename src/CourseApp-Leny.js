@@ -22,6 +22,8 @@ import { Menu, Play, Home, PlayCircle, Calendar, UserX, UserCheck, Headphones, M
     import newSupportNotificationService from './NewSupportNotificationService';
     import SimpleSmsLogin from './SimpleSmsLogin';
     import BallRegistrationPage from './BallRegistrationPage';
+    import StoriesListPage from './StoriesListPage';
+
 
 
 
@@ -134,6 +136,7 @@ import { Menu, Play, Home, PlayCircle, Calendar, UserX, UserCheck, Headphones, M
     const [showSmsLogin, setShowSmsLogin] = useState(false);
     const [showBallRegistration, setShowBallRegistration] = useState(false);
 const [userBallCount, setUserBallCount] = useState(0);
+const [showStoriesPage, setShowStoriesPage] = useState(false);
 
 
 
@@ -193,10 +196,9 @@ const [userBallCount, setUserBallCount] = useState(0);
 
       ];
 
-      const handleServiceClick = (service) => {
+     const handleServiceClick = (service) => {
   if (service.id === 1) { // قصه
-    // کد مربوط به قصه
-    console.log('قصه کلیک شد');
+    setShowStoriesPage(true);
   } else if (service.id === 2) { // شعر
     // کد مربوط به شعر
     console.log('شعر کلیک شد');
@@ -1360,6 +1362,13 @@ onClick={() => setShowBallRegistration(true)}
     </div>
   )}
 
+{/* StoriesListPage */}
+{showStoriesPage && (
+ <StoriesListPage
+   isDarkMode={isDarkMode}
+   onClose={() => setShowStoriesPage(false)}
+ />
+)}
 
 
 
