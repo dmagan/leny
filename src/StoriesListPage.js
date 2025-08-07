@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, Play, Pause, Volume2, SkipBack, SkipForward, RotateCcw, RotateCw, Loader, Clock, Rewind, FastForward, Gauge } from 'lucide-react';
-import { STORIES_CONFIG, PLAYER_CONFIG } from './storiesConfig';
+import { X, Play, Pause, Volume2, SkipBack, SkipForward, RotateCcw, RotateCw, Loader, Rewind, FastForward, Gauge } from 'lucide-react';
+import { STORIES_CONFIG } from './storiesConfig';
 
 const StoriesListPage = ({ isDarkMode, onClose }) => {
   const [isLandscape, setIsLandscape] = useState(window.innerHeight < window.innerWidth);
@@ -22,24 +22,18 @@ const StoriesListPage = ({ isDarkMode, onClose }) => {
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const audioRef = useRef(null);
 
-  // مدیریت مدت زمان‌ها
-  const [storyDurations, setStoryDurations] = useState({});
-  const [durationsLoading, setDurationsLoading] = useState(false);
 
   // لیست قصه‌ها از فایل config
-  const stories = STORIES_CONFIG;
+const stories = STORIES_CONFIG;
 
-  useEffect(() => {
-    setTimeout(() => {
-      setShowCard(true);
-    }, 100);
-    
-    // محاسبه مدت زمان‌ها
-    calculateDurations();
-  }, []);
+useEffect(() => {
+  setTimeout(() => {
+    setShowCard(true);
+  }, 100);
+}, []);
 
-  useEffect(() => {
-    const handleResize = () => {
+useEffect(() => {
+  const handleResize = () => {
       setIsLandscape(window.innerHeight < window.innerWidth);
     };
     window.addEventListener('resize', handleResize);
@@ -59,103 +53,7 @@ const StoriesListPage = ({ isDarkMode, onClose }) => {
     return () => document.removeEventListener('click', handleClickOutside);
   }, [showSpeedMenu]);
 
-  // محاسبه مدت زمان‌های فایل‌های صوتی
-  const calculateDurations = () => {
-    setDurationsLoading(true);
-    
-    // بارگذاری از کش
-    const cached = JSON.parse(localStorage.getItem('story_durations') || '{}');
-    const now = Date.now();
-    const expiry = PLAYER_CONFIG.cacheExpiry;
-    
-    const validCached = {};
-    for (const [id, data] of Object.entries(cached)) {
-      if (data.timestamp && (now - data.timestamp) < expiry) {
-        validCached[id] = data.duration;
-      }
-    }
-    
-    setStoryDurations(validCached);
-    
-    // محاسبه مدت زمان‌های جدید
-    const uncachedStories = stories.filter(story => !validCached[story.id]);
-    
-    if (uncachedStories.length === 0) {
-      setDurationsLoading(false);
-      return;
-    }
-    
-    console.log(`🔄 محاسبه مدت زمان ${uncachedStories.length} قصه از ${stories.length} قصه کل`);
-    
-    let completed = 0;
-    const newDurations = { ...validCached };
 
-    
-    uncachedStories.forEach((story, index) => {
-      setTimeout(() => {
-        console.log(`📊 در حال محاسبه: ${story.title}`);
-        const audio = new Audio();
-        audio.preload = 'metadata';
-        audio.volume = 0;
-        
-        const timeout = setTimeout(() => {
-          console.log(`⏰ Timeout برای: ${story.title}`);
-          audio.src = '';
-          completed++;
-          if (completed === uncachedStories.length) {
-            setDurationsLoading(false);
-            console.log(`✅ محاسبه مدت زمان‌ها تکمیل شد`);
-          }
-        }, 10000); // 10 ثانیه timeout
-        
-        audio.onloadedmetadata = () => {
-          clearTimeout(timeout);
-          const duration = audio.duration;
-          
-          if (duration && !isNaN(duration) && duration > 0) {
-            const formatted = formatTime(duration);
-            newDurations[story.id] = formatted;
-            
-            console.log(`✅ ${story.title}: ${formatted}`);
-            
-            // ذخیره در کش
-            const cacheData = {
-              ...JSON.parse(localStorage.getItem('story_durations') || '{}'),
-              [story.id]: {
-                duration: formatted,
-                timestamp: Date.now()
-              }
-            };
-            localStorage.setItem('story_durations', JSON.stringify(cacheData));
-            
-            setStoryDurations({ ...newDurations });
-          } else {
-            console.log(`❌ مدت زمان نامعتبر برای: ${story.title}`);
-          }
-          
-          audio.src = '';
-          completed++;
-          if (completed === uncachedStories.length) {
-            setDurationsLoading(false);
-            console.log(`✅ محاسبه مدت زمان‌ها تکمیل شد`);
-          }
-        };
-        
-        audio.onerror = (e) => {
-          clearTimeout(timeout);
-          console.error(`❌ خطا در بارگذاری: ${story.title}`, e);
-          audio.src = '';
-          completed++;
-          if (completed === uncachedStories.length) {
-            setDurationsLoading(false);
-            console.log(`✅ محاسبه مدت زمان‌ها تکمیل شد (با خطا)`);
-          }
-        };
-        
-        audio.src = story.audioUrl;
-      }, index * 1000); // تاخیر 1 ثانیه بین هر درخواست
-    });
-  };
 
   // مدیریت پخش‌کننده صوتی
   useEffect(() => {
@@ -167,6 +65,8 @@ const StoriesListPage = ({ isDarkMode, onClose }) => {
     const handleEnd = () => {
       setIsPlaying(false);
       setCurrentTime(0);
+      // پخش خودکار قصه بعدی
+      goToNextTrack();
     };
 
     audio.addEventListener('timeupdate', updateTime);
@@ -205,11 +105,8 @@ const StoriesListPage = ({ isDarkMode, onClose }) => {
       setCurrentTime(0);
       
       if (audioRef.current) {
-        // متوقف کردن پخش قبلی
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
-        
-        // تنظیم فایل جدید
         audioRef.current.src = story.audioUrl;
         audioRef.current.playbackRate = playbackRate;
         
@@ -267,29 +164,11 @@ const StoriesListPage = ({ isDarkMode, onClose }) => {
     }
   };
 
-  const skip30Forward = () => {
+  const skipForward = () => {
     if (audioRef.current && duration) {
       audioRef.current.currentTime = Math.min(
-        audioRef.current.currentTime + 15, 
+        audioRef.current.currentTime + 30, 
         duration
-      );
-    }
-  };
-
- const skipForward = () => {
-  if (audioRef.current && duration) {
-    audioRef.current.currentTime = Math.min(
-      audioRef.current.currentTime + 30, 
-      duration
-    );
-  }
-};
-
-  const skipBackward = () => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = Math.max(
-        audioRef.current.currentTime - PLAYER_CONFIG.skipDuration, 
-        0
       );
     }
   };
@@ -312,27 +191,20 @@ const StoriesListPage = ({ isDarkMode, onClose }) => {
   ];
 
   const goToNextTrack = () => {
-  const currentIndex = stories.findIndex(story => story.id === currentStory?.id);
-  if (currentIndex !== -1 && currentIndex < stories.length - 1) {
-    const nextStory = stories[currentIndex + 1];
-    playStory(nextStory);
-  }
-};
+    const currentIndex = stories.findIndex(story => story.id === currentStory?.id);
+    if (currentIndex !== -1 && currentIndex < stories.length - 1) {
+      const nextStory = stories[currentIndex + 1];
+      playStory(nextStory);
+    }
+  };
 
-const goToPreviousTrack = () => {
-  const currentIndex = stories.findIndex(story => story.id === currentStory?.id);
-  if (currentIndex !== -1 && currentIndex > 0) {
-    const previousStory = stories[currentIndex - 1];
-    playStory(previousStory);
-  }
-};
-
-const restart = () => {
-  if (audioRef.current) {
-    audioRef.current.currentTime = 0;
-    setCurrentTime(0);
-  }
-};
+  const goToPreviousTrack = () => {
+    const currentIndex = stories.findIndex(story => story.id === currentStory?.id);
+    if (currentIndex !== -1 && currentIndex > 0) {
+      const previousStory = stories[currentIndex - 1];
+      playStory(previousStory);
+    }
+  };
 
   const handleProgressChange = (e) => {
     if (audioRef.current && duration) {
@@ -401,12 +273,7 @@ const restart = () => {
                     قصه مورد علاقه خود را انتخاب کنید
                   </p>
                   
-                  {durationsLoading && (
-                    <div className="mt-3 flex items-center justify-center gap-2 text-sm text-yellow-600">
-                      <Loader size={16} className="animate-spin" />
-                      <span>در حال محاسبه مدت زمان قصه‌ها...</span>
-                    </div>
-                  )}
+
                 </div>
 
                 <div className="space-y-4">
@@ -423,36 +290,36 @@ const restart = () => {
                       onClick={() => playStory(story)}
                     >
                       <div className="flex items-center gap-4">
-                       <div className="w-20 h-20 rounded-lg bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center flex-shrink-0">
+                        <div className="w-20 h-20 rounded-lg bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center flex-shrink-0">
                           {story.image ? (
-                            <img 
-                              src={story.image} 
-                              alt={story.title}
-                              className="w-full h-full rounded-lg object-cover"
-                              onError={(e) => {
-                                // اگر تصویر لود نشد، آیکون Play نمایش داده شود
-                                e.target.style.display = 'none';
-                                e.target.nextSibling.style.display = 'block';
-                              }}
-                            />
-                          ) : null}
-                          <Play 
-                            size={24} 
-                            className="text-white" 
-                            style={{ display: story.image ? 'none' : 'block' }}
-                          />
+                            <>
+                              <img 
+                                src={story.image} 
+                                alt={story.title}
+                                className="w-full h-full rounded-lg object-cover"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                  e.target.nextSibling.style.display = 'block';
+                                }}
+                              />
+                              <Play 
+                                size={24} 
+                                className="text-white" 
+                                style={{ display: 'none' }}
+                              />
+                            </>
+                          ) : (
+                            <Play size={24} className="text-white" />
+                          )}
                         </div>
 
                         <div className="flex-1">
                           <h3 className={`font-medium mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                             {story.title}
                           </h3>
-                          <div className="flex items-center gap-2">
-                            <Clock size={14} className={isDarkMode ? 'text-gray-400' : 'text-gray-500'} />
-                            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                              {storyDurations[story.id] || 'محاسبه...'}
-                            </p>
-                          </div>
+                          <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+  قصه کودکانه
+</p>
                         </div>
 
                         <div className="flex-shrink-0">
@@ -478,134 +345,134 @@ const restart = () => {
             </div>
           </div>
 
-          {/* Fixed Player at Bottom - Positioned Absolutely */}
-         {currentStory && (
-  <div 
-    className={`absolute bottom-0 left-0 right-0 border-t backdrop-blur-sm bg-opacity-95 ${
-      isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
-    }`} 
-    style={{ zIndex: 100 }}
-  >
-    <div className="p-4">
-      <div className="max-w-md mx-auto">
-        <div className="text-center mb-3">
-          <p className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-            {currentStory.title}
-          </p>
-        </div>
-
-        <div className="mb-1">
-          <div 
-            className="w-full h-2 bg-gray-300 rounded-full cursor-pointer"
-            onClick={handleProgressChange}
-          >
+          {/* Fixed Player at Bottom */}
+          {currentStory && (
             <div 
-              className="h-full bg-yellow-500 rounded-full transition-all duration-100"
-              style={{ width: duration ? `${(currentTime / duration) * 100}%` : '0%' }}
-            />
-          </div>
-          <div className="flex justify-between text-xs text-gray-500 mt-1">
-            <span>{formatTime(currentTime)}</span>
-            <span>{formatTime(duration)}</span>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-center gap-2">
-          {/* دکمه 15 ثانیه عقب */}
-          <button 
-            onClick={skip15Backward}
-            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
-            title="15 ثانیه عقب"
-          >
-            <RotateCcw size={20} className={isDarkMode ? 'text-gray-300' : 'text-gray-600'} />
-          </button>
-          
-          {/* دکمه ترک قبلی */}
-          <button 
-            onClick={goToPreviousTrack}
-            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
-            title="ترک قبلی"
-            disabled={stories.findIndex(story => story.id === currentStory?.id) === 0}
-          >
-            <SkipBack size={24} className={`${
-              stories.findIndex(story => story.id === currentStory?.id) === 0 
-                ? 'text-gray-400' 
-                : isDarkMode ? 'text-gray-300' : 'text-gray-600'
-            }`} />
-          </button>
-          
-          {/* دکمه پخش/توقف */}
-          <button 
-            onClick={togglePlayPause}
-            className="p-3 rounded-full bg-yellow-500 hover:bg-yellow-600"
-            title={isPlaying ? 'توقف' : 'پخش'}
-          >
-            {isPlaying ? (
-              <Pause size={28} className="text-white" />
-            ) : (
-              <Play size={28} className="text-white mr-0.5" />
-            )}
-          </button>
-          
-          {/* دکمه ترک بعدی */}
-          <button 
-            onClick={goToNextTrack}
-            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
-            title="ترک بعدی"
-            disabled={stories.findIndex(story => story.id === currentStory?.id) === stories.length - 1}
-          >
-            <SkipForward size={24} className={`${
-              stories.findIndex(story => story.id === currentStory?.id) === stories.length - 1 
-                ? 'text-gray-400' 
-                : isDarkMode ? 'text-gray-300' : 'text-gray-600'
-            }`} />
-          </button>
-
-           {/* دکمه 15 ثانیه جلو */}
-          <button 
-            onClick={skipForward}
-            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
-            title="شروع از اول"
-          >
-            <RotateCw size={20} className={isDarkMode ? 'text-gray-300' : 'text-gray-600'} />
-          </button>
-
-          {/* دکمه سرعت پخش */}
-          <div className="relative speed-menu-container">
-            <button 
-              onClick={() => setShowSpeedMenu(!showSpeedMenu)}
-              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
-              title="سرعت پخش"
+              className={`absolute bottom-0 left-0 right-0 border-t backdrop-blur-sm bg-opacity-95 ${
+                isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+              }`} 
+              style={{ zIndex: 100 }}
             >
-              <Gauge size={20} className={isDarkMode ? 'text-gray-300' : 'text-gray-600'} />
-            </button>
-            
-            {/* منوی سرعت */}
-            {showSpeedMenu && (
-              <div className={`absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 rounded-lg shadow-lg border ${
-                isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'
-              }`} style={{ zIndex: 200 }}>
-                {playbackRates.map((rate) => (
-                  <button
-                    key={rate.value}
-                    onClick={() => changePlaybackRate(rate.value)}
-                    className={`block w-full px-4 py-2 text-sm text-center hover:bg-gray-100 dark:hover:bg-gray-600 first:rounded-t-lg last:rounded-b-lg ${
-                      playbackRate === rate.value 
-                        ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' 
-                        : isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                    }`}
-                  >
-                    {rate.label}
-                  </button>
-                ))}
+              <div className="p-4">
+                <div className="max-w-md mx-auto">
+                  <div className="text-center mb-3">
+                    <p className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {currentStory.title}
+                    </p>
+                  </div>
+
+                  <div className="mb-1">
+                    <div 
+                      className="w-full h-2 bg-gray-300 rounded-full cursor-pointer"
+                      onClick={handleProgressChange}
+                    >
+                      <div 
+                        className="h-full bg-yellow-500 rounded-full transition-all duration-100"
+                        style={{ width: duration ? `${(currentTime / duration) * 100}%` : '0%' }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-500 mt-1">
+                      <span>{formatTime(currentTime)}</span>
+                      <span>{formatTime(duration)}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-center gap-2">
+                    {/* دکمه 15 ثانیه عقب */}
+                    <button 
+                      onClick={skip15Backward}
+                      className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                      title="15 ثانیه عقب"
+                    >
+                      <RotateCcw size={20} className={isDarkMode ? 'text-gray-300' : 'text-gray-600'} />
+                    </button>
+                    
+                    {/* دکمه ترک قبلی */}
+                    <button 
+                      onClick={goToPreviousTrack}
+                      className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                      title="ترک قبلی"
+                      disabled={stories.findIndex(story => story.id === currentStory?.id) === 0}
+                    >
+                      <SkipBack size={24} className={`${
+                        stories.findIndex(story => story.id === currentStory?.id) === 0 
+                          ? 'text-gray-400' 
+                          : isDarkMode ? 'text-gray-300' : 'text-gray-600'
+                      }`} />
+                    </button>
+                    
+                    {/* دکمه پخش/توقف */}
+                    <button 
+                      onClick={togglePlayPause}
+                      className="p-3 rounded-full bg-yellow-500 hover:bg-yellow-600"
+                      title={isPlaying ? 'توقف' : 'پخش'}
+                    >
+                      {isPlaying ? (
+                        <Pause size={28} className="text-white" />
+                      ) : (
+                        <Play size={28} className="text-white mr-0.5" />
+                      )}
+                    </button>
+                    
+                    {/* دکمه ترک بعدی */}
+                    <button 
+                      onClick={goToNextTrack}
+                      className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                      title="ترک بعدی"
+                      disabled={stories.findIndex(story => story.id === currentStory?.id) === stories.length - 1}
+                    >
+                      <SkipForward size={24} className={`${
+                        stories.findIndex(story => story.id === currentStory?.id) === stories.length - 1 
+                          ? 'text-gray-400' 
+                          : isDarkMode ? 'text-gray-300' : 'text-gray-600'
+                      }`} />
+                    </button>
+
+                    {/* دکمه 30 ثانیه جلو */}
+                    <button 
+                      onClick={skipForward}
+                      className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                      title="30 ثانیه جلو"
+                    >
+                      <RotateCw size={20} className={isDarkMode ? 'text-gray-300' : 'text-gray-600'} />
+                    </button>
+
+                    {/* دکمه سرعت پخش */}
+                    <div className="relative speed-menu-container">
+                      <button 
+                        onClick={() => setShowSpeedMenu(!showSpeedMenu)}
+                        className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                        title="سرعت پخش"
+                      >
+                        <Gauge size={20} className={isDarkMode ? 'text-gray-300' : 'text-gray-600'} />
+                      </button>
+                      
+                      {/* منوی سرعت */}
+                      {showSpeedMenu && (
+                        <div className={`absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 rounded-lg shadow-lg border ${
+                          isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'
+                        }`} style={{ zIndex: 200 }}>
+                          {playbackRates.map((rate) => (
+                            <button
+                              key={rate.value}
+                              onClick={() => changePlaybackRate(rate.value)}
+                              className={`block w-full px-4 py-2 text-sm text-center hover:bg-gray-100 dark:hover:bg-gray-600 first:rounded-t-lg last:rounded-b-lg ${
+                                playbackRate === rate.value 
+                                  ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' 
+                                  : isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                              }`}
+                            >
+                              {rate.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+            </div>
+          )}
         </div>
       </div>
 

@@ -119,10 +119,7 @@ import { Menu, Play, Home, PlayCircle, Calendar, UserX, UserCheck, Headphones, M
 
       const navigate = useNavigate();
       const sliderRef = useRef(null);
-      const slidersRef = useRef(null);
       const [currentIndex, setCurrentIndex] = useState(0);
-      const [currentSlide, setCurrentSlide] = useState(0); // برای ردیابی اسلاید فعلی
-      const [autoplayEnabled, setAutoplayEnabled] = useState(false); // افزودن state جدید
       const [showZeroTo100Page, setShowZeroTo100Page] = useState(false);
       const [showSignalStreamPage, setShowSignalStreamPage] = useState(false);
       const [isUIDLoading, setIsUIDLoading] = useState(false);
@@ -170,13 +167,15 @@ const [showStoriesPage, setShowStoriesPage] = useState(false);
           id: 2,
           name: "شعر",
             backgroundImage: "/Services/song-bg.jpg",
-        },
+        }, 
+        
+        /*
         {
           id: 3,
           name: "فروشگاه ",
             backgroundImage: "/Services/shop-bg.jpg",
         },
-        /*    {
+           {
           id: 4,
           name: "آموزش دکس تریدینگ +‌ 0 تا 100",
           imageSrc: "/Services/0to100+dex.jpg",
@@ -196,17 +195,15 @@ const [showStoriesPage, setShowStoriesPage] = useState(false);
 
       ];
 
-     const handleServiceClick = (service) => {
-  if (service.id === 1) { // قصه
-    setShowStoriesPage(true);
-  } else if (service.id === 2) { // شعر
-    // کد مربوط به شعر
-    console.log('شعر کلیک شد');
-  } else if (service.id === 3) { // فروشگاه
-    navigate('/products');
-  } else if (service.id === 7) { // کارتن
-    console.log('کارتن کلیک شد');
-  }else if (service.id === 4) { // پکیج
+    const handleServiceClick = (service) => {
+if (service.id === 1) { // قصه
+  setShowStoriesPage(true);
+} else if (service.id === 2) { // شعر
+  // کد مربوط به شعر
+  console.log('شعر کلیک شد');
+} else if (service.id === 7) { // کارتن
+  console.log('کارتن کلیک شد');
+}else if (service.id === 4) { // پکیج
           // بررسی وضعیت ورود کاربر
           const userToken = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
           
@@ -362,82 +359,7 @@ setUserBallCount(data.user_specific_count || data.total_count || 0);
     window.location.reload();
   };
 
-      const handleSliderWithPaymentClick = (productName, productPrice) => {
-      // بررسی وضعیت ورود کاربر
-      const userToken = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
-      
-      if (!userToken) {
-        // مستقیماً به صفحه لاگین هدایت می‌شود بدون نمایش پیام
-        navigate('/login');
-        return;
-      }
-      
-      // بررسی خریدهای کاربر
-      const purchasedProductsStr = localStorage.getItem('purchasedProducts');
-      
-      if (purchasedProductsStr) {
-        try {
-          const products = JSON.parse(purchasedProductsStr);
-          
-          // بررسی آیا محصول مشابه قبلاً خریداری شده است
-          const hasSimilarProduct = products.some(p => 
-            p.title && 
-            p.title.toLowerCase().includes(productName.toLowerCase()) && 
-            p.status === 'active'
-          );
-          
-          // اگر محصول دکس یا صفر تا صد است، بررسی اضافی انجام می‌دهیم
-          let hasDexAndZeroTo100 = false;
-          
-          if (productName.toLowerCase().includes('دکس') && productName.toLowerCase().includes('صفر تا صد')) {
-            const hasDex = products.some(p => 
-              p.title && 
-              p.title.toLowerCase().includes('دکس') && 
-              p.status === 'active'
-            );
-            
-            const hasZeroTo100 = products.some(p => 
-              p.title && 
-              (p.title.toLowerCase().includes('صفر تا صد') || p.title.toLowerCase().includes('0 تا 100')) && 
-              p.status === 'active'
-            );
-            
-            hasDexAndZeroTo100 = hasDex && hasZeroTo100;
-          }
-          
-          // اگر کاربر محصول مشابه یا هر دو دوره را خریداری کرده باشد
-          if (hasSimilarProduct || hasDexAndZeroTo100) {
-            Store.addNotification({
-              title: (
-                <div dir="rtl" style={{ textAlign: 'right', paddingRight: '15px' }}>
-                  اطلاعیه
-                </div>
-              ),
-              message: (
-                <div dir="rtl" style={{ textAlign: 'right' }}>
-                  شما قبلاً این دوره آموشی را خریداری کرده‌اید. می‌توانید از طریق منوی مربوطه به محتوای دوره دسترسی داشته باشید.
-                </div>
-              ),
-              type: "info",
-              insert: "top",
-              container: "center",
-              animationIn: ["animate__animated", "animate__flipInX"],
-              animationOut: ["animate__animated", "animate__flipOutX"],
-              dismiss: { duration: 7500, showIcon: true, pauseOnHover: true }
-            });
-            return;
-          }
-        } catch (error) {
-        }
-      }
-      
-      // اگر خریدی نداشته باشد یا خطایی رخ داده باشد، کارت پرداخت را نمایش می‌دهیم
-      setShowPaymentCard({
-        show: true,
-        productTitle: productName,
-        price: productPrice
-      });
-    };
+
     const handleZeroTo100Click = () => {
       const userInfo = localStorage.getItem('userInfo') || sessionStorage.getItem('userInfo');
       if (!userInfo) {
@@ -521,7 +443,6 @@ setUserBallCount(data.user_specific_count || data.total_count || 0);
       // ذخیره وضعیت اتوپلی در localStorage
     // همیشه اتوپلی را فعال نگه دار
     localStorage.removeItem('sliderAutoplayEnabled');
-    setAutoplayEnabled(false);
     }, []);
 
     // بررسی وضعیت لاگین هنگام لود صفحه
@@ -652,98 +573,9 @@ setUserBallCount(data.user_specific_count || data.total_count || 0);
 
 
 
-      // اضافه کردن یک useEffect جدید برای هندل کردن اسکرول دستی
-      useEffect(() => {
-        if (!slidersRef.current) return;
-        
-        const slider = slidersRef.current;
-        
-        const handleScroll = () => {
-          const index = Math.round(slider.scrollLeft / slider.offsetWidth);
-          
-          // اگر شماره اسلاید تغییر کرده باشد، به معنی تعامل کاربر است
-          if (index !== currentSlide) {
-            setCurrentSlide(index);
-          }
-        };
-      
-        slider.addEventListener('scroll', handleScroll);
-        
-        return () => {
-          slider.removeEventListener('scroll', handleScroll);
-        };
-      }, [currentSlide]);
 
-    // اتوچنج اسلایدر (فقط اگر autoplayEnabled فعال باشد)
-    useEffect(() => {
-      // اگر اسلایدری وجود ندارد یا autoplayEnabled غیرفعال است، اجرا نشود
-      if (sliders.length === 0 || !autoplayEnabled) return;
-      
-      //console.log('اتوپلی اسلایدر فعال است');
-      
-      const interval = setInterval(() => {
-        if (slidersRef.current) {
-          const nextSlide = (currentSlide + 1) % sliders.length;
-          setCurrentSlide(nextSlide);
-          
-          slidersRef.current.scrollTo({
-            left: nextSlide * slidersRef.current.clientWidth,
-            behavior: 'smooth'
-          });
-        }
-      }, 1000);  // هر 4 ثانیه
-      
-      return () => clearInterval(interval);
-    }, [currentSlide, sliders.length, autoplayEnabled]);
 
-    // افزودن useEffect برای مدیریت تعامل کاربر
-    useEffect(() => {
-      const slider = slidersRef.current;
-      if (!slider) return;
 
-      // غیرفعال کردن دائمی اتوچنج با تعامل کاربر
-      // غیرفعال کردن موقت اتوچنج با تعامل کاربر
-    const disableAutoplay = () => {
-      // فقط موقتاً غیرفعال می‌کنیم، بدون ذخیره در localStorage
-      if (autoplayEnabled) {
-        //console.log('اتوپلی اسلایدر موقتاً غیرفعال شد');
-        setAutoplayEnabled(false);
-        
-        // بعد از چند ثانیه دوباره فعال می‌کنیم
-        setTimeout(() => {
-          setAutoplayEnabled(true);
-          //console.log('اتوپلی اسلایدر دوباره فعال شد');
-        }, 3000); // 10 ثانیه بعد
-      }
-    };
-
-      // ایجاد event listener برای همه انواع تعامل کاربر
-      const handleUserInteraction = () => {
-        disableAutoplay();
-      };
-
-      slider.addEventListener('touchstart', handleUserInteraction, { passive: true });
-      slider.addEventListener('mousedown', handleUserInteraction);
-      slider.addEventListener('wheel', handleUserInteraction);
-      slider.addEventListener('scroll', handleUserInteraction, { passive: true });
-      
-      // اضافه کردن listener برای کلیک روی دکمه‌های navigation
-      const navButtons = document.querySelectorAll('.slider-nav-button');
-      navButtons.forEach(button => {
-        button.addEventListener('click', handleUserInteraction);
-      });
-
-      return () => {
-        slider.removeEventListener('touchstart', handleUserInteraction);
-        slider.removeEventListener('mousedown', handleUserInteraction);
-        slider.removeEventListener('wheel', handleUserInteraction);
-        slider.removeEventListener('scroll', handleUserInteraction);
-        
-        navButtons.forEach(button => {
-          button.removeEventListener('click', handleUserInteraction);
-        });
-      };
-    }, [autoplayEnabled]);
 
 
     // اضافه کردن useEffect برای راه‌اندازی سرویس نوتیفیکیشن VIP
@@ -1022,7 +854,7 @@ useEffect(() => {
 
 
     {/* Header */}
-    <div className={`fixed top-0 left-0 right-0 z-50 px-6 py-4 flex items-center justify-between`} style={{ backgroundColor: '#f3f3f3' }}>
+    <div className={`fixed top-0 left-0 right-0 z-50 px-6 py-4 flex items-center justify-between`} style={{ backgroundColor: '#ffffff' }}>
       <img src="/Logo-UpLeft.png" alt="Logo" className="h-8 w-auto" />
       <span className={`text-lg ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>خانه</span>
       <ThemeSwitcher isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />
@@ -1145,63 +977,6 @@ onClick={() => setShowBallRegistration(true)}
   </div>
 
 
-    {/* Sliders Section */}
-  <div className="px-4 mb-32">
-      <div className="relative">
-        <div 
-          ref={slidersRef}
-          className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
-        >
-        {sliders.map((slider, index) => (
-          <div 
-            key={slider.id}
-            className="flex-none w-full snap-center cursor-pointer"
-            style={{
-              width: '100%',
-              minWidth: '100%'
-            }}
-            onClick={() => {
-              // استخراج لینک و اطلاعات محصول از متادیتای اسلایدر
-              const link = slider.meta?.slider_link || '';
-              const productName = slider.meta?.slider_product_name || '';
-              const productPrice = slider.meta?.slider_product_price || '';
-              
-              // بررسی آیا باید صفحه پرداخت باز شود
-              if (link === 'PAYMENT' && productName && productPrice) {
-                // اینجا تابع بررسی وضعیت ورود کاربر را فراخوانی می‌کنیم
-                handleSliderWithPaymentClick(productName, productPrice);
-              }
-              // بررسی آیا لینک داخلی است
-              else if (link && link.startsWith('/')) {
-                // هدایت به مسیر داخلی با استفاده از React Router
-                navigate(link);
-              } else if (link && !link.startsWith('http')) {
-                // اگر لینک با http شروع نشود، فرض می‌کنیم مسیر داخلی بدون اسلش ابتدایی است
-                navigate('/' + link);
-              } else if (link) {
-                // لینک خارجی
-                window.open(link, '_blank');
-              }
-            }}
-          >
-            {slider._embedded && 
-            slider._embedded['wp:featuredmedia'] && 
-            slider._embedded['wp:featuredmedia'][0] && (
-              <img
-                src={slider._embedded['wp:featuredmedia'][0].source_url}
-                alt={slider.title.rendered}
-                className="w-full h-18 object-cover rounded-xl"
-                loading="eager"
-              />
-            )}
-          </div>
-        ))}
-        </div>
-        {/* Navigation & Control */}س
-      
-      </div>
-    </div>
-
 
 
         
@@ -1233,7 +1008,7 @@ onClick={() => setShowBallRegistration(true)}
           
           <NavItem 
             icon={<MonitorPlay size={24} />} 
-            label="آموزشی" 
+            label="خبرهای لنی" 
             active={false} 
             isDarkMode={isDarkMode}
             isLoggedIn={isLoggedIn}
@@ -1381,41 +1156,38 @@ onClick={() => setShowBallRegistration(true)}
     const NavItem = ({ icon, label, active, isDarkMode, isProfile, onLogout, isLoggedIn, badgeCount, badgePosition = "top-3",isCenterIcon = false }) => {
       const navigate = useNavigate();
 
-    const handleClick = () => {
-    if (isProfile) {
+const handleClick = () => {
+if (isProfile) {
+if (isLoggedIn) {
+  navigate('/profile');
+} else {
+navigate('/login');
+}
+}else if (label === "آپدیت مارکت") {
     if (isLoggedIn) {
-      navigate('/profile');
+      navigate('/chanel-public');
     } else {
-  navigate('/login');
+navigate('/login');
     }
-  }else if (label === "آپدیت مارکت") {
-        if (isLoggedIn) {
-          navigate('/chanel-public');
-        } else {
-  navigate('/login');
-        }
-      } else if (label === "آموزشی") {
-        if (isLoggedIn) {
-          navigate('/chanel-posts');
-        } else {
-          navigate('/login');
-        }
-      } else if (label === "محصولات") {
-        navigate('/products');
-      } else if (label === "سفارش‌ها") {
-        if (isLoggedIn) {
-          navigate('/orders');
-        } else {
-          navigate('/login');
-        }
-      } else if (label === "پشتیبانی") {
-        if (isLoggedIn) {
-          navigate('/new-support');
-        } else {
-          navigate('/login');
-        }
-      }
-    };
+  } else if (label === "خبرهای لنی") {
+    if (isLoggedIn) {
+      navigate('/chanel-posts');
+    } else {
+      navigate('/login');
+    }
+  } else if (label === "محصولات") {
+    navigate('/products');
+  } else if (label === "سفارش‌ها") {
+    if (isLoggedIn) {
+      navigate('/orders');
+    } else {
+      navigate('/login');
+    }
+  } else if (label === "پشتیبانی") {
+    // موقتاً غیرفعال - هیچ کاری انجام نمی‌دهد
+    return;
+  }
+};
 
     if (isCenterIcon) {
     return (

@@ -360,22 +360,24 @@ setTimeout(() => {
             <div className="space-y-4 px-1">
               <div className="relative">
                 <input
-                  type="text"
-                  value={ballCode}
-                  onChange={handleBallCodeChange}
-placeholder="کد 9 رقمی توپ (مثال: 123456789)"
-                  className={`w-full px-4 py-3 sm:py-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#f7d55d] text-center pr-12 ${
-                    isDarkMode 
-                      ? 'bg-gray-800 text-white placeholder-gray-500 border-gray-700'
-                      : 'bg-gray-100 text-gray-900 placeholder-gray-500'
-                  } ${
-                    codeStatus === 'valid' ? 'border-green-500' :
-                    codeStatus === 'invalid' ? 'border-red-500' :
-                    codeStatus === 'used' ? 'border-orange-500' : ''
-                  }`}
-                  style={{ fontSize: '18px', letterSpacing: '2px' }}
-maxLength="9"
-                />
+  type="tel"
+  inputMode="numeric"
+  pattern="[0-9]*"
+  value={ballCode}
+  onChange={handleBallCodeChange}
+  placeholder="کد 9 رقمی توپ (مثال: 123456789)"
+  className={`w-full px-4 py-3 sm:py-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#f7d55d] text-center pr-12 ${
+    isDarkMode 
+      ? 'bg-gray-800 text-white placeholder-gray-500 border-gray-700'
+      : 'bg-gray-100 text-gray-900 placeholder-gray-500'
+  } ${
+    codeStatus === 'valid' ? 'border-green-500' :
+    codeStatus === 'invalid' ? 'border-red-500' :
+    codeStatus === 'used' ? 'border-orange-500' : ''
+  }`}
+  style={{ fontSize: '18px', letterSpacing: '2px' }}
+  maxLength="9"
+/>
                 
                 {/* آیکون وضعیت */}
                 <div className="absolute left-4 top-1/2 transform -translate-y-1/2">

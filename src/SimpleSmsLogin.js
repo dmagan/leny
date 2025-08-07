@@ -134,15 +134,20 @@ const setupAutoOTPDetection = () => {
     }
 
     // اگر آخرین رقم وارد شد، خودکار ارسال کن
-    if (value && index === 5) {
-      const completeCode = newOTP.join('');
-      if (completeCode.length === 6) {
-        // کمی تأخیر برای نمایش رقم آخر
-        setTimeout(() => {
-          handleOTPSubmit(completeCode);
-        }, 100);
-      }
-    }
+ // اگر آخرین رقم وارد شد، خودکار ارسال کن
+if (value && index === 5) {
+  const completeCode = newOTP.join('');
+  if (completeCode.length === 6) {
+    // فوراً loading را فعال کن
+    setIsLoading(true);
+    setError(''); // پاک کردن خطاهای قبلی
+    
+    // کمی تأخیر برای نمایش رقم آخر و loading
+    setTimeout(() => {
+      handleOTPSubmit(completeCode);
+    }, 100);
+  }
+}
   };
 
   // پردازش backspace
@@ -161,6 +166,10 @@ const handlePaste = (e) => {
     const otpDigits = pastedData.split('');
     setOtpCode(otpDigits);
     
+    // فوراً loading را فعال کن
+    setIsLoading(true);
+    setError('');
+    
     // خودکار تأیید
     setTimeout(() => {
       handleOTPSubmit(pastedData);
@@ -173,6 +182,7 @@ const handlePaste = (e) => {
   const enteredCode = codeToCheck || otpCode.join('');
   
   if (enteredCode.length !== 6) {
+    setIsLoading(false);
     setError('لطفا کد 6 رقمی را کامل وارد کنید');
     return;
   }
@@ -324,6 +334,17 @@ const handlePaste = (e) => {
 />
               ))}
             </div>
+
+            {/* نمایش loading بعد از وارد کردن کد کامل */}
+{isLoading && otpCode.every(digit => digit !== '') && (
+  <div className="flex items-center justify-center gap-2 py-4">
+    <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+    <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+      در حال تأیید کد...
+    </span>
+  </div>
+)}
+
 
             {error && (
               <div className="bg-red-100 dark:bg-red-900 border border-red-400 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg text-sm">
