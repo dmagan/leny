@@ -798,7 +798,7 @@ useEffect(() => {
       console.log('کاربر قبلاً لاگین کرده');
     } else {
       setIsLoggedIn(false);
-      setShowSmsLogin(true);
+      setShowSmsLogin(false);
       console.log('کاربر لاگین نیست، نمایش صفحه OTP');
     }
   };

@@ -130,10 +130,12 @@ import { Menu, Play, Home, PlayCircle, Calendar, UserX, UserCheck, Headphones, M
     const [isAdmin, setIsAdmin] = useState(false);
     const [showTicketAnswer, setShowTicketAnswer] = useState(false);
     const [unreadNewSupportMessages, setUnreadNewSupportMessages] = useState(0);
-    const [showSmsLogin, setShowSmsLogin] = useState(false);
+    const [showSmsLogin, setShowSmsLogin] = useState( );
     const [showBallRegistration, setShowBallRegistration] = useState(false);
 const [userBallCount, setUserBallCount] = useState(0);
 const [showStoriesPage, setShowStoriesPage] = useState(false);
+const [showTradeProPage, setShowTradeProPage] = useState(false);
+
 
 
 
@@ -195,96 +197,93 @@ const [showStoriesPage, setShowStoriesPage] = useState(false);
 
       ];
 
-    const handleServiceClick = (service) => {
-if (service.id === 1) { // قصه
-  setShowStoriesPage(true);
-} else if (service.id === 2) { // شعر
-  // کد مربوط به شعر
-  console.log('شعر کلیک شد');
-} else if (service.id === 7) { // کارتن
-  console.log('کارتن کلیک شد');
-}else if (service.id === 4) { // پکیج
-          // بررسی وضعیت ورود کاربر
-          const userToken = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
-          
-          if (!userToken) {
-            // اگر کاربر لاگین نیست، به صفحه لاگین هدایت می‌شود
-            navigate('/login');
-            return;
-          }
-          
-          // بررسی خریدهای کاربر
-          const purchasedProductsStr = localStorage.getItem('purchasedProducts');
-          
-          if (purchasedProductsStr) {
-            try {
-              const products = JSON.parse(purchasedProductsStr);
-              
-              // بررسی آیا پکیج ترکیبی خریداری شده است
-              const hasPackage = products.some(p => 
-                p.title && 
-                p.title.toLowerCase().includes('پکیج') && 
-                p.title.toLowerCase().includes('دکس') && 
-                p.title.toLowerCase().includes('صفر') && 
-                p.status === 'active'
-              );
-              
-              // بررسی آیا هر دو دوره جداگانه خریداری شده‌اند
-              const hasDex = products.some(p => 
-                p.title && 
-                p.title.toLowerCase().includes('دکس') && 
-                p.status === 'active'
-              );
-              
-              const hasZeroTo100 = products.some(p => 
-                p.title && 
-                (p.title.toLowerCase().includes('صفر تا صد') || p.title.toLowerCase().includes('0 تا 100')) && 
-                p.status === 'active'
-              );
-              
-              // اگر کاربر پکیج یا هر دو دوره را خریداری کرده باشد
-              if (hasPackage || (hasDex && hasZeroTo100)) {
-                Store.addNotification({
-                  title: (
-                    <div dir="rtl" style={{ textAlign: 'right', paddingRight: '15px' }}>
-                      اطلاعیه
-                    </div>
-                  ),
-                  message: (
-                    <div dir="rtl" style={{ textAlign: 'right' }}>
-                      شما قبلاً این آموزشها را خریداری کرده‌اید. می‌توانید از طریق منوی مربوطه به محتوای دوره‌ها دسترسی داشته باشید.
-                    </div>
-                  ),
-                  type: "info",
-                  insert: "top",
-                  container: "center",
-                  animationIn: ["animate__animated", "animate__flipInX"],
-                  animationOut: ["animate__animated", "animate__flipOutX"],
-                  dismiss: { duration: 7500, showIcon: true, pauseOnHover: true }
-                });
-                return;
-              }
-            } catch (error) {
-            }
-          }
-          
-          // اگر خریدی نداشته باشد، کارت پرداخت را نمایش می‌دهیم
-          setShowPaymentCard({
-            show: true,
-            productTitle: 'پکیج آموزشی دکس + صفر تا صد',
-            price: PRODUCT_PRICES.DEX_ZERO_TO_100_PACKAGE
+ const handleServiceClick = (service) => {
+  if (service.id === 1) { // قصه
+    setShowStoriesPage(true);
+  } else if (service.id === 2) { // شعر
+    // کد مربوط به شعر
+    console.log('شعر کلیک شد');
+  } else if (service.id === 7) { // کارتن - فقط یک بار
+    console.log('کارتن کلیک شد - باز کردن ترید پرو');
+    setShowTradeProPage(true);
+  } else if (service.id === 4) { // پکیج
+    // بررسی وضعیت ورود کاربر
+    const userToken = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+    
+    if (!userToken) {
+      // اگر کاربر لاگین نیست، به صفحه لاگین هدایت می‌شود
+      navigate('/login');
+      return;
+    }
+    
+    // بررسی خریدهای کاربر
+    const purchasedProductsStr = localStorage.getItem('purchasedProducts');
+    
+    if (purchasedProductsStr) {
+      try {
+        const products = JSON.parse(purchasedProductsStr);
+        
+        // بررسی آیا پکیج ترکیبی خریداری شده است
+        const hasPackage = products.some(p => 
+          p.title && 
+          p.title.toLowerCase().includes('پکیج') && 
+          p.title.toLowerCase().includes('دکس') && 
+          p.title.toLowerCase().includes('صفر') && 
+          p.status === 'active'
+        );
+        
+        // بررسی آیا هر دو دوره جداگانه خریداری شده‌اند
+        const hasDex = products.some(p => 
+          p.title && 
+          p.title.toLowerCase().includes('دکس') && 
+          p.status === 'active'
+        );
+        
+        const hasZeroTo100 = products.some(p => 
+          p.title && 
+          (p.title.toLowerCase().includes('صفر تا صد') || p.title.toLowerCase().includes('0 تا 100')) && 
+          p.status === 'active'
+        );
+        
+        // اگر کاربر پکیج یا هر دو دوره را خریداری کرده باشد
+        if (hasPackage || (hasDex && hasZeroTo100)) {
+          Store.addNotification({
+            title: (
+              <div dir="rtl" style={{ textAlign: 'right', paddingRight: '15px' }}>
+                اطلاعیه
+              </div>
+            ),
+            message: (
+              <div dir="rtl" style={{ textAlign: 'right' }}>
+                شما قبلاً این آموزشها را خریداری کرده‌اید. می‌توانید از طریق منوی مربوطه به محتوای دوره‌ها دسترسی داشته باشید.
+              </div>
+            ),
+            type: "info",
+            insert: "top",
+            container: "center",
+            animationIn: ["animate__animated", "animate__flipInX"],
+            animationOut: ["animate__animated", "animate__flipOutX"],
+            dismiss: { duration: 7500, showIcon: true, pauseOnHover: true }
           });
+          return;
         }
-        else if (service.id === 5) { // ترید حرفه‌ای
-  console.log('ترید حرفه‌ای کلیک شد');
-  // یا می‌توانید به صفحه‌ای هدایت کنید:
-  // navigate('/trade-pro');
-} else if (service.id === 7) { // کارتن
-  console.log('کارتن کلیک شد');
-  // یا می‌توانید به صفحه‌ای هدایت کنید:
-  // navigate('/cartoon');
-}
-      };
+      } catch (error) {
+        // خطا در پارس کردن JSON
+      }
+    }
+    
+    // اگر خریدی نداشته باشد، کارت پرداخت را نمایش می‌دهیم
+    setShowPaymentCard({
+      show: true,
+      productTitle: 'پکیج آموزشی دکس + صفر تا صد',
+      price: PRODUCT_PRICES.DEX_ZERO_TO_100_PACKAGE
+    });
+  } else if (service.id === 5) { // ترید حرفه‌ای
+    console.log('ترید حرفه‌ای کلیک شد');
+    // یا می‌توانید به صفحه‌ای هدایت کنید:
+    // navigate('/trade-pro');
+  }
+};
 
 
 
@@ -1145,6 +1144,14 @@ onClick={() => setShowBallRegistration(true)}
  />
 )}
 
+{/* TradeProPage */}
+{showTradeProPage && (
+  <TradeProPage
+    isDarkMode={isDarkMode}
+    isOpen={showTradeProPage}
+    onClose={() => setShowTradeProPage(false)}
+  />
+)}
 
 
 
